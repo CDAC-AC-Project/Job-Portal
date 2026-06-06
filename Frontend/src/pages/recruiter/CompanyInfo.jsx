@@ -1,4 +1,9 @@
 import { useState } from "react";
+import Button from "../../components/common/Button";
+import Input from "../../components/common/Input";
+import TextArea from "../../components/common/TextArea";
+import UploadBox from "../../components/common/UploadBox";
+import Footer from "../../components/layout/Footer";
 
 export default function CompanyInfo() {
   const [companyName, setCompanyName] = useState("");
@@ -6,110 +11,59 @@ export default function CompanyInfo() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      
-      {/* Header */}
-      <div className="bg-white border-b px-8 py-4">
-        <h1 className="text-2xl font-bold text-blue-600">
+      <header className="bg-white px-10 py-5 border-b">
+        <h1 className="text-xl font-semibold text-gray-900">
           JobPilot
         </h1>
-      </div>
+      </header>
 
-      {/* Main Content */}
-      <div className="max-w-5xl mx-auto w-full py-8">
-
-        {/* Step Navigation */}
-        <div className="flex justify-center gap-8 border-b pb-4 mb-8">
-
-          <button className="text-blue-600 font-semibold">
-            Company Info
-          </button>
-
-          <button className="text-gray-400">
-            Founding Info
-          </button>
-
-          <button className="text-gray-400">
-            Social Media
-          </button>
-
-          <button className="text-gray-400">
-            Contact
-          </button>
-
+      <main className="max-w-5xl mx-auto w-full py-10 px-6">
+        <div className="flex justify-center gap-10 border-b border-gray-200 pb-4 mb-8 text-sm">
+          <button className="text-blue-600 font-semibold">Company Info</button>
+          <button className="text-gray-400">Founding Info</button>
+          <button className="text-gray-400">Social Media Profile</button>
+          <button className="text-gray-400">Contact</button>
         </div>
 
-        {/* Upload Section */}
-        <div className="grid grid-cols-3 gap-6 mb-8">
+        <h2 className="text-lg font-semibold text-gray-900 mb-5">
+          Logo & Banner Image
+        </h2>
 
-          <div>
-            <label className="block mb-2 font-medium">
-              Upload Logo
-            </label>
+        <div className="grid grid-cols-3 gap-5 mb-8">
+          <UploadBox
+            label="Upload Logo"
+            title="Browse photo or drop here"
+            description="A photo larger than 400 pixels works best. Max photo size 5 MB."
+            className="h-44"
+          />
 
-            <div className="border-2 border-dashed rounded-lg h-48 flex items-center justify-center text-gray-400">
-              Browse Photo
-            </div>
-          </div>
-
-          <div className="col-span-2">
-            <label className="block mb-2 font-medium">
-              Banner Image
-            </label>
-
-            <div className="border-2 border-dashed rounded-lg h-48 flex items-center justify-center text-gray-400">
-              Browse Banner
-            </div>
-          </div>
-
+          <UploadBox
+            label="Banner Image"
+            title="Browse photo or drop here"
+            description="Banner image optimal dimension 1520x400. Supported format JPEG, PNG."
+            className="col-span-2 h-44"
+          />
         </div>
 
-        {/* Company Name */}
-        <div className="mb-6">
-
-          <label className="block mb-2 font-medium">
-            Company Name
-          </label>
-
-          <input
-            type="text"
+        <div className="space-y-6">
+          <Input
+            label="Company Name"
             value={companyName}
             onChange={(e) => setCompanyName(e.target.value)}
-            className="w-full border rounded-md px-3 py-2"
           />
 
-        </div>
-
-        {/* About Us */}
-        <div className="mb-8">
-
-          <label className="block mb-2 font-medium">
-            About Us
-          </label>
-
-          <textarea
-            rows="6"
+          <TextArea
+            label="About Us"
+            placeholder="Write down about your company here. Let the candidate know who we are..."
             value={about}
             onChange={(e) => setAbout(e.target.value)}
-            placeholder="Write down about your company..."
-            className="w-full border rounded-md px-3 py-2"
           />
 
+          <Button>Save & Next →</Button>
         </div>
+      </main>
 
-        {/* Button */}
-        <button
-          className="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700"
-        >
-          Save & Next →
-        </button>
-
-      </div>
-
-      {/* Footer */}
-      <div className="mt-auto text-center text-gray-500 py-4 border-t">
-        © 2025 Job Portal
-      </div>
-
+      <Footer />
     </div>
   );
 }
