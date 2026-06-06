@@ -3,6 +3,8 @@ import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import TextArea from "../../components/common/TextArea";
 import Footer from "../../components/layout/Footer";
+import RecruiterSetupSteps from "../../components/recruiter/RecruiterSetupSteps";
+import SetupProgressBar from "../../components/recruiter/SetupProgressBar";
 
 export default function FoundingInfo() {
   const [formData, setFormData] = useState({
@@ -31,21 +33,17 @@ export default function FoundingInfo() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white px-10 py-5 border-b border-gray-200">
-        <h1 className="text-xl font-semibold text-gray-900">JobPilot</h1>
-      </header>
+       <header className="bg-white px-10 py-5 border-b border-gray-200">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-gray-900">JobPilot</h1>
+            <SetupProgressBar progress={50} />
+          </div>
+          </header>
 
       {/* Main Content */}
       <main className="max-w-5xl mx-auto w-full py-10 px-6">
         {/* Step Navigation */}
-        <div className="flex justify-center gap-10 border-b border-gray-200 pb-4 mb-8 text-sm">
-          <button className="text-gray-400">Company Info</button>
-          <button className="text-blue-600 font-semibold border-b-2 border-blue-600 pb-4 -mb-4">
-            Founding Info
-          </button>
-          <button className="text-gray-400">Social Media Profile</button>
-          <button className="text-gray-400">Contact</button>
-        </div>
+       <RecruiterSetupSteps />
 
         <form onSubmit={handleNext}>
           <h2 className="text-lg font-semibold text-gray-900 mb-6">
