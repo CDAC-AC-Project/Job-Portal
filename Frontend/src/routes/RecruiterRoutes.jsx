@@ -9,6 +9,7 @@ import RecruiterDashboard from "../pages/recruiter/RecruiterDashboard";
 import PlansBilling from "../pages/recruiter/PlansBilling";
 import PostJob from "../pages/recruiter/PostJob";
 import MyJobs from "../pages/recruiter/MyJobs";
+import Applications from "../pages/recruiter/Applications";
 
 const RecruiterRoutes = (
   <>
@@ -30,6 +31,7 @@ const RecruiterRoutes = (
     <Route path="/recruiter/plans-billing" element={<PlansBilling />} />
     <Route path="/recruiter/post-job" element={<PostJob/>} />
     <Route path="/recruiter/my-jobs" element={<MyJobs />} />
+    <Route path="/recruiter/applications" element={<Applications />} />
   </>
 );
 

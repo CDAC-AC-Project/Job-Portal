@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+
 import {
   FiCheckCircle,
   FiXCircle,
@@ -10,7 +13,7 @@ import {
 
 export default function MyJobsTable({ jobs }) {
   const [openMenuId, setOpenMenuId] = useState(null);
-
+    const navigate = useNavigate();
   return (
     <div className="overflow-x-auto border border-gray-200 rounded-lg">
       <table className="w-full min-w-[850px] text-sm">
@@ -62,9 +65,10 @@ export default function MyJobsTable({ jobs }) {
               </td>
 
               <td className="px-5 py-5">
-                <button className="px-5 py-3 rounded-md font-semibold bg-gray-100 text-blue-600 hover:bg-blue-600 hover:text-white transition">
-                  View Applications
-                </button>
+               <button
+                onClick={() => navigate("/recruiter/applications")}
+                className="px-5 py-3 rounded-md font-semibold bg-gray-100 text-blue-600 hover:bg-blue-600 hover:text-white transition"
+                >View Applications</button>
               </td>
 
               <td className="px-5 py-5 text-right relative">
