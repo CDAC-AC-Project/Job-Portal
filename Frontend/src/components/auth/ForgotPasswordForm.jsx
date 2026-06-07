@@ -2,9 +2,12 @@ import { FaFacebookF } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { BriefcaseBusiness, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const ForgotPasswordForm = () => {
-  return (
+  const navigate = useNavigate();
+
+  return  (
     <div className="flex flex-col justify-center px-10 lg:px-24">
       {/* Logo */}
       <div className="absolute top-8 left-10 flex items-center gap-2">
@@ -47,10 +50,13 @@ const ForgotPasswordForm = () => {
         />
 
         {/* Button */}
-        <button className="mt-5 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md flex items-center justify-center gap-2 transition">
-          Reset Password
-          <ArrowRight size={18} />
-        </button>
+        <button
+         onClick={() => navigate("/reset-password")}
+         className="mt-5 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md flex items-center justify-center gap-2 transition"
+        >
+       Reset Password
+       <ArrowRight size={18} />
+       </button>
 
         {/* Divider */}
         <div className="flex items-center my-8">
