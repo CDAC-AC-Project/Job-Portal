@@ -2,6 +2,7 @@ import { Route, Navigate } from "react-router-dom";
 import AdminLayout from "../components/layout/AdminLayout";
 import Dashboard from "../pages/admin/Dashboard";
 import UserManagement from "../pages/admin/UserManagement";
+import JobMonitoring from "../pages/admin/JobMonitoring";
 
 const AdminRoutes = (
   <Route path="/admin" element={<AdminLayout />}>
@@ -22,9 +23,9 @@ const AdminRoutes = (
     />
 
     <Route
-      path="jobs"
-      element={<h1>Job Monitoring</h1>}
-    />
+  path="jobs"
+  element={<JobMonitoring />}
+/>
 
     <Route
       path="reports"
