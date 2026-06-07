@@ -7,6 +7,8 @@ import ContactInfo from "../pages/recruiter/ContactInfo";
 import ProfileComplete from "../pages/recruiter/ProfileComplete";
 import RecruiterDashboard from "../pages/recruiter/RecruiterDashboard";
 import PlansBilling from "../pages/recruiter/PlansBilling";
+import PostJob from "../pages/recruiter/PostJob";
+import MyJobs from "../pages/recruiter/MyJobs";
 
 const RecruiterRoutes = (
   <>
@@ -26,7 +28,8 @@ const RecruiterRoutes = (
     {/* Recruiter dashboard routes */}
     <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
     <Route path="/recruiter/plans-billing" element={<PlansBilling />} />
-    <Route path="/recruiter/post-job" element={<h1>Post job Page</h1>} />
+    <Route path="/recruiter/post-job" element={<PostJob/>} />
+    <Route path="/recruiter/my-jobs" element={<MyJobs />} />
   </>
 );
 
