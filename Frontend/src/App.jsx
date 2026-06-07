@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+import AdminRoutes from "./routes/AdminRoutes";
 import AuthRoutes from "./routes/AuthRoutes";
 import CandidateRoutes from "./routes/CandidateRoutes";
 import RecruiterRoutes from "./routes/RecruiterRoutes";
@@ -13,6 +14,7 @@ function App() {
         {AuthRoutes}
         {CandidateRoutes}
         {RecruiterRoutes}
+        {AdminRoutes}
       </Routes>
     </BrowserRouter>
   );
