@@ -22,17 +22,45 @@ export const stats = [
 ];
 
 export const pendingJobs = [
-  "Frontend Developer",
-  "Java Developer",
-  "React Developer",
-  "Data Analyst",
+  {
+    id: 1,
+    title: "Frontend Developer",
+  },
+  {
+    id: 2,
+    title: "Java Developer",
+  },
+  {
+    id: 3,
+    title: "React Developer",
+  },
+  {
+    id: 4,
+    title: "UI/UX Designer",
+  },
 ];
 
 export const recentUsers = [
-  "John Doe",
-  "Priya Sharma",
-  "Rahul Verma",
-  "Neha Patil",
+  {
+    id: 1,
+    name: "John Doe",
+    role: "Applicant",
+  },
+  {
+    id: 2,
+    name: "Priya Sharma",
+    role: "Recruiter",
+  },
+  {
+    id: 3,
+    name: "Rahul Verma",
+    role: "Applicant",
+  },
+  {
+    id: 4,
+    name: "Neha Patil",
+    role: "Applicant",
+  },
 ];
 
 export const recentJobs = [
