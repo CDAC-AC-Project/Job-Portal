@@ -4,6 +4,8 @@ import CandidateLayout from "../components/layout/CandidateLayout.jsx";
 import FindJob from "../pages/candidate/FindJob.jsx";
 import CandidateDashboard from "../pages/candidate/CandidateDashboard.jsx";
 import AppliedJobs from "../pages/candidate/AppliedJobs.jsx";
+import FavoriteJobs from "../pages/candidate/FavoriteJobs.jsx";
+import Settings from "../pages/candidate/Settings.jsx";
 
 const CandidateRoutes = (
   <Route path="/candidate" element={<CandidateLayout />}>
@@ -39,12 +41,12 @@ const CandidateRoutes = (
 
     <Route
       path="favorite-jobs"
-      element={<h1 className="p-10 text-3xl font-bold">Favorite Jobs</h1>}
+      element={<FavoriteJobs />}
     />
 
     <Route
       path="settings"
-      element={<h1 className="p-10 text-3xl font-bold">Settings</h1>}
+      element={<Settings />}
     />
   </Route>
 );
