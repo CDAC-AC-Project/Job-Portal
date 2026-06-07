@@ -4,7 +4,7 @@ import { FiArrowLeft, FiArrowRight, FiEdit2 } from "react-icons/fi";
 import CandidateSidebar from "../../components/candidate/CandidateSidebar";
 import JobAlertRow from "../../components/candidate/JobAlertRow";
 import Loader from "../../components/common/Loader";
-import { getJobAlerts } from "../../services/jobAlertService";
+import { getJobAlerts } from "../../services/jobAlertService.js";
 
 export default function JobAlerts() {
   const [jobAlerts, setJobAlerts] = useState([]);

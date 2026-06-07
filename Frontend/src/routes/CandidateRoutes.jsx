@@ -4,12 +4,9 @@ import CandidateLayout from "../components/layout/CandidateLayout.jsx";
 import FindJob from "../pages/candidate/FindJob.jsx";
 import CandidateDashboard from "../pages/candidate/CandidateDashboard.jsx";
 import AppliedJobs from "../pages/candidate/AppliedJobs.jsx";
-<<<<<<< HEAD
 import FavoriteJobs from "../pages/candidate/FavoriteJobs.jsx";
 import Settings from "../pages/candidate/Settings.jsx";
-=======
 import JobAlerts from "../pages/candidate/JobAlerts";
->>>>>>> 491b6af832b98e87190a55462476689260090c03
 
 const CandidateRoutes = (
   <Route path="/candidate" element={<CandidateLayout />}>
