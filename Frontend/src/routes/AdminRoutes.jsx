@@ -14,9 +14,10 @@ const AdminRoutes = (
       element={<Dashboard />}
     />
 
+
     <Route
       path="users"
-      element={<h1>User Management</h1>}
+      element={<UserManagement />}
     />
 
     <Route
@@ -28,7 +29,9 @@ const AdminRoutes = (
       path="reports"
       element={<h1>Reports</h1>}
     />
+
   </Route>
+
 );
 
 export default AdminRoutes;
