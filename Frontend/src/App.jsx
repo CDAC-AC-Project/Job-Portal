@@ -4,6 +4,8 @@ import FoundingInfo from "./pages/recruiter/FoundingInfo";
 import SocialMediaProfile from "./pages/recruiter/SocialMediaProfile";
 import ContactInfo from "./pages/recruiter/ContactInfo";
 import ProfileComplete from "./pages/recruiter/ProfileComplete";
+import RecruiterDashboard from "./pages/recruiter/RecruiterDashboard";
+import PlansBilling from "./pages/recruiter/PlansBilling";
 
 function App() {
   return (
@@ -22,9 +24,9 @@ function App() {
           path="/recruiter/profile-complete"
           element={<ProfileComplete />}
         />
-
+        <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
         {/* Temporary routes */}
-        <Route path="/recruiter/dashboard" element={<h1>Recruiter Dashboard</h1>} />
+        <Route path="/recruiter/plans-billing" element={<PlansBilling />} />
         <Route path="/recruiter/post-job" element={<h1>Post Job Page</h1>} />
       </Routes>
     </BrowserRouter>
