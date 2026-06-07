@@ -1,6 +1,7 @@
 import { Route, Navigate } from "react-router-dom";
 import AdminLayout from "../components/layout/AdminLayout";
 import Dashboard from "../pages/admin/Dashboard";
+import UserManagement from "../pages/admin/UserManagement";
 
 const AdminRoutes = (
   <Route path="/admin" element={<AdminLayout />}>
