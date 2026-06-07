@@ -5,6 +5,9 @@ import FoundingInfo from "./pages/recruiter/FoundingInfo";
 import SocialMediaProfile from "./pages/recruiter/SocialMediaProfile";
 import ContactInfo from "./pages/recruiter/ContactInfo";
 import ProfileComplete from "./pages/recruiter/ProfileComplete";
+import RecruiterDashboard from "./pages/recruiter/RecruiterDashboard";
+import PlansBilling from "./pages/recruiter/PlansBilling";
+import PostJob from "./pages/recruiter/PostJob";
 
 import AuthRoutes from "./routes/AuthRoutes";
 import CandidateRoutes from "./routes/CandidateRoutes";
@@ -31,12 +34,10 @@ function App() {
           element={<ProfileComplete />}
         />
 
-        {/* Temporary recruiter routes */}
-        <Route
-          path="/recruiter/dashboard"
-          element={<h1>Recruiter Dashboard</h1>}
-        />
-        <Route path="/recruiter/post-job" element={<h1>Post Job Page</h1>} />
+        {/* Recruiter dashboard routes */}
+        <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
+        <Route path="/recruiter/plans-billing" element={<PlansBilling />} />
+        <Route path="/recruiter/post-job" element={<h1>Post job Page</h1>} />
       </Routes>
     </BrowserRouter>
   );
