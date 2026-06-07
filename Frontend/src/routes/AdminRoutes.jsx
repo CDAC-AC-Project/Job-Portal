@@ -3,6 +3,7 @@ import AdminLayout from "../components/layout/AdminLayout";
 import Dashboard from "../pages/admin/Dashboard";
 import UserManagement from "../pages/admin/UserManagement";
 import JobMonitoring from "../pages/admin/JobMonitoring";
+import Reports from "../pages/admin/Reports";
 
 const AdminRoutes = (
   <Route path="/admin" element={<AdminLayout />}>
@@ -23,15 +24,14 @@ const AdminRoutes = (
     />
 
     <Route
-  path="jobs"
-  element={<JobMonitoring />}
-/>
+      path="jobs"
+      element={<JobMonitoring />}
+    />
 
     <Route
       path="reports"
-      element={<h1>Reports</h1>}
+      element={<Reports />}
     />
-
   </Route>
 
 );
