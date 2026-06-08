@@ -115,3 +115,23 @@ export const validateProfileSettings = (formData) => {
 
   return errors;
 };
+export const validateSocialLinks = (socialLinks) => {
+  const errors = {};
+
+  socialLinks.forEach((link) => {
+    if (!link.platform) {
+      errors[`platform_${link.id}`] = "Please select platform";
+    }
+
+    if (link.url.trim()) {
+      const urlRegex =
+        /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/[\w\-._~:/?#[\]@!$&'()*+,;=]*)?$/;
+
+      if (!urlRegex.test(link.url.trim())) {
+        errors[`url_${link.id}`] = "Enter a valid profile URL";
+      }
+    }
+  });
+
+  return errors;
+};

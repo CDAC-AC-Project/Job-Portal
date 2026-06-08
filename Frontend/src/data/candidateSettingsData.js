@@ -36,3 +36,25 @@ export const candidateProfileDetailsData = {
   experience: "",
   biography: "",
 };
+export const candidateSocialLinksData = [
+  {
+    id: 1,
+    platform: "Facebook",
+    url: "",
+  },
+  {
+    id: 2,
+    platform: "Twitter",
+    url: "",
+  },
+  {
+    id: 3,
+    platform: "Instagram",
+    url: "",
+  },
+  {
+    id: 4,
+    platform: "Youtube",
+    url: "",
+  },
+];

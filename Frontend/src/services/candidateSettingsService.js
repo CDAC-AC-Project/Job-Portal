@@ -2,6 +2,7 @@ import {
   candidateProfileData,
   candidateResumeData,
   candidateProfileDetailsData,
+   candidateSocialLinksData,
 } from "../data/candidateSettingsData";
 
 export const getCandidateSettings = async () => {
@@ -11,6 +12,7 @@ export const getCandidateSettings = async () => {
         profile: candidateProfileData,
         resumes: candidateResumeData,
         profileDetails: candidateProfileDetailsData,
+        socialLinks: candidateSocialLinksData,
       });
     }, 400);
   });
@@ -59,6 +61,18 @@ export const updateCandidateProfileDetails = async (profileDetails) => {
       resolve({
         success: true,
         message: "Profile details updated successfully",
+      });
+    }, 400);
+  });
+};
+export const updateCandidateSocialLinks = async (socialLinks) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log("Social links updated:", socialLinks);
+
+      resolve({
+        success: true,
+        message: "Social links updated successfully",
       });
     }, 400);
   });
