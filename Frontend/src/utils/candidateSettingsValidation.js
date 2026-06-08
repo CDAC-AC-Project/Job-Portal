@@ -80,3 +80,38 @@ export const validateResumeFile = (file) => {
 
   return errors;
 };
+export const validateProfileSettings = (formData) => {
+  const errors = {};
+
+  if (!formData.nationality) {
+    errors.nationality = "Please select nationality";
+  }
+
+  if (!formData.dateOfBirth) {
+    errors.dateOfBirth = "Date of birth is required";
+  }
+
+  if (!formData.gender) {
+    errors.gender = "Please select gender";
+  }
+
+  if (!formData.maritalStatus) {
+    errors.maritalStatus = "Please select marital status";
+  }
+
+  if (!formData.education) {
+    errors.education = "Please select education";
+  }
+
+  if (!formData.experience) {
+    errors.experience = "Please select experience";
+  }
+
+  if (!formData.biography.trim()) {
+    errors.biography = "Biography is required";
+  } else if (formData.biography.trim().length < 30) {
+    errors.biography = "Biography must be at least 30 characters";
+  }
+
+  return errors;
+};

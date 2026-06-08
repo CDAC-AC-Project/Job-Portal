@@ -27,3 +27,12 @@ export const candidateResumeData = [
     fileType: "PDF",
   },
 ];
+export const candidateProfileDetailsData = {
+  nationality: "",
+  dateOfBirth: "",
+  gender: "",
+  maritalStatus: "",
+  education: "",
+  experience: "",
+  biography: "",
+};

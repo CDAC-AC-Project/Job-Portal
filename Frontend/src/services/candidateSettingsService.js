@@ -1,6 +1,7 @@
 import {
   candidateProfileData,
   candidateResumeData,
+  candidateProfileDetailsData,
 } from "../data/candidateSettingsData";
 
 export const getCandidateSettings = async () => {
@@ -9,6 +10,7 @@ export const getCandidateSettings = async () => {
       resolve({
         profile: candidateProfileData,
         resumes: candidateResumeData,
+        profileDetails: candidateProfileDetailsData,
       });
     }, 400);
   });
@@ -49,7 +51,18 @@ export const deleteCandidateResume = async (resumeId) => {
     }, 300);
   });
 };
+export const updateCandidateProfileDetails = async (profileDetails) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log("Profile details updated:", profileDetails);
 
+      resolve({
+        success: true,
+        message: "Profile details updated successfully",
+      });
+    }, 400);
+  });
+};
 /*
 Later backend API structure:
 

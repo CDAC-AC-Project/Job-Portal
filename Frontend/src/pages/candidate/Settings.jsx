@@ -4,6 +4,7 @@ import CandidateSidebar from "../../components/candidate/CandidateSidebar";
 import SettingsTabs from "../../components/candidate/settings/SettingsTabs";
 import PersonalSettings from "../../components/candidate/settings/PersonalSettings";
 import Loader from "../../components/common/Loader";
+import ProfileSettings from "../../components/candidate/settings/ProfileSettings";
 
 import { getCandidateSettings } from "../../services/candidateSettingsService.js";
 
@@ -19,6 +20,15 @@ export default function Settings() {
     website: "",
     profilePicture: "",
   });
+  const [profileDetails, setProfileDetails] = useState({
+  nationality: "",
+  dateOfBirth: "",
+  gender: "",
+  maritalStatus: "",
+  education: "",
+  experience: "",
+  biography: "",
+  });
 
   const [resumes, setResumes] = useState([]);
 
@@ -31,6 +41,7 @@ export default function Settings() {
 
         setProfile(data.profile);
         setResumes(data.resumes);
+        setProfileDetails(data.profileDetails);
       } catch (error) {
         console.error("Failed to fetch candidate settings:", error);
       } finally {
@@ -53,18 +64,14 @@ export default function Settings() {
       );
     }
 
-    if (activeTab === "profile") {
-      return (
-        <div className="border border-gray-200 rounded-md p-8 text-center">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Profile Section
-          </h2>
-          <p className="text-gray-500 mt-2">
-            You can add profile details section here later.
-          </p>
-        </div>
-      );
-    }
+   if (activeTab === "profile") {
+  return (
+    <ProfileSettings
+      profileDetails={profileDetails}
+      setProfileDetails={setProfileDetails}
+    />
+  );
+}
 
     if (activeTab === "social") {
       return (
