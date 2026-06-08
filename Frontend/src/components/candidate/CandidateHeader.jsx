@@ -11,7 +11,6 @@ export default function CandidateHeader() {
   const navLinks = [
     { name: "Home", path: "/candidate/home" },
     { name: "Find Job", path: "/candidate/find-job" },
-    { name: "Find Employers", path: "/candidate/find-employers" },
     { name: "Dashboard", path: "/candidate/dashboard" },
     { name: "Job Alerts", path: "/candidate/job-alerts" },
     { name: "Customer Supports", path: "/candidate/support" },
@@ -41,11 +40,11 @@ export default function CandidateHeader() {
           <div className="flex items-center gap-5 text-sm text-gray-600">
             <div className="flex items-center gap-2">
               <FiPhone />
-              <span>+1-202-555-0178</span>
+              <span>+91-7558268202</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <span>🇺🇸</span>
+              <span>US</span>
               <span>English</span>
               <FiChevronDown />
             </div>

@@ -7,6 +7,7 @@ import AppliedJobs from "../pages/candidate/AppliedJobs.jsx";
 import FavoriteJobs from "../pages/candidate/FavoriteJobs.jsx";
 import Settings from "../pages/candidate/Settings.jsx";
 import JobAlerts from "../pages/candidate/JobAlerts";
+import CustomerSupport from "../pages/candidate/support/CustomerSupport.jsx";
 
 const CandidateRoutes = (
   <Route path="/candidate" element={<CandidateLayout />}>
@@ -20,10 +21,6 @@ const CandidateRoutes = (
 
     <Route path="find-job" element={<FindJob />} />
 
-    <Route
-      path="find-employers"
-      element={<h1 className="p-10 text-3xl font-bold">Find Employers</h1>}
-    />
 
     <Route path="dashboard" element={<CandidateDashboard />} />
 
@@ -31,7 +28,7 @@ const CandidateRoutes = (
 
     <Route
       path="support"
-      element={<h1 className="p-10 text-3xl font-bold">Customer Support</h1>}
+      element={<CustomerSupport/>}
     />
 
     {/* Dashboard sidebar routes */}
