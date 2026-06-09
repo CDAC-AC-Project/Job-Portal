@@ -8,16 +8,14 @@ import FavoriteJobs from "../pages/candidate/FavoriteJobs.jsx";
 import Settings from "../pages/candidate/Settings.jsx";
 import JobAlerts from "../pages/candidate/JobAlerts";
 import CustomerSupport from "../pages/candidate/support/CustomerSupport.jsx";
+import Home from "../pages/Home.jsx";
 
 const CandidateRoutes = (
   <Route path="/candidate" element={<CandidateLayout />}>
     <Route index element={<Navigate to="/candidate/find-job" />} />
 
     {/* Header based routes */}
-    <Route
-      path="home"
-      element={<h1 className="p-10 text-3xl font-bold">Home Page</h1>}
-    />
+     <Route path="home" element={<Home />} />
 
     <Route path="find-job" element={<FindJob />} />
 
