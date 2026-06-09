@@ -6,6 +6,7 @@ import {
   recentlyAppliedJobs,
 } from "../../data/candidateDashboardData";
 import { FiArrowRight } from "react-icons/fi";
+import { NavLink } from "react-router-dom";
 
 export default function CandidateDashboard() {
   return (
@@ -47,10 +48,13 @@ export default function CandidateDashboard() {
               </div>
             </div>
 
-            <button className="bg-white text-red-500 px-5 py-3 rounded-md font-medium flex items-center justify-center gap-2 hover:bg-red-50">
-              Edit Profile
-              <FiArrowRight />
-            </button>
+            <NavLink
+                  to="/candidate/settings"
+                  className="bg-white text-red-500 px-5 py-3 rounded-md font-medium flex items-center justify-center gap-2 hover:bg-red-50"
+                >
+                  Edit Profile
+                  <FiArrowRight />
+                </NavLink>
           </div>
 
           <AppliedJobTable jobs={recentlyAppliedJobs} showViewAll={true} />

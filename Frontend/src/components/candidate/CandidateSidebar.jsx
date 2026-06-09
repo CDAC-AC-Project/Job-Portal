@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   FiGrid,
   FiBriefcase,
@@ -38,6 +38,7 @@ const sidebarLinks = [
 ];
 
 export default function CandidateSidebar() {
+  const navigate =useNavigate()
   return (
     <aside className="w-full lg:w-64 border-r border-gray-200 bg-white">
       <div className="p-5">
@@ -79,7 +80,9 @@ export default function CandidateSidebar() {
       </div>
 
       <div className="hidden lg:flex min-h-[420px] items-end p-5">
-        <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500">
+        <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500 " onClick={()=>{
+          navigate("/login");
+        }}>
           <FiLogOut />
           Log-out
         </button>

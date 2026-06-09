@@ -58,3 +58,24 @@ export const candidateSocialLinksData = [
     url: "",
   },
 ];
+export const candidateAccountSettingsData = {
+  mapLocation: "",
+  countryCode: "+880",
+  phone: "",
+  email: "",
+  notifications: {
+    shortlisted: true,
+    savedProfile: false,
+    appliedJobsExpire: false,
+    rejected: true,
+    jobAlerts: true,
+  },
+  jobAlerts: {
+    role: "",
+    location: "",
+  },
+  privacy: {
+    profilePublic: true,
+    resumePrivate: false,
+  },
+};

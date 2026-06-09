@@ -3,6 +3,7 @@ import {
   candidateResumeData,
   candidateProfileDetailsData,
    candidateSocialLinksData,
+   candidateAccountSettingsData,
 } from "../data/candidateSettingsData";
 
 export const getCandidateSettings = async () => {
@@ -13,6 +14,7 @@ export const getCandidateSettings = async () => {
         resumes: candidateResumeData,
         profileDetails: candidateProfileDetailsData,
         socialLinks: candidateSocialLinksData,
+        accountSettings: candidateAccountSettingsData,
       });
     }, 400);
   });
@@ -73,6 +75,77 @@ export const updateCandidateSocialLinks = async (socialLinks) => {
       resolve({
         success: true,
         message: "Social links updated successfully",
+      });
+    }, 400);
+  });
+};
+export const updateCandidateContactInfo = async (contactInfo) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log("Contact info updated:", contactInfo);
+      resolve({
+        success: true,
+        message: "Contact info updated successfully",
+      });
+    }, 400);
+  });
+};
+
+export const updateCandidateNotifications = async (notifications) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log("Notifications updated:", notifications);
+      resolve({
+        success: true,
+        message: "Notifications updated successfully",
+      });
+    }, 400);
+  });
+};
+
+export const updateCandidateJobAlerts = async (jobAlerts) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log("Job alerts updated:", jobAlerts);
+      resolve({
+        success: true,
+        message: "Job alerts updated successfully",
+      });
+    }, 400);
+  });
+};
+
+export const updateCandidatePrivacy = async (privacy) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log("Privacy updated:", privacy);
+      resolve({
+        success: true,
+        message: "Privacy updated successfully",
+      });
+    }, 400);
+  });
+};
+
+export const updateCandidatePassword = async (passwordData) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log("Password updated:", passwordData);
+      resolve({
+        success: true,
+        message: "Password updated successfully",
+      });
+    }, 400);
+  });
+};
+
+export const deleteCandidateAccount = async () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log("Candidate account deleted");
+      resolve({
+        success: true,
+        message: "Account deleted successfully",
       });
     }, 400);
   });

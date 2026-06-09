@@ -7,6 +7,7 @@ import Loader from "../../components/common/Loader";
 import ProfileSettings from "../../components/candidate/settings/ProfileSettings";
 import SocialLinksSettings from "../../components/candidate/settings/SocialLinksSettings";
 import { getCandidateSettings } from "../../services/candidateSettingsService.js";
+import AccountSettings from "../../components/candidate/settings/AccountSettings";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("personal");
@@ -20,6 +21,27 @@ export default function Settings() {
     website: "",
     profilePicture: "",
   });
+  const [accountSettings, setAccountSettings] = useState({
+  mapLocation: "",
+  countryCode: "+880",
+  phone: "",
+  email: "",
+  notifications: {
+    shortlisted: true,
+    savedProfile: false,
+    appliedJobsExpire: false,
+    rejected: true,
+    jobAlerts: true,
+  },
+  jobAlerts: {
+    role: "",
+    location: "",
+  },
+  privacy: {
+    profilePublic: true,
+    resumePrivate: false,
+  },
+});
   const [profileDetails, setProfileDetails] = useState({
   nationality: "",
   dateOfBirth: "",
@@ -44,6 +66,7 @@ export default function Settings() {
         setResumes(data.resumes);
         setProfileDetails(data.profileDetails);
         setSocialLinks(data.socialLinks);
+        setAccountSettings(data.accountSettings);
       } catch (error) {
         console.error("Failed to fetch candidate settings:", error);
       } finally {
@@ -84,16 +107,12 @@ export default function Settings() {
   );
  }
 
-    if (activeTab === "account") {
+      if (activeTab === "account") {
       return (
-        <div className="border border-gray-200 rounded-md p-8 text-center">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Account Setting Section
-          </h2>
-          <p className="text-gray-500 mt-2">
-            You can add password change and account security settings here.
-          </p>
-        </div>
+        <AccountSettings
+          accountSettings={accountSettings}
+          setAccountSettings={setAccountSettings}
+        />
       );
     }
 
