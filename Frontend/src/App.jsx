@@ -6,6 +6,7 @@ import SocialMediaProfile from "./pages/recruiter/SocialMediaProfile";
 import ContactInfo from "./pages/recruiter/ContactInfo";
 import ProfileComplete from "./pages/recruiter/ProfileComplete";
 
+
 import AuthRoutes from "./routes/AuthRoutes";
 import CandidateRoutes from "./routes/CandidateRoutes";
 
@@ -36,6 +37,7 @@ function App() {
           path="/recruiter/dashboard"
           element={<h1>Recruiter Dashboard</h1>}
         />
+       
         <Route path="/recruiter/post-job" element={<h1>Post Job Page</h1>} />
       </Routes>
     </BrowserRouter>
