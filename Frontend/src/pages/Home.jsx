@@ -11,7 +11,7 @@ import HomeFooter from "../components/home/HomeFooter";
 export default function Home() {
   return (
     <div className="min-h-screen bg-white">
-      <HomeNavbar />
+      
       <HeroSection />
       <StatsSection />
       <PopularVacancies />
@@ -19,7 +19,7 @@ export default function Home() {
       <FeaturedJobs />
       <TopCompanies />
       <HomeCTA />
-      <HomeFooter />
+      
     </div>
   );
 }
