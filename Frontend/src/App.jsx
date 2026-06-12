@@ -22,27 +22,6 @@ function App() {
         {CandidateRoutes}
         {RecruiterRoutes}
         {AdminRoutes}
-
-        {/* Recruiter setup routes */}
-        <Route path="/recruiter/company-info" element={<CompanyInfo />} />
-        <Route path="/recruiter/founding-info" element={<FoundingInfo />} />
-        <Route
-          path="/recruiter/social-media-profile"
-          element={<SocialMediaProfile />}
-        />
-        <Route path="/recruiter/contact" element={<ContactInfo />} />
-        <Route
-          path="/recruiter/profile-complete"
-          element={<ProfileComplete />}
-        />
-
-        {/* Temporary recruiter routes */}
-        <Route
-          path="/recruiter/dashboard"
-          element={<h1>Recruiter Dashboard</h1>}
-        />
-       
-        <Route path="/recruiter/post-job" element={<h1>Post Job Page</h1>} />
       </Routes>
     </BrowserRouter>
   );
