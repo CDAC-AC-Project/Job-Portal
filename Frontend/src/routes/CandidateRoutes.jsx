@@ -8,7 +8,7 @@ import FavoriteJobs from "../pages/candidate/FavoriteJobs.jsx";
 import Settings from "../pages/candidate/Settings.jsx";
 import JobAlerts from "../pages/candidate/JobAlerts";
 import CustomerSupport from "../pages/candidate/support/CustomerSupport.jsx";
-//import Home from "../pages/Home.jsx";
+import Home from "../pages/Home.jsx";
 
 const CandidateRoutes = (
   <Route path="/candidate" element={<CandidateLayout />}>

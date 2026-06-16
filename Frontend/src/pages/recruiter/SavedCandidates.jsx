@@ -4,6 +4,7 @@ import { FiInfo, FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import RecruiterHeader from "../../components/recruiter/RecruiterHeader";
 import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
 import SavedCandidateRow from "../../components/recruiter/SavedCandidateRow";
+import Footer from "../../components/layout/Footer";
 
 import { getSavedCandidates } from "../../services/recruiterCandidateService";
 
@@ -103,9 +104,7 @@ export default function SavedCandidates() {
         </div>
       </main>
 
-      <footer className="border-t border-gray-200 py-5 text-center text-sm text-gray-400">
-        © 2025 Jobpilot - Job Board. All rights Reserved
-      </footer>
+      <footer/>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
 import ApplicationColumn from "../../components/recruiter/ApplicationColumn";
 import AddColumnModal from "../../components/recruiter/AddColumnModal";
 import { getRecruiterApplications } from "../../services/recruiterApplicationService";
+import Footer from "../../components/layout/Footer";
 
 export default function Applications() {
   const [columns, setColumns] = useState([]);
@@ -165,9 +166,7 @@ export default function Applications() {
         </div>
       </main>
 
-      <footer className="border-t border-gray-200 py-5 text-center text-sm text-gray-400">
-        © 2025 Jobpilot - Job Board. All rights Reserved
-      </footer>
+    <Footer/>
     </div>
   );
 }

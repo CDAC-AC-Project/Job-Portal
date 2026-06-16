@@ -2,8 +2,8 @@ import RecruiterHeader from "../../components/recruiter/RecruiterHeader";
 import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
 import SubscriptionPlanCard from "../../components/recruiter/SubscriptionPlanCard";
 import PremiumSubscriptionIllustration from "../../components/recruiter/PremiumSubscriptionIllustration";
-
 import { subscriptionPlans } from "../../data/subscriptionPlansData";
+import Footer from "../../components/layout/Footer";
 
 export default function PlansBilling() {
   const handleChoosePlan = (plan) => {
@@ -48,9 +48,7 @@ export default function PlansBilling() {
         </div>
       </main>
 
-      <footer className="border-t border-gray-200 py-5 text-center text-sm text-gray-400">
-        © 2025 Jobpilot - Job Board. All rights Reserved
-      </footer>
+      <Footer/>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import RecruiterHeader from "../../components/recruiter/RecruiterHeader";
 import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
 import RecruiterStatCard from "../../components/recruiter/RecruiterStatCard";
 import RecentlyPostedJobsTable from "../../components/recruiter/RecentlyPostedJobsTable";
+import Footer from "../../components/layout/Footer";
 
 import {
   recruiterStats,
@@ -38,9 +39,7 @@ export default function RecruiterDashboard() {
         </div>
       </main>
 
-      <footer className="border-t border-gray-200 py-5 text-center text-sm text-gray-400">
-        © 2025 Jobpilot - Job Board. All rights Reserved
-      </footer>
+      <footer/>
     </div>
   );
 }

@@ -4,8 +4,8 @@ import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import RecruiterHeader from "../../components/recruiter/RecruiterHeader";
 import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
 import MyJobsTable from "../../components/recruiter/MyJobsTable";
-
 import { getRecruiterJobs } from "../../services/recruiterJobService";
+import Footer from "../../components/layout/Footer";
 
 export default function MyJobs() {
   const [jobs, setJobs] = useState([]);
@@ -114,9 +114,7 @@ export default function MyJobs() {
         </div>
       </main>
 
-      <footer className="border-t border-gray-200 py-5 text-center text-sm text-gray-400">
-        © 2025 Jobpilot - Job Board. All rights Reserved
-      </footer>
+      <footer/>
     </div>
   );
 }
