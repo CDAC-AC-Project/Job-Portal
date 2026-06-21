@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiArrowRight, FiAlertCircle } from "react-icons/fi";
+import axios from "axios";
 
 import RecruiterHeader from "../../components/recruiter/RecruiterHeader";
 import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
@@ -28,8 +29,7 @@ import {
   incrementPostedJobCount,
   getPostedJobCount,
 } from "../../services/recruiterPlanService";
-
-import { saveRecruiterJob } from "../../services/recruiterJobService";
+import Footer from "../../components/layout/Footer";
 
 export default function PostJob() {
   const navigate = useNavigate();
@@ -41,6 +41,7 @@ export default function PostJob() {
   const [postedCount, setPostedCount] = useState(0);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [postedJob, setPostedJob] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     jobTitle: "",
@@ -112,7 +113,46 @@ export default function PostJob() {
     setSelectedBenefits([]);
   };
 
-  const handleSubmit = (e) => {
+  const convertToEnumValue = (value) => {
+    return value
+      .trim()
+      .toUpperCase()
+      .replaceAll(" ", "_")
+      .replaceAll("-", "_");
+  };
+
+  const buildBackendPayload = () => {
+    return {
+      companyId: 1, // temporary. Later get this from logged-in recruiter's company profile
+
+      title: formData.jobTitle,
+      tags: formData.tags,
+      jobRole: formData.jobRole,
+
+      minSalary: Number(formData.minSalary),
+      maxSalary: Number(formData.maxSalary),
+      salaryType: convertToEnumValue(formData.salaryType),
+
+      education: formData.education,
+      experience: formData.experience,
+
+      jobType: convertToEnumValue(formData.jobType),
+      vacancies: Number(formData.vacancies),
+      expirationDate: formData.expirationDate,
+      jobLevel: convertToEnumValue(formData.jobLevel),
+
+      description: formData.description,
+
+      country: formData.isRemote ? "Worldwide" : formData.country,
+      state: "",
+      city: formData.isRemote ? "Remote" : formData.city,
+      remote: formData.isRemote,
+
+      benefits: selectedBenefits,
+    };
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!canPostJob()) {
@@ -130,24 +170,43 @@ export default function PostJob() {
       return;
     }
 
-    const finalJobData = {
-      ...formData,
-      benefits: selectedBenefits,
-      recruiterPlan: plan,
-      applications: 0,
-      status: "Active",
-    };
+    try {
+      setIsSubmitting(true);
 
-    const savedJob = saveRecruiterJob(finalJobData);
+      const payload = buildBackendPayload();
 
-    incrementPostedJobCount();
+      const response = await axios.post(
+        "http://localhost:8080/jobs",
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
 
-    setPostedJob(savedJob);
-    setRemainingPosts(getRemainingJobPosts());
-    setPostedCount(getPostedJobCount());
-    setShowSuccessModal(true);
+            // Temporary until Spring Security/JWT is added
+            "userId": 1,
+          },
+        }
+      );
 
-    resetForm();
+      incrementPostedJobCount();
+
+      setPostedJob(response.data);
+      setRemainingPosts(getRemainingJobPosts());
+      setPostedCount(getPostedJobCount());
+      setShowSuccessModal(true);
+
+      resetForm();
+    } catch (error) {
+      console.error("Post job failed:", error);
+
+      if (error.response) {
+        alert(error.response.data.message || "Failed to post job");
+      } else {
+        alert("Backend is not reachable. Please check if Jobs-service is running.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderInputError = (field) => {
@@ -451,9 +510,10 @@ export default function PostJob() {
 
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white px-8 py-3 rounded-md font-semibold flex items-center gap-2 hover:bg-blue-700"
+                  disabled={isSubmitting}
+                  className="bg-blue-600 text-white px-8 py-3 rounded-md font-semibold flex items-center gap-2 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
                 >
-                  Post Job
+                  {isSubmitting ? "Posting..." : "Post Job"}
                   <FiArrowRight />
                 </button>
               </form>
@@ -462,9 +522,7 @@ export default function PostJob() {
         </div>
       </main>
 
-      <footer className="border-t border-gray-200 py-5 text-center text-sm text-gray-400">
-        © 2025 Jobpilot - Job Board. All rights Reserved
-      </footer>
+      <Footer/>
 
       <JobPostedSuccessModal
         isOpen={showSuccessModal}

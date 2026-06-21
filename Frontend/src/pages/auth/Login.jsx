@@ -79,7 +79,7 @@ export default function Login() {
     if (formData.role === "candidate") {
       navigate("/candidate/find-job");
     } else if (formData.role === "employer") {
-      navigate("/recruiter/company-info");
+      navigate("/recruiter/dashboard");
     }
   };
 
