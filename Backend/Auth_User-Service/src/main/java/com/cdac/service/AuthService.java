@@ -1,5 +1,10 @@
 package com.cdac.service;
 
-public interface AuthService {
+import com.cdac.dtos.*;
 
+public interface AuthService {
+	
+	AuthResponseDto register(RegisterDto request);
+
+    AuthResponseDto login(LoginDto request);
 }
