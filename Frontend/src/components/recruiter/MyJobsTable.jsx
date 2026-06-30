@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FiEdit2 } from "react-icons/fi";
 
 
 import {
@@ -97,6 +98,14 @@ export default function MyJobsTable({ jobs }) {
                       <FiXCircle />
                       Make it Expire
                     </button>
+
+                    <button
+                  onClick={() => navigate(`/recruiter/edit-job/${job.id}`)}
+                  className="w-full px-4 py-3 text-sm flex items-center gap-2 text-blue-600 hover:bg-blue-50"
+                >
+                  <FiEdit2 />
+                  Edit Job
+                </button>
                   </div>
                 )}
               </td>

@@ -78,3 +78,29 @@ export const updateRecruiterJobStatus = (jobId, status) => {
 
   return updatedJobs;
 };
+
+export const getRecruiterJobById = (jobId) => {
+  const jobs = getRecruiterJobs();
+
+  return jobs.find((job) => String(job.id) === String(jobId));
+};
+
+export const updateRecruiterJob = (jobId, updatedJobData) => {
+  const jobs = getRecruiterJobs();
+
+  const updatedJobs = jobs.map((job) =>
+    String(job.id) === String(jobId)
+      ? {
+          ...job,
+          ...updatedJobData,
+          id: job.id,
+          status: job.status,
+          applications: job.applications,
+        }
+      : job
+  );
+
+  localStorage.setItem("recruiterJobs", JSON.stringify(updatedJobs));
+
+  return updatedJobs.find((job) => String(job.id) === String(jobId));
+};

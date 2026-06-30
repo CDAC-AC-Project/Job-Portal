@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { FiArrowRight, FiAlertCircle } from "react-icons/fi";
 import axios from "axios";
 
 import RecruiterHeader from "../../components/recruiter/RecruiterHeader";
 import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
 import JobPostedSuccessModal from "../../components/recruiter/JobPostedSuccessModal";
+
+import {
+  saveRecruiterJob,
+  getRecruiterJobById,
+  updateRecruiterJob,
+} from "../../services/recruiterJobService";
 
 import {
   jobRoles,
@@ -34,6 +40,8 @@ import Footer from "../../components/layout/Footer";
 export default function PostJob() {
   const navigate = useNavigate();
 
+  const { jobId } = useParams();
+  const isEditMode = Boolean(jobId);
   const [errors, setErrors] = useState({});
   const [selectedBenefits, setSelectedBenefits] = useState([]);
   const [plan, setPlan] = useState("FREE");
@@ -153,8 +161,37 @@ export default function PostJob() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
+  const validationErrors = validatePostJobForm(formData);
+
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    return;
+  }
+
+  const payload = buildBackendPayload();
+
+  try {
+    setIsSubmitting(true);
+
+    // EDIT JOB MODE
+    if (isEditMode) {
+      await axios.put(`http://localhost:8080/jobs/${jobId}`, payload, {
+        headers: {
+          "Content-Type": "application/json",
+
+          // Temporary until Spring Security/JWT is added
+          userId: 1,
+        },
+      });
+
+      alert("Job updated successfully");
+      navigate("/recruiter/my-jobs");
+      return;
+    }
+
+    // CREATE JOB MODE
     if (!canPostJob()) {
       alert(
         "You have reached your job posting limit. Please buy a subscription plan."
@@ -163,57 +200,49 @@ export default function PostJob() {
       return;
     }
 
-    const validationErrors = validatePostJobForm(formData);
+    const response = await axios.post("http://localhost:8080/jobs", payload, {
+      headers: {
+        "Content-Type": "application/json",
 
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
+        // Temporary until Spring Security/JWT is added
+        userId: 1,
+      },
+    });
+
+    incrementPostedJobCount();
+
+    setPostedJob(response.data);
+    setRemainingPosts(getRemainingJobPosts());
+    setPostedCount(getPostedJobCount());
+    setShowSuccessModal(true);
+
+    resetForm();
+  } catch (error) {
+    console.error("Job save failed:", error);
+
+    if (error.response) {
+      alert(error.response.data.message || "Failed to save job");
+    } else {
+      alert("Backend is not reachable. Please check if Jobs-service is running.");
     }
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
-    try {
-      setIsSubmitting(true);
+const renderInputError = (fieldName) => {
+  if (!errors[fieldName]) {
+    return null;
+  }
 
-      const payload = buildBackendPayload();
+  return (
+    <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+      <FiAlertCircle />
+      {errors[fieldName]}
+    </p>
+  );
+};
 
-      const response = await axios.post(
-        "http://localhost:8080/jobs",
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-
-            // Temporary until Spring Security/JWT is added
-            "userId": 1,
-          },
-        }
-      );
-
-      incrementPostedJobCount();
-
-      setPostedJob(response.data);
-      setRemainingPosts(getRemainingJobPosts());
-      setPostedCount(getPostedJobCount());
-      setShowSuccessModal(true);
-
-      resetForm();
-    } catch (error) {
-      console.error("Post job failed:", error);
-
-      if (error.response) {
-        alert(error.response.data.message || "Failed to post job");
-      } else {
-        alert("Backend is not reachable. Please check if Jobs-service is running.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const renderInputError = (field) => {
-    return errors[field] ? (
-      <p className="text-red-500 text-xs mt-1">{errors[field]}</p>
-    ) : null;
-  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -226,8 +255,8 @@ export default function PostJob() {
           <section className="flex-1 px-4 sm:px-6 lg:px-10 py-10">
             <div className="max-w-5xl">
               <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-                Post a job
-              </h1>
+               {isEditMode ? "Edit Job" : "Post a job"}
+                </h1>
 
               <div className="mb-6 border border-blue-100 bg-blue-50 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-start gap-3">
@@ -508,14 +537,20 @@ export default function PostJob() {
                   {renderInputError("description")}
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="bg-blue-600 text-white px-8 py-3 rounded-md font-semibold flex items-center gap-2 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? "Posting..." : "Post Job"}
-                  <FiArrowRight />
-                </button>
+                              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-blue-600 text-white px-8 py-3 rounded-md font-semibold flex items-center gap-2 hover:bg-blue-700 disabled:bg-blue-300"
+              >
+                {isSubmitting
+                  ? isEditMode
+                    ? "Updating..."
+                    : "Posting..."
+                  : isEditMode
+                  ? "Update Job"
+                  : "Post Job"}
+                <FiArrowRight />
+              </button>
               </form>
             </div>
           </section>
