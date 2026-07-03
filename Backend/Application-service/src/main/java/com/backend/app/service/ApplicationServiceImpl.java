@@ -1,11 +1,14 @@
 package com.backend.app.service;
 
+import java.util.List;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.backend.app.dto.ApplicationResponse;
 import com.backend.app.dto.ApplyJobRequest;
+import com.backend.app.dto.MyApplicationResponse;
 import com.backend.app.enums.ApplicationStatus;
 import com.backend.app.entities.JobApplication;
 import com.backend.app.exception.DuplicateApplicationException;
@@ -61,4 +64,16 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         return response;
     }
+
+	@Override
+	public List<MyApplicationResponse> getMyApplication(Long candidateId) {
+		List<JobApplication> Application =
+				applicationRepository.findByCandidateIdOrderByAppliedAtDesc(candidateId);
+		return Application.stream().map(this::mapToMyApplicationResponse).toList();
+	}
+	
+	private MyApplicationResponse mapToMyApplicationResponse(JobApplication application){
+		MyApplicationResponse response = mapper.map(application,MyApplicationResponse.class);
+				return response;
+	}
 }
