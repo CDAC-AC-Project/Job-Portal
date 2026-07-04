@@ -2,6 +2,8 @@ package com.backend.jobs.service;
 
 import java.util.List;
 
+import javax.management.RuntimeErrorException;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +13,7 @@ import com.backend.jobs.dtos.CreateJobDto;
 import com.backend.jobs.dtos.PostJobResponse;
 import com.backend.jobs.dtos.RecruiterJobListResp;
 import com.backend.jobs.entities.JobStatus;
+import com.backend.jobs.entities.JobType;
 import com.backend.jobs.entities.Jobs;
 
 import lombok.AllArgsConstructor;
@@ -74,6 +77,71 @@ public class JobsServiceImpl implements JobsService{
 		PostJobResponse postJobResp = mapper.map(job, PostJobResponse.class);
 		return postJobResp;
 	}
+	
+	public PostJobResponse getJobById(Long jobId) {
+		
+		Jobs job = jobDao.findById(jobId)
+					.orElseThrow(() -> new RuntimeException("Job Not Found"));
+		PostJobResponse response = mapper.map(job, PostJobResponse.class);
+		response.setMessage("Job Fetched Successfully");
+		return response;
+	}
+	
+	public List<PostJobResponse> searchJobs(
+			String keyword,
+	        String city,
+	        String country,
+	        JobType jobType){
+		
+		List<Jobs> jobs = jobDao.searchJobs(keyword, city, country, jobType);
+		
+		return jobs.stream()
+				.map(job -> {
+					PostJobResponse response = mapper.map(job, PostJobResponse.class);
+					response.setMessage("Job fetched successfully");
+					return response;
+				}).toList();  
+	}
+	
+	public PostJobResponse closeJob(Long jobId, Long recruiterId, String userRole) {
+		
+		if(!"RECRUITER".equals(userRole)) {
+			throw new RuntimeException("Only recruiter can Edit Job");
+		}
+		
+		Jobs job = jobDao.findById(jobId)
+					.orElseThrow(()->  new RuntimeException("Job not found"));
+		
+		if(!job.getRecruiterId().equals(recruiterId)) {
+			throw new RuntimeException("You are Not Allowed to Edit this job ");
+		}
+		
+		job.setStatus(JobStatus.CLOSED);
+		
+		PostJobResponse response = mapper.map(job, PostJobResponse.class);
+		response.setMessage("Job Closed succesfully");
+		return response;
+	}
+	
+	public PostJobResponse deleteJob(Long jobId, Long recruiterId, String userRole) {
+		
+		if(!"RECRUITER".equals(recruiterId))
+			throw new RuntimeException("Only recruiter can delete Job");
+		
+		Jobs job = jobDao.findById(recruiterId)
+					.orElseThrow(()-> new RuntimeException("Job not Found"));
+		
+		if(!job.getRecruiterId().equals(recruiterId))
+			throw new RuntimeException("You are Not Allowed to Delete this Job");
+		
+		job.setStatus(JobStatus.DELETED);
+		
+		PostJobResponse response = mapper.map(job, PostJobResponse.class);
+		response.setMessage("Job Delete Successfully");
+		
+		return response;
+	}
+	
 }
 
 
