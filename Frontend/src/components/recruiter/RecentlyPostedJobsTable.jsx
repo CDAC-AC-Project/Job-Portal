@@ -9,7 +9,7 @@ import {
   FiTrendingUp,
 } from "react-icons/fi";
 
-export default function RecentlyPostedJobsTable({ jobs }) {
+export default function RecentlyPostedJobsTable({ jobs = [] }) {
   const [openMenuId, setOpenMenuId] = useState(null);
 
   const handleRowClick = (jobId) => {

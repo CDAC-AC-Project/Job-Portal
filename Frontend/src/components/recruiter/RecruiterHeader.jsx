@@ -10,7 +10,7 @@ export default function RecruiterHeader() {
   const navigate = useNavigate();
 
   const navLinks = [
-    { name: "Home", path: "/recruiter/home" },
+    { name: "Home", path: "/" },
     { name: "Find Candidate", path: "/recruiter/find-candidate" },
     { name: "Dashboard", path: "/recruiter/dashboard" },
     { name: "My Jobs", path: "/recruiter/my-jobs" },

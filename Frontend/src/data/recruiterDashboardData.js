@@ -1,17 +1,29 @@
+import { FiBriefcase, FiUsers, FiEye } from "react-icons/fi";
+
 export const recruiterStats = [
   {
     id: 1,
     title: "Open Jobs",
-    value: 589,
-    bgColor: "bg-blue-50",
-    iconColor: "text-blue-600",
+    value: "589",
+    icon: FiBriefcase,
+    bg: "bg-blue-50",
+    iconBg: "bg-blue-600",
   },
   {
     id: 2,
     title: "Saved Candidates",
     value: "2,517",
-    bgColor: "bg-yellow-50",
-    iconColor: "text-yellow-600",
+    icon: FiUsers,
+    bg: "bg-yellow-50",
+    iconBg: "bg-yellow-500",
+  },
+  {
+    id: 3,
+    title: "Profile Views",
+    value: "12.4k",
+    icon: FiEye,
+    bg: "bg-green-50",
+    iconBg: "bg-green-600",
   },
 ];
 

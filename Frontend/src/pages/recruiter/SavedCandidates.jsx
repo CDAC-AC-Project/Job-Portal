@@ -60,7 +60,6 @@ export default function SavedCandidates() {
                 <SavedCandidateRow
                   key={candidate.id}
                   candidate={candidate}
-                  highlighted={index === 2}
                 />
               ))}
             </div>

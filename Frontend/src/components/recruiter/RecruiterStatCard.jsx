@@ -1,26 +1,23 @@
-import { FiBriefcase, FiUserCheck } from "react-icons/fi";
-
-const icons = {
-  "Open Jobs": FiBriefcase,
-  "Saved Candidates": FiUserCheck,
-};
-
-export default function RecruiterStatCard({ stat }) {
-  const Icon = icons[stat.title] || FiBriefcase;
-
+export default function RecruiterStatCard({
+  title,
+  value,
+  icon: Icon,
+  bg = "bg-blue-50",
+  iconBg = "bg-blue-600",
+}) {
   return (
-    <div
-      className={`${stat.bgColor} rounded-lg p-6 flex items-center justify-between`}
-    >
-      <div>
-        <h3 className="text-3xl font-semibold text-gray-900">
-          {stat.value}
-        </h3>
-        <p className="text-sm text-gray-600 mt-1">{stat.title}</p>
-      </div>
+    <div className={`${bg} rounded-2xl p-6 border border-gray-100`}>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-3xl font-bold text-gray-900">{value}</p>
+          <p className="mt-1 text-sm font-medium text-gray-600">{title}</p>
+        </div>
 
-      <div className="w-14 h-14 rounded-md bg-white flex items-center justify-center">
-        <Icon className={`text-2xl ${stat.iconColor}`} />
+        <div
+          className={`${iconBg} h-14 w-14 rounded-2xl text-white flex items-center justify-center text-2xl shadow-sm`}
+        >
+          <Icon />
+        </div>
       </div>
     </div>
   );

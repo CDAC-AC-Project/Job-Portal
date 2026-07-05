@@ -1,7 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import AdminRoutes from "./routes/AdminRoutes";
-
+import Home from "./pages/Home";
 
 import AuthRoutes from "./routes/AuthRoutes";
 import CandidateRoutes from "./routes/CandidateRoutes";
@@ -11,7 +11,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/" element={<Home />} />
 
         {AuthRoutes}
         {CandidateRoutes}

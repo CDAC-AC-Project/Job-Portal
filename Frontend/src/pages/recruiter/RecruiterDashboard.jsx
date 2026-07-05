@@ -1,45 +1,65 @@
-import RecruiterHeader from "../../components/recruiter/RecruiterHeader";
-import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
-import RecruiterStatCard from "../../components/recruiter/RecruiterStatCard";
-import RecentlyPostedJobsTable from "../../components/recruiter/RecentlyPostedJobsTable";
-import Footer from "../../components/layout/Footer";
+import { useNavigate } from "react-router-dom";
+import { FiTrendingUp } from "react-icons/fi";
 
-import {
-  recruiterStats,
-  recentlyPostedJobs,
-} from "../../data/recruiterDashboardData";
+import RecentlyPostedJobsTable from "../../components/recruiter/RecentlyPostedJobsTable";
+import RecruiterStatCard from "../../components/recruiter/RecruiterStatCard";
+
+import { recruiterStats, recentlyPostedJobs } from "../../data/recruiterDashboardData";
 
 export default function RecruiterDashboard() {
+  const navigate = useNavigate();
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <RecruiterHeader />
+    <div>
+      <section className="mb-8 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 sm:px-8 py-8 text-white">
+        <p className="text-sm font-medium text-blue-100">Welcome back</p>
 
-      <main className="flex-1">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row border-x border-gray-200">
-          <RecruiterSidebar />
+        <h1 className="mt-2 text-2xl sm:text-3xl font-bold">
+          Hello, Instagram
+        </h1>
 
-          <section className="flex-1 px-4 sm:px-6 lg:px-8 py-10">
-            <div className="mb-8">
-              <h1 className="text-xl font-semibold text-gray-900">
-                Hello, Instagram
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Here is your daily activities and applications
-              </p>
-            </div>
+        <p className="mt-2 text-blue-100">
+          Here is your daily recruitment activity and application summary.
+        </p>
+      </section>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-2xl mb-8">
-              {recruiterStats.map((stat) => (
-                <RecruiterStatCard key={stat.id} stat={stat} />
-              ))}
-            </div>
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+        {recruiterStats.map((stat) => (
+          <RecruiterStatCard
+            key={stat.id}
+            title={stat.title}
+            value={stat.value}
+            icon={stat.icon}
+            bg={stat.bg}
+            iconBg={stat.iconBg}
+          />
+        ))}
+      </section>
 
-            <RecentlyPostedJobsTable jobs={recentlyPostedJobs} />
-          </section>
+      <section className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-5 border-b border-gray-100">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Recently Posted Jobs
+            </h2>
+
+            <p className="text-sm text-gray-500">
+              Track your latest job postings and applications.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate("/recruiter/my-jobs")}
+            className="hidden sm:inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
+          >
+            View all
+            <FiTrendingUp />
+          </button>
         </div>
-      </main>
 
-      <footer/>
+        <RecentlyPostedJobsTable jobs={recentlyPostedJobs} />
+      </section>
     </div>
   );
 }
