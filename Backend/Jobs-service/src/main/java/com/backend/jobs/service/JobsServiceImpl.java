@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.backend.jobs.JobsServiceApplication;
 import com.backend.jobs.dao.JobsDao;
 import com.backend.jobs.dtos.CreateJobDto;
+import com.backend.jobs.dtos.JobInternalResponse;
 import com.backend.jobs.dtos.PostJobResponse;
 import com.backend.jobs.dtos.RecruiterJobListResp;
 import com.backend.jobs.entities.JobStatus;
@@ -141,6 +142,30 @@ public class JobsServiceImpl implements JobsService{
 		
 		return response;
 	}
+	
+	public JobInternalResponse getJobInternalDetails(Long jobId) {
+		
+		 Jobs job = jobDao.findById(jobId)
+		            .orElseThrow(() -> new RuntimeException("Job not found"));
+		 
+		 JobInternalResponse response = mapper.map(job, JobInternalResponse.class);
+
+	    // because entity field is id, but DTO field is jobId
+	    response.setJobId(job.getId());
+
+	    // custom calculated field
+	    if (Boolean.TRUE.equals(job.getRemote())) {
+	        response.setLocation("Remote");
+	    } else {
+	        response.setLocation(
+	                job.getCity() + ", " + job.getState() + ", " + job.getCountry()
+	        );
+	    }
+		 
+	    return response;
+	}
+	
+	
 	
 }
 

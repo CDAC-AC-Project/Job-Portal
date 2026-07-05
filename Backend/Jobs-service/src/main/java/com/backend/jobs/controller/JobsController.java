@@ -83,6 +83,12 @@ public class JobsController {
 		
 		return ResponseEntity.ok(jobService.deleteJob(jobId, recruiterId, userRole));
 	}
+	
+	@GetMapping("/internal/{jobId}")
+	public ResponseEntity<?> getInternalJobDetails(@PathVariable Long jobId){
+		
+		return ResponseEntity.ok(jobService.getJobInternalDetails(jobId));
+	}
 }
 
 

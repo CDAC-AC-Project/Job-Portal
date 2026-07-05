@@ -1,6 +1,7 @@
 package com.backend.jobs.service;  
 
 import com.backend.jobs.dtos.CreateJobDto;
+import com.backend.jobs.dtos.JobInternalResponse;
 import com.backend.jobs.dtos.PostJobResponse;
 import com.backend.jobs.dtos.RecruiterJobListResp;
 import com.backend.jobs.entities.JobStatus;
@@ -17,4 +18,5 @@ public interface JobsService {
 	 List<PostJobResponse> searchJobs(String keyword, String city, String country, JobType jobType);
 	 PostJobResponse closeJob(Long jobId, Long recruiterId, String userRole);
 	 PostJobResponse deleteJob(Long jobId, Long recruiterId, String userRole);
+	 JobInternalResponse getJobInternalDetails(Long jobId);
 }
