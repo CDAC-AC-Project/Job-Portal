@@ -1,0 +1,73 @@
+export const recruiterApplicationsData = [
+  {
+    id: 1,
+    column: "all",
+    name: "Ronald Richards",
+    role: "UI/UX Designer",
+    experience: "7 Years Experience",
+    education: "Master Degree",
+    appliedDate: "Jan 23, 2022",
+    avatar: "https://i.pravatar.cc/100?img=11",
+  },
+  {
+    id: 2,
+    column: "all",
+    name: "Theresa Webb",
+    role: "Product Designer",
+    experience: "7 Years Experience",
+    education: "High School Degree",
+    appliedDate: "Jan 23, 2022",
+    avatar: "https://i.pravatar.cc/100?img=12",
+  },
+  {
+    id: 3,
+    column: "all",
+    name: "Devon Lane",
+    role: "User Experience Designer",
+    experience: "7 Years Experience",
+    education: "Master Degree",
+    appliedDate: "Jan 23, 2022",
+    avatar: "https://i.pravatar.cc/100?img=13",
+  },
+  {
+    id: 4,
+    column: "all",
+    name: "Kathryn Murphy",
+    role: "Frontend Developer",
+    experience: "4 Years Experience",
+    education: "Bachelor Degree",
+    appliedDate: "Jan 22, 2022",
+    avatar: "https://i.pravatar.cc/100?img=14",
+  },
+  {
+    id: 5,
+    column: "shortlisted",
+    name: "Darrell Steward",
+    role: "UI/UX Designer",
+    experience: "7 Years Experience",
+    education: "Intermediate Degree",
+    appliedDate: "Jan 23, 2022",
+    avatar: "https://i.pravatar.cc/100?img=15",
+  },
+  {
+    id: 6,
+    column: "shortlisted",
+    name: "Jenny Wilson",
+    role: "UI Designer",
+    experience: "7 Years Experience",
+    education: "Bachelor Degree",
+    appliedDate: "Jan 23, 2022",
+    avatar: "https://i.pravatar.cc/100?img=16",
+  },
+];
+
+export const applicationColumnsData = [
+  {
+    id: "all",
+    title: "All Application",
+  },
+  {
+    id: "shortlisted",
+    title: "Shortlisted",
+  },
+];

@@ -1,0 +1,35 @@
+import { Route } from "react-router-dom";
+import RecruiterLayout from "../components/layout/RecruiterLayout";
+import { Navigate } from "react-router-dom";
+import RecruiterDashboard from "../pages/recruiter/RecruiterDashboard";
+import PlansBilling from "../pages/recruiter/PlansBilling";
+import PostJob from "../pages/recruiter/PostJob";
+import MyJobs from "../pages/recruiter/MyJobs";
+import Applications from "../pages/recruiter/Applications";
+import SavedCandidates from "../pages/recruiter/SavedCandidates";
+import CandidateProfile from "../pages/recruiter/CandidateProfile";
+import RecruiterSettings from "../pages/recruiter/RecruiterSettings";
+import Home from "../pages/Home";
+import FindCandidate from "../pages/recruiter/FindCandidates";
+
+
+const RecruiterRoutes = (
+
+  <Route path="/recruiter" element={<RecruiterLayout />}>
+    <Route index element={<Navigate to="/recruiter/dashboard" />} />
+
+    <Route path="dashboard" element={<RecruiterDashboard />} />
+    <Route path="find-candidate" element={<FindCandidate />} />
+    <Route path="post-job" element={<PostJob />} />
+    <Route path="my-jobs" element={<MyJobs />} />
+    <Route path="applications" element={<Applications />} />
+    <Route path="plans-billing" element={<PlansBilling />} />
+    <Route path="settings" element={<RecruiterSettings />} />
+    <Route path="saved-candidate" element={<SavedCandidates />} />
+    <Route path="candidate-profile/:id" element={<CandidateProfile />} />
+    <Route path="recruiter/edit-job/:jobId" element={<PostJob />} />
+  </Route>
+  
+);
+
+export default RecruiterRoutes;
