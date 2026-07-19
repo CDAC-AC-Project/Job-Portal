@@ -15,33 +15,32 @@ import lombok.AllArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
-@AllArgsConstructor  
 public class SecurityConfig {
+	@Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-	
-	private final JwtAuthFilter jwtAuthFilter;
+        http
+            .csrf(csrf -> csrf.disable())
+            .cors(cors -> {})
+            .sessionManagement(session ->
+                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            .authorizeHttpRequests(auth -> auth
+                    .requestMatchers(
+                            "/auth/register",
+                            "/auth/login",
+                            "/auth/verify-email",
+                            "/auth/forgot-password",
+                            "/auth/reset-password"
+                    ).permitAll()
+                    .anyRequest().permitAll()
+            );
 
+        return http.build();
+    }
 	
 	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		
-		http
-			.csrf(csrf -> csrf.disable())
-			.cors(cors -> {})
-			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			.authorizeHttpRequests(auth -> auth
-					.requestMatchers("/auth/register", "/auth/login").permitAll()
-					.requestMatchers("/auth/verify-email").permitAll()
-					.anyRequest().authenticated()
-					)
-			.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-		
-		return http.build();
-	}
-	
-	   @Bean
-	    public PasswordEncoder passwordEncoder() {
-		   
-	        return new BCryptPasswordEncoder();
-	    }
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 }

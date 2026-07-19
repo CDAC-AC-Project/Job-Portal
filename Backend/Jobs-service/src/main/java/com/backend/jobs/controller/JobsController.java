@@ -31,16 +31,18 @@ public class JobsController {
 	
 	private final JobsService jobService;
 	
-	@PostMapping
-	public ResponseEntity<?> postJob(@RequestHeader("userId") Long recruiterId, @Valid @RequestBody CreateJobDto dto){
-		return ResponseEntity.ok(jobService.createDto(recruiterId, dto));
-		
-	}
+	//Recruiter Jobs API
 	
 	@GetMapping("/{recruiterId}/{status}")
 	public ResponseEntity<?> getMyJobs(@RequestParam Long recruiterId, @RequestParam JobStatus status){
 		
 		return ResponseEntity.ok(jobService.getMyJobs(recruiterId, status));
+	}
+	
+	@PostMapping
+	public ResponseEntity<?> postJob(@RequestHeader("userId") Long recruiterId, @Valid @RequestBody CreateJobDto dto){
+		return ResponseEntity.ok(jobService.createDto(recruiterId, dto));
+		
 	}
 	
 	@PutMapping
