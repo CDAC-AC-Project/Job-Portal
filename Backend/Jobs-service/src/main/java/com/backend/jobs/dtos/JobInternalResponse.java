@@ -11,7 +11,7 @@ public class JobInternalResponse {
 	private Long jobId;
     private String title;
     private Long recruiterId;
-    private Long companyId;
+    //private Long companyId;
     private String companyName;
     private String location;
     private JobStatus status;
