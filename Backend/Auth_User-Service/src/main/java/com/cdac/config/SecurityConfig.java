@@ -25,6 +25,7 @@ public class SecurityConfig {
             .sessionManagement(session ->
                     session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
+            //Authorization filter configuration
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers(
                             "/auth/register",
