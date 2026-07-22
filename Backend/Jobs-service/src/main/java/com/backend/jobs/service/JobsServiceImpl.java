@@ -1,5 +1,6 @@
 package com.backend.jobs.service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import javax.management.RuntimeErrorException;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.backend.jobs.JobsServiceApplication;
 import com.backend.jobs.dao.JobsDao;
+import com.backend.jobs.dtos.CandidateHomeJobResponse;
 import com.backend.jobs.dtos.CreateJobDto;
 import com.backend.jobs.dtos.JobInternalResponse;
 import com.backend.jobs.dtos.PostJobResponse;
@@ -165,7 +167,24 @@ public class JobsServiceImpl implements JobsService{
 	    return response;
 	}
 	
+	//User APIS
 	
+	 public List<CandidateHomeJobResponse> getCandidateHomeJobs(){
+	
+		 List<Jobs> jobs = jobDao.findCandidateHomeJobs(
+		            JobStatus.ACTIVE,
+		            LocalDate.now()
+		    );
+		
+		    return jobs.stream()
+		            .map(this::mapToCandidateHomeJobResponse)
+		            .toList();
+	 }
+	 
+	 private CandidateHomeJobResponse mapToCandidateHomeJobResponse(Jobs job) {
+
+		    return mapper.map(job, CandidateHomeJobResponse.class);
+		}
 	
 }
 

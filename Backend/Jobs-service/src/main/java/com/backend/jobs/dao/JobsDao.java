@@ -7,6 +7,8 @@ import org.springframework.data.repository.query.Param;
 import com.backend.jobs.entities.JobStatus;
 import com.backend.jobs.entities.JobType;
 import com.backend.jobs.entities.Jobs;
+
+import java.time.LocalDate;
 import java.util.*;
 
 public interface JobsDao extends JpaRepository<Jobs, Long>{
@@ -31,4 +33,16 @@ public interface JobsDao extends JpaRepository<Jobs, Long>{
 		        @Param("country") String country,
 		        @Param("jobType") JobType jobType
 		);
+	
+	@Query("""
+	        SELECT j
+	        FROM Jobs j
+	        WHERE j.status = :status
+	        AND (j.expirationDate IS NULL OR j.expirationDate >= :today)
+	        ORDER BY j.createdAt DESC
+	    """)
+	    List<Jobs> findCandidateHomeJobs(
+	            @Param("status") JobStatus status,
+	            @Param("today") LocalDate today
+	    );
 }

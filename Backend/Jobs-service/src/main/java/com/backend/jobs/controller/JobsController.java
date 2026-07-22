@@ -1,6 +1,8 @@
 package com.backend.jobs.controller;
 
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.backend.jobs.dtos.CandidateHomeJobResponse;
 import com.backend.jobs.dtos.CreateJobDto;
 import com.backend.jobs.entities.JobStatus;
 import com.backend.jobs.entities.JobType;
@@ -30,6 +33,30 @@ import lombok.AllArgsConstructor;
 public class JobsController {
 	
 	private final JobsService jobService;
+	
+	
+	//Candidates API
+	
+	@GetMapping("/search")
+	public ResponseEntity<?> searchJobs(
+	        @RequestParam(required = false) String keyword,
+	        @RequestParam(required = false) String city,
+	        @RequestParam(required = false) String country,
+	        @RequestParam(required = false) JobType jobType
+	) {
+	    return ResponseEntity.ok(
+	            jobService.searchJobs(keyword, city, country, jobType)
+	    );
+	}
+	
+	@GetMapping("/candidate/home")
+	public ResponseEntity<?> getCandidateHomeJobs() {
+
+	    List<CandidateHomeJobResponse> response = jobService.getCandidateHomeJobs();
+
+	    return ResponseEntity.ok(response);
+	}
+	
 	
 	//Recruiter Jobs API
 	
@@ -57,18 +84,6 @@ public class JobsController {
 		return ResponseEntity.ok(jobService.getJobById(jobId));
 	}
 	
-	@GetMapping("/search")
-	public ResponseEntity<?> searchJobs(
-	        @RequestParam(required = false) String keyword,
-	        @RequestParam(required = false) String city,
-	        @RequestParam(required = false) String country,
-	        @RequestParam(required = false) JobType jobType
-	) {
-	    return ResponseEntity.ok(
-	            jobService.searchJobs(keyword, city, country, jobType)
-	    );
-	}
-	
 	@PatchMapping("/{jobId}/close")
 	public ResponseEntity<?> closeJob(
 	        @PathVariable Long jobId,
@@ -80,11 +95,14 @@ public class JobsController {
 	    );
 	}
 	
-	@DeleteMapping("/{jobId/delete")
+	@DeleteMapping("/{jobId}/delete")
 	public ResponseEntity<?> deleteJob(@PathVariable Long jobId, @RequestHeader("User-Id") Long recruiterId, @RequestHeader("User-Role") String userRole){
 		
 		return ResponseEntity.ok(jobService.deleteJob(jobId, recruiterId, userRole));
 	}
+	
+	
+	//Internal API
 	
 	@GetMapping("/internal/{jobId}")
 	public ResponseEntity<?> getInternalJobDetails(@PathVariable Long jobId){
