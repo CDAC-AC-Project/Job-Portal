@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.backend.app.dto.ApplicationDetailsResponse;
 import com.backend.app.dto.ApplyJobRequest;
 import com.backend.app.service.ApplicationService;
 
@@ -37,5 +38,11 @@ public class ApplicationController {
     public ResponseEntity<?> getapplications(@RequestHeader Long candidateId){
     	return ResponseEntity.ok(applicationService.getMyApplication(candidateId));
     }
-
+    
+    @GetMapping("/{applicationId}")
+    public ResponseEntity<ApplicationDetailsResponse> getApplication(@PathVariable Long applicationId){
+    	return ResponseEntity.ok(applicationService.getApplication(applicationId));
+    }
+    
+    
 }

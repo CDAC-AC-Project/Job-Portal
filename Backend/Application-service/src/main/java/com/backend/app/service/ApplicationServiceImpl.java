@@ -6,6 +6,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.backend.app.dto.ApplicationDetailsResponse;
 import com.backend.app.dto.ApplicationResponse;
 import com.backend.app.dto.ApplyJobRequest;
 import com.backend.app.dto.MyApplicationResponse;
@@ -75,5 +76,16 @@ public class ApplicationServiceImpl implements ApplicationService {
 	private MyApplicationResponse mapToMyApplicationResponse(JobApplication application){
 		MyApplicationResponse response = mapper.map(application,MyApplicationResponse.class);
 				return response;
+	}
+	
+	public ApplicationDetailsResponse getApplication(Long applicationId) {
+	JobApplication application =
+			applicationRepository.findById(applicationId)
+	                .orElseThrow(() ->
+	                        new RuntimeException("Application not found"));
+	
+	ApplicationDetailsResponse response = mapper.map(application,ApplicationDetailsResponse.class);
+	response.setApplicationId(application.getId());
+	return response;
 	}
 }
