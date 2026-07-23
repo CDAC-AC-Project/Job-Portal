@@ -1,6 +1,7 @@
 package com.backend.jobs.service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.management.RuntimeErrorException;
@@ -9,20 +10,13 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.backend.jobs.JobsServiceApplication;
-import com.backend.jobs.dao.JobsDao;
-import com.backend.jobs.dtos.CandidateHomeJobResponse;
-import com.backend.jobs.dtos.CreateJobDto;
-import com.backend.jobs.dtos.JobInternalResponse;
-import com.backend.jobs.dtos.PostJobResponse;
-import com.backend.jobs.dtos.RecruiterJobListResp;
-import com.backend.jobs.entities.JobStatus;
-import com.backend.jobs.entities.JobType;
-import com.backend.jobs.entities.Jobs;
+import com.backend.jobs.client.ProfileServiceClient;
+import com.backend.jobs.dao.*;
+import com.backend.jobs.dtos.*;
+import com.backend.jobs.entities.*;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
-
+import feign.FeignException;
+import lombok.*;
 
 @Service
 @Transactional
@@ -30,23 +24,101 @@ import lombok.RequiredArgsConstructor;
 public class JobsServiceImpl implements JobsService{
 
 	private final JobsDao jobDao;
-	private  ModelMapper mapper;
+	private  final ModelMapper mapper;
+	 private final ProfileServiceClient profileServiceClient;
 	
-	
-	public PostJobResponse createDto(Long recruiterId, CreateJobDto dto) {
+	 
+	//CANDIDATE API
+	public List<PostJobResponse> searchJobs(
+			String keyword,
+	        String city,
+	        String country,
+	        JobType jobType){
 		
-		Jobs job = mapper.map(dto, Jobs.class);
-
-        job.setRecruiterId(recruiterId);
-        job.setStatus(JobStatus.ACTIVE);
-
-        Jobs savedJob = jobDao.save(job);
-
-        PostJobResponse response = mapper.map(savedJob, PostJobResponse.class);
-        response.setMessage("Job posted successfully");
-
-        return response;
+		List<Jobs> jobs = jobDao.searchJobs(keyword, city, country, jobType);
+		
+		return jobs.stream()
+				.map(job -> {
+					PostJobResponse response = mapper.map(job, PostJobResponse.class);
+					response.setMessage("Job fetched successfully");
+					return response;
+				}).toList();  
 	}
+	
+	public List<CandidateHomeJobResponse> getCandidateHomeJobs(){
+		
+		 List<Jobs> jobs = jobDao.findCandidateHomeJobs(
+		            JobStatus.ACTIVE,
+		            LocalDate.now()
+		    );
+		
+		    return jobs.stream()
+		            .map(this::mapToCandidateHomeJobResponse)
+		            .toList();
+	 }
+	 
+	 private CandidateHomeJobResponse mapToCandidateHomeJobResponse(Jobs job) {
+
+		    return mapper.map(job, CandidateHomeJobResponse.class);
+		}
+	
+	
+	 //RECRUITER APIS
+	 @Override
+	 public PostJobResponse postJob(Long recruiterId, String role, CreateJobDto dto) {
+
+	     if (!"RECRUITER".equalsIgnoreCase(role)) {
+	         throw new RuntimeException("Only recruiter can post a job");
+	     }
+
+	     if (dto.getMinSalary() != null && dto.getMaxSalary() != null
+	             && dto.getMinSalary().compareTo(dto.getMaxSalary()) > 0) {
+	         throw new RuntimeException("Minimum salary cannot be greater than maximum salary");
+	     }
+
+	     CompanySummaryDto companySummary;
+
+	     try {
+	         companySummary = profileServiceClient.getCompanySummaryByRecruiterId(recruiterId);
+	     } catch (FeignException.NotFound ex) {
+	         throw new RuntimeException("Company profile not found. Please complete company profile first.");
+	     } catch (FeignException ex) {
+	         throw new RuntimeException("Profile Service is currently unavailable. Please try again later.");
+	     }
+
+	     if (companySummary == null || companySummary.getCompanyId() == null) {
+	         throw new RuntimeException("Company profile not found. Please complete company profile first.");
+	     }
+
+	     Jobs job = mapper.map(dto, Jobs.class);
+
+	     job.setRecruiterId(recruiterId);
+
+	     job.setCompanyId(companySummary.getCompanyId());
+	     job.setCompanyName(companySummary.getCompanyName());
+	     job.setCompanyLogoUrl(companySummary.getCompanyLogoUrl());
+	     job.setCompanyIndustry(companySummary.getCompanyIndustry());
+
+	     job.setStatus(JobStatus.ACTIVE);
+	     job.setFeatured(false);
+	     job.setHighlighted(false);
+	     job.setViewsCount(0L);
+
+	     if (job.getRemote() == null) {
+	         job.setRemote(false);
+	     }
+
+	     if (job.getBenefits() == null) {
+	         job.setBenefits(new ArrayList<>());
+	     }
+
+	     Jobs savedJob = jobDao.save(job);
+
+	     PostJobResponse response = mapper.map(savedJob, PostJobResponse.class);
+	     response.setMessage("Job posted successfully");
+
+	     return response;
+	 }
 	
 	@Override
 	public List<RecruiterJobListResp> getMyJobs(Long recruiterId, JobStatus status) {
@@ -90,22 +162,6 @@ public class JobsServiceImpl implements JobsService{
 		return response;
 	}
 	
-	public List<PostJobResponse> searchJobs(
-			String keyword,
-	        String city,
-	        String country,
-	        JobType jobType){
-		
-		List<Jobs> jobs = jobDao.searchJobs(keyword, city, country, jobType);
-		
-		return jobs.stream()
-				.map(job -> {
-					PostJobResponse response = mapper.map(job, PostJobResponse.class);
-					response.setMessage("Job fetched successfully");
-					return response;
-				}).toList();  
-	}
-	
 	public PostJobResponse closeJob(Long jobId, Long recruiterId, String userRole) {
 		
 		if(!"RECRUITER".equals(userRole)) {
@@ -145,6 +201,7 @@ public class JobsServiceImpl implements JobsService{
 		return response;
 	}
 	
+	//INTERNAL APIS
 	public JobInternalResponse getJobInternalDetails(Long jobId) {
 		
 		 Jobs job = jobDao.findById(jobId)
@@ -166,25 +223,6 @@ public class JobsServiceImpl implements JobsService{
 		 
 	    return response;
 	}
-	
-	//User APIS
-	
-	 public List<CandidateHomeJobResponse> getCandidateHomeJobs(){
-	
-		 List<Jobs> jobs = jobDao.findCandidateHomeJobs(
-		            JobStatus.ACTIVE,
-		            LocalDate.now()
-		    );
-		
-		    return jobs.stream()
-		            .map(this::mapToCandidateHomeJobResponse)
-		            .toList();
-	 }
-	 
-	 private CandidateHomeJobResponse mapToCandidateHomeJobResponse(Jobs job) {
-
-		    return mapper.map(job, CandidateHomeJobResponse.class);
-		}
 	
 }
 
