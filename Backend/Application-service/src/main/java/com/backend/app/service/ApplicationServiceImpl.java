@@ -1,14 +1,17 @@
 package com.backend.app.service;
 
 import java.util.List;
+import com.backend.app.enums.JobStatus;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.backend.app.client.JobClient;
 import com.backend.app.dto.ApplicationDetailsResponse;
 import com.backend.app.dto.ApplicationResponse;
 import com.backend.app.dto.ApplyJobRequest;
+import com.backend.app.dto.JobInternalResponse;
 import com.backend.app.dto.MyApplicationResponse;
 import com.backend.app.enums.ApplicationStatus;
 import com.backend.app.entities.JobApplication;
@@ -25,6 +28,8 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final JobApplicationRepository applicationRepository;
 
     private final ModelMapper mapper;
+    
+    private final JobClient jobClient;
 
     @Override
     public ApplicationResponse applyJob(Long candidateId, Long jobId ,ApplyJobRequest dto) {
@@ -38,21 +43,29 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         // Convert DTO to Entity
         JobApplication application = mapper.map(dto, JobApplication.class);
+        
+        application.setJobId(jobId);
 
         // Set backend-controlled fields
         application.setCandidateId(candidateId);
         application.setStatus(ApplicationStatus.APPLIED);
         
         //Adding hardcore temporary value for now
-        application.setRecruiterId(1L);
-
-        application.setJobId(jobId);
         
-        application.setJobTitleSnapshot("Java Developer");
+        JobInternalResponse job =
+                jobClient.getJobById(jobId);
+        
+        if (job.getStatus() != JobStatus.ACTIVE) {
+            throw new RuntimeException("Job is not active");
+        }
 
-        application.setCompanyNameSnapshot("TCS");
+        application.setRecruiterId(job.getRecruiterId());
 
-        application.setJobLocationSnapshot("Pune");
+        application.setJobTitleSnapshot(job.getTitle());
+
+        application.setCompanyNameSnapshot(job.getCompanyName());
+
+        application.setJobLocationSnapshot(job.getLocation());
 
         // Save into database
         JobApplication savedApplication = applicationRepository.save(application);
