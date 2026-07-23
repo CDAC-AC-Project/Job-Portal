@@ -12,7 +12,7 @@ import java.util.*;
 
 public interface JobsService {
 	
-	 PostJobResponse createDto(Long recruiterId, CreateJobDto dto);
+	 PostJobResponse postJob(Long recruiterId, String role, CreateJobDto dto);
 	 List<RecruiterJobListResp> getMyJobs(Long recruiterId, JobStatus status);
 	 PostJobResponse editMyJob(Long jobId, Long recruiterId ,CreateJobDto dto);
 	 PostJobResponse getJobById(Long jobId);

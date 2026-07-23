@@ -20,9 +20,6 @@ import lombok.Setter;
 @Getter
 public class CreateJobDto {
 
-    @NotNull(message = "Company id is required")
-    private Long companyId;
-
     @NotBlank(message = "Job title is required")
     private String title;
 

@@ -12,15 +12,34 @@ import lombok.Setter;
 @Setter
 @Getter
 public class PostJobResponse {
+	
+	private String title;
+	
 	private Long id;
-    private String title;
+	 
     private String city;
+    
     private String state;
+    
     private String country;
-    private boolean remote;
+
+    private Boolean remote;
+
     private JobType jobType;
+
     private JobStatus status;
+
     private LocalDate expirationDate;
+
     private LocalDateTime createdAt;
+
+    private Long companyId;
+
+    private String companyName;
+
+    private String companyLogoUrl;
+
+    private String companyIndustry;
+
     private String message;
 }

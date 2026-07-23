@@ -106,6 +106,16 @@ public class Jobs extends BaseEntity {
     )
     @Column(name = "benefit_name", nullable = false)
     private List<String> benefits = new ArrayList<>();
+    
+    //Company Snapshot
+    @Column(name = "company_name", nullable = false, length = 200)
+    private String companyName;
+
+    @Column(name = "company_logo_url", length = 1000)
+    private String companyLogoUrl;
+
+    @Column(name = "company_industry", length = 100)
+    private String companyIndustry;
 }
 
 
