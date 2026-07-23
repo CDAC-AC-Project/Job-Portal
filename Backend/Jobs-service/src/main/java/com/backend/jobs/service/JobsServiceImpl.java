@@ -3,13 +3,11 @@ package com.backend.jobs.service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.management.RuntimeErrorException;
-
+import org.springframework.data.domain.Page;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.backend.jobs.JobsServiceApplication;
 import com.backend.jobs.client.ProfileServiceClient;
 import com.backend.jobs.dao.*;
 import com.backend.jobs.dtos.*;
@@ -22,34 +20,73 @@ import lombok.*;
 @Transactional
 @AllArgsConstructor
 public class JobsServiceImpl implements JobsService{
-
+	
+	private static final int HOME_JOBS_LIMIT = 15;
+	
 	private final JobsDao jobDao;
 	private  final ModelMapper mapper;
 	 private final ProfileServiceClient profileServiceClient;
 	
 	 
 	//CANDIDATE API
-	public List<PostJobResponse> searchJobs(
-			String keyword,
-	        String city,
-	        String country,
-	        JobType jobType){
-		
-		List<Jobs> jobs = jobDao.searchJobs(keyword, city, country, jobType);
-		
-		return jobs.stream()
-				.map(job -> {
-					PostJobResponse response = mapper.map(job, PostJobResponse.class);
-					response.setMessage("Job fetched successfully");
-					return response;
-				}).toList();  
-	}
+	 @Override
+	 public PageResponse<JobCardResponse> searchJobs(
+	         String keyword,
+	         String city,
+	         String country,
+	         JobType jobType,
+	         int page,
+	         int size
+	 ) {
+		//if "", " text " such comes we are making them null, "text" respectively.
+	     keyword = normalize(keyword);
+	     city = normalize(city);
+	     country = normalize(country);
+
+	     int pageNumber = Math.max(page, 0);
+	     int pageSize = Math.min(Math.max(size, 1), 50);
+
+	     PageRequest pageRequest = PageRequest.of(pageNumber, pageSize);
+
+	     Page<Jobs> jobsPage = jobDao.searchJobs(
+	             keyword,
+	             city,
+	             country,
+	             jobType,
+	             JobStatus.ACTIVE,
+	             LocalDate.now(),
+	             pageRequest
+	     );
+
+	     List<JobCardResponse> jobCards = jobsPage.getContent()
+	             .stream()
+	             .map(job -> mapper.map(job, JobCardResponse.class))
+	             .toList();
+
+	     return new PageResponse<>(
+	             jobCards,
+	             jobsPage.getNumber(),
+	             jobsPage.getSize(),
+	             jobsPage.getTotalElements(),
+	             jobsPage.getTotalPages(),
+	             jobsPage.hasNext(),
+	             jobsPage.isLast()
+	     );
+	 }
+
+	 private String normalize(String value) {
+	     return value == null || value.trim().isEmpty()
+	             ? null
+	             : value.trim();
+	 }
+	 
 	
-	public List<CandidateHomeJobResponse> getCandidateHomeJobs(){
-		
+	public List<JobCardResponse> getCandidateHomeJobs(){
+			 
 		 List<Jobs> jobs = jobDao.findCandidateHomeJobs(
 		            JobStatus.ACTIVE,
-		            LocalDate.now()
+		            LocalDate.now(),
+		            PageRequest.of(0, HOME_JOBS_LIMIT)
 		    );
 		
 		    return jobs.stream()
@@ -57,13 +94,14 @@ public class JobsServiceImpl implements JobsService{
 		            .toList();
 	 }
 	 
-	 private CandidateHomeJobResponse mapToCandidateHomeJobResponse(Jobs job) {
+	 private JobCardResponse mapToCandidateHomeJobResponse(Jobs job) {
 
-		    return mapper.map(job, CandidateHomeJobResponse.class);
+		    return mapper.map(job, JobCardResponse.class);
 		}
 	
 	
 	 //RECRUITER APIS
+	 //PostJOb API - When recruiter post, it store that data from database along with company details snapshot by calling profile service API
 	 @Override
 	 public PostJobResponse postJob(Long recruiterId, String role, CreateJobDto dto) {
 
@@ -134,7 +172,7 @@ public class JobsServiceImpl implements JobsService{
 				.map(this::mapToRecruiterJobListResp).toList();
 	}
 	
-	public RecruiterJobListResp mapToRecruiterJobListResp(Jobs job) {
+	private RecruiterJobListResp mapToRecruiterJobListResp(Jobs job) {
 
         RecruiterJobListResp response = mapper.map(job, RecruiterJobListResp.class);
 
