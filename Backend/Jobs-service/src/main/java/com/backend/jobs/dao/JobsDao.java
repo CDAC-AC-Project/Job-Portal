@@ -15,8 +15,8 @@ import java.util.*;
 
 public interface JobsDao extends JpaRepository<Jobs, Long>{
 	
-	List<Jobs> findByrecruiterIdOrderByCreatedAtDesc(Long recruiterId);
-	List<Jobs> findByrecruiterIdAndStatusOrderByCreatedAtDesc(Long recruiterId, JobStatus status);
+	List<Jobs> findByRecruiterIdOrderByCreatedAtDesc(Long recruiterId);
+	List<Jobs>findByRecruiterIdAndStatusOrderByCreatedAtDesc(Long recruiterId, JobStatus status);
 
 	@Query(
 		    value = """

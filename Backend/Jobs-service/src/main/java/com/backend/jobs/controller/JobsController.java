@@ -55,23 +55,32 @@ public class JobsController {
 	    return ResponseEntity.ok(response);
 	}
 	
+	@GetMapping("/{jobId}")
+	public ResponseEntity<JobDetailsResponseDto> getCandidateJobDetails(
+	        @PathVariable Long jobId
+	) {
+	    JobDetailsResponseDto response = jobService.getCandidateJobDetails(jobId);
+
+	    return ResponseEntity.ok(response);
+	}
+	
 	
 	//Recruiter Jobs API
 	
 	@GetMapping("/{recruiterId}/{status}")
-	public ResponseEntity<?> getMyJobs(@RequestParam Long recruiterId, @RequestParam JobStatus status){
+	public ResponseEntity<?> getMyJobs(@RequestParam Long recruiterId, @RequestParam JobStatus status, @RequestHeader("X-User-Role") String role){
 		
-		return ResponseEntity.ok(jobService.getMyJobs(recruiterId, status));
+		return ResponseEntity.ok(jobService.getMyJobs(recruiterId, status, role));
 	}
 	
 	
 	@PostMapping
-    public ResponseEntity<PostJobResponse> createJob(
+    public ResponseEntity<JobResponse> createJob(
             @RequestHeader("X-User-Id") Long recruiterId,
             @RequestHeader("X-User-Role") String role,
             @Valid @RequestBody CreateJobDto dto
     ) {
-        PostJobResponse response = jobService.postJob(recruiterId, role, dto);
+        JobResponse response = jobService.postJob(recruiterId, role, dto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -83,9 +92,9 @@ public class JobsController {
 	}
 	
 	@GetMapping("{jobId}")
-	public ResponseEntity<?> getJobsById(@PathVariable Long jobId){
+	public ResponseEntity<?> getJobsById(@PathVariable Long jobId, @RequestHeader("X-User-Id") Long recruiterId, @RequestHeader("X-User-Role") String role){
 		
-		return ResponseEntity.ok(jobService.getJobById(jobId));
+		return ResponseEntity.ok(jobService.getJobById(jobId, recruiterId, role));
 	}
 	
 	@PatchMapping("/{jobId}/close")
@@ -99,10 +108,14 @@ public class JobsController {
 	    );
 	}
 	
-	@DeleteMapping("/{jobId}/delete")
-	public ResponseEntity<?> deleteJob(@PathVariable Long jobId, @RequestHeader("User-Id") Long recruiterId, @RequestHeader("User-Role") String userRole){
-		
-		return ResponseEntity.ok(jobService.deleteJob(jobId, recruiterId, userRole));
+	@DeleteMapping("/{jobId}")
+	public ResponseEntity<String> deleteJob(
+	        @PathVariable Long jobId,
+	        @RequestHeader("X-User-Id") Long recruiterId,
+	        @RequestHeader("X-User-Role") String role
+	) {
+	    jobService.deleteJob(jobId, recruiterId, role);
+	    return ResponseEntity.ok("Job deleted successfully");
 	}
 	
 	
