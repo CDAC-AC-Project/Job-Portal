@@ -17,12 +17,5 @@ public class RecruiterJobListResp {
     private JobType jobType;
     private JobStatus status;
     private LocalDate expirationDate;
-    private LocalDateTime createdAt;
-
-    private String city;
-    private String state;
-    private String country;
-    private Boolean remote;
-
     private Long applicationCount;
 }

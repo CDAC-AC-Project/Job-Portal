@@ -2,12 +2,18 @@ package com.backend.jobs.service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.backend.jobs.client.ApplicationServiceClient;
 import com.backend.jobs.client.ProfileServiceClient;
 import com.backend.jobs.dao.*;
 import com.backend.jobs.dtos.*;
@@ -25,7 +31,8 @@ public class JobsServiceImpl implements JobsService{
 	
 	private final JobsDao jobDao;
 	private  final ModelMapper mapper;
-	 private final ProfileServiceClient profileServiceClient;
+	private final ProfileServiceClient profileServiceClient;
+	private final ApplicationServiceClient applicationServiceClient;
 	
 	 
 	//CANDIDATE API
@@ -81,6 +88,7 @@ public class JobsServiceImpl implements JobsService{
 	 }
 	 
 	
+	 
 	public List<JobCardResponse> getCandidateHomeJobs(){
 			 
 		 List<Jobs> jobs = jobDao.findCandidateHomeJobs(
@@ -98,12 +106,33 @@ public class JobsServiceImpl implements JobsService{
 
 		    return mapper.map(job, JobCardResponse.class);
 		}
+	 
+	 @Override
+	 public JobDetailsResponseDto getCandidateJobDetails(Long jobId) {
+
+	     Jobs job = jobDao.findById(jobId)
+	             .orElseThrow(() -> new RuntimeException("Job not found"));
+
+	     if (!JobStatus.ACTIVE.equals(job.getStatus())) {
+	         throw new RuntimeException("This job is no longer available");
+	     }
+
+	     if (job.getExpirationDate() != null
+	             && job.getExpirationDate().isBefore(LocalDate.now())) {
+	         throw new RuntimeException("This job has expired");
+	     }
+
+	     JobDetailsResponseDto response = mapper.map(job, JobDetailsResponseDto.class);
+
+	     return response;
+	 }
 	
 	
+	 
 	 //RECRUITER APIS
 	 //PostJOb API - When recruiter post, it store that data from database along with company details snapshot by calling profile service API
 	 @Override
-	 public PostJobResponse postJob(Long recruiterId, String role, CreateJobDto dto) {
+	 public JobResponse postJob(Long recruiterId, String role, CreateJobDto dto) {
 
 	     if (!"RECRUITER".equalsIgnoreCase(role)) {
 	         throw new RuntimeException("Only recruiter can post a job");
@@ -152,58 +181,92 @@ public class JobsServiceImpl implements JobsService{
 
 	     Jobs savedJob = jobDao.save(job);
 
-	     PostJobResponse response = mapper.map(savedJob, PostJobResponse.class);
+	     JobResponse response = mapper.map(savedJob, JobResponse.class);
 	     response.setMessage("Job posted successfully");
 
 	     return response;
 	 }
 	
-	@Override
-	public List<RecruiterJobListResp> getMyJobs(Long recruiterId, JobStatus status) {
-		
-		List<Jobs> jobs;
-		
-		if(status == null) {
-			jobs = jobDao.findByrecruiterIdOrderByCreatedAtDesc(recruiterId);
-		}else {
-			jobs = jobDao.findByrecruiterIdAndStatusOrderByCreatedAtDesc(recruiterId, status);
-		}
-		return jobs.stream()
-				.map(this::mapToRecruiterJobListResp).toList();
-	}
+	 @Override
+	 public List<RecruiterJobListResp> getMyJobs(Long recruiterId, JobStatus status, String role) {
+	     if (!"RECRUITER".equalsIgnoreCase(role)) {
+	         throw new RuntimeException("Only recruiter can view jobs");
+	     }
+
+	     List<Jobs> jobs;
+	     	
+	     if(status!=null)
+	         jobs = jobDao.findByRecruiterIdAndStatusOrderByCreatedAtDesc(recruiterId, status);
+	     else
+	    	 jobs = jobDao.findByRecruiterIdOrderByCreatedAtDesc(recruiterId);
+	    
+
+	     List<Long> jobIds = jobs.stream()
+	             .map(job -> job.getId())
+	             .toList();
+
+	     Map<Long, Long> countMap = new HashMap<>();
+
+	     if (!jobIds.isEmpty()) {
+	         List<ApplicationCountResponse> counts =
+	                 applicationServiceClient.getApplicationCountsByJobIds(jobIds);
+
+	         countMap = counts.stream()
+	                 .collect(Collectors.toMap(
+	                         applicationCount -> applicationCount.getJobId(),
+	                         applicationCount -> applicationCount.getApplicationCount()
+	                 ));
+	     }
+
+	     Map<Long, Long> finalCountMap = countMap;
+
+	     return jobs.stream()
+	             .map(job -> {
+	                 RecruiterJobListResp response =
+	                         mapper.map(job, RecruiterJobListResp.class);
+
+	                 response.setApplicationCount(
+	                         finalCountMap.getOrDefault(job.getId(), 0L)
+	                 );
+
+	                 return response;
+	             })
+	             .toList();
+	 }
 	
-	private RecruiterJobListResp mapToRecruiterJobListResp(Jobs job) {
-
-        RecruiterJobListResp response = mapper.map(job, RecruiterJobListResp.class);
-
-        // Temporary value because Application Service is not ready yet
-        response.setApplicationCount(0L);
-
-        return response;
-    }
-	
-	public PostJobResponse editMyJob(Long jobId, Long recruiterId, CreateJobDto dto) {
+	 //Incomplete
+	public JobResponse editMyJob(Long jobId, Long recruiterId, CreateJobDto dto) {
 		
 		Jobs job = jobDao.findById(jobId).orElseThrow(()-> new RuntimeException());
 		job = mapper.map(dto, Jobs.class);
 		job.setRecruiterId(recruiterId);
-		PostJobResponse postJobResp = mapper.map(job, PostJobResponse.class);
+		JobResponse postJobResp = mapper.map(job, JobResponse.class);
 		return postJobResp;
 	}
 	
-	public PostJobResponse getJobById(Long jobId) {
+	public JobResponse getJobById(Long jobId, Long recruiterId, String role) {
 		
-		Jobs job = jobDao.findById(jobId)
-					.orElseThrow(() -> new RuntimeException("Job Not Found"));
-		PostJobResponse response = mapper.map(job, PostJobResponse.class);
-		response.setMessage("Job Fetched Successfully");
-		return response;
+		if (!"RECRUITER".equalsIgnoreCase(role)) {
+	        throw new RuntimeException("Only recruiter can view this job");
+	    }
+
+	    Jobs job = jobDao.findById(jobId)
+	            .orElseThrow(() -> new RuntimeException("Job not found"));
+
+	    if (!job.getRecruiterId().equals(recruiterId)) {
+	        throw new RuntimeException("You are not allowed to view this job");
+	    }
+	    
+	    JobResponse response = mapper.map(job, JobResponse.class);
+	    response.setMessage("Job details");
+
+	    return response;
 	}
 	
-	public PostJobResponse closeJob(Long jobId, Long recruiterId, String userRole) {
+	public JobResponse closeJob(Long jobId, Long recruiterId, String userRole) {
 		
-		if(!"RECRUITER".equals(userRole)) {
-			throw new RuntimeException("Only recruiter can Edit Job");
+		if(!"RECRUITER".equalsIgnoreCase(userRole)) {
+			throw new RuntimeException("Only recruiter can Close Job");
 		}
 		
 		Jobs job = jobDao.findById(jobId)
@@ -215,29 +278,34 @@ public class JobsServiceImpl implements JobsService{
 		
 		job.setStatus(JobStatus.CLOSED);
 		
-		PostJobResponse response = mapper.map(job, PostJobResponse.class);
+		JobResponse response = mapper.map(job, JobResponse.class);
 		response.setMessage("Job Closed succesfully");
 		return response;
+		
+		//I May need to call Application Service
 	}
 	
-	public PostJobResponse deleteJob(Long jobId, Long recruiterId, String userRole) {
-		
-		if(!"RECRUITER".equals(recruiterId))
-			throw new RuntimeException("Only recruiter can delete Job");
-		
-		Jobs job = jobDao.findById(recruiterId)
-					.orElseThrow(()-> new RuntimeException("Job not Found"));
-		
-		if(!job.getRecruiterId().equals(recruiterId))
-			throw new RuntimeException("You are Not Allowed to Delete this Job");
-		
-		job.setStatus(JobStatus.DELETED);
-		
-		PostJobResponse response = mapper.map(job, PostJobResponse.class);
-		response.setMessage("Job Delete Successfully");
-		
-		return response;
-	}
+	@Override
+	public void deleteJob(Long jobId, Long recruiterId, String role) {
+
+	    if (!"RECRUITER".equalsIgnoreCase(role)) {
+	        throw new RuntimeException("Only recruiter can delete job");
+	    }
+
+	    Jobs job = jobDao.findById(jobId)
+	            .orElseThrow(() -> new RuntimeException("Job not found"));
+
+	    if (!job.getRecruiterId().equals(recruiterId)) {
+	        throw new RuntimeException("You are not allowed to delete this job");
+	    }
+
+	    job.setStatus(JobStatus.DELETED);
+
+	    jobDao.save(job);
+
+	    applicationServiceClient.markApplicationsJobDeleted(jobId);	
+	    
+	    }
 	
 	//INTERNAL APIS
 	public JobInternalResponse getJobInternalDetails(Long jobId) {
