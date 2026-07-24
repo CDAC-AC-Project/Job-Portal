@@ -11,7 +11,7 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class PostJobResponse {
+public class JobResponse {
 	
 	private String title;
 	
@@ -32,14 +32,6 @@ public class PostJobResponse {
     private LocalDate expirationDate;
 
     private LocalDateTime createdAt;
-
-    private Long companyId;
-
-    private String companyName;
-
-    private String companyLogoUrl;
-
-    private String companyIndustry;
 
     private String message;
 }
