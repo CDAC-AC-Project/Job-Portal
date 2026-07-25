@@ -96,9 +96,6 @@ public class Jobs extends BaseEntity {
     @Column(name = "is_highlighted")
     private Boolean highlighted = false;
 
-    @Column(name = "views_count")
-    private Long viewsCount = 0L;
-
     @ElementCollection
     @CollectionTable(
             name = "job_benefits",
