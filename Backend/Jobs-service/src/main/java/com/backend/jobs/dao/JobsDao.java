@@ -6,54 +6,88 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.backend.jobs.entities.JobStatus;
-import com.backend.jobs.entities.JobType;
-import com.backend.jobs.entities.Jobs;
+import com.backend.jobs.dtos.JobCardResponse;
+import com.backend.jobs.dtos.RecruiterJobListResp;
+import com.backend.jobs.entities.*;
 
 import java.time.LocalDate;
 import java.util.*;
 
 public interface JobsDao extends JpaRepository<Jobs, Long>{
 	
-	List<Jobs> findByRecruiterIdOrderByCreatedAtDesc(Long recruiterId);
-	List<Jobs>findByRecruiterIdAndStatusOrderByCreatedAtDesc(Long recruiterId, JobStatus status);
-
+	//Candidate
+	@Query("""
+		    SELECT new com.backend.jobs.dtos.JobCardResponse(
+		        j.id,
+		        j.title,
+		        j.minSalary,
+		        j.maxSalary,
+		        j.city,
+		        j.country,
+		        j.remote,
+		        j.jobType,
+		        j.companyName,
+		        j.companyLogoUrl
+		    )
+		    FROM Jobs j
+		    WHERE j.status = :status
+		    AND (j.expirationDate IS NULL OR j.expirationDate >= :today)
+		    ORDER BY j.createdAt DESC, j.id DESC
+		""")
+		List<JobCardResponse> findCandidateHomeJobs(
+		        @Param("status") JobStatus status,
+		        @Param("today") LocalDate today,
+		        Pageable pageable
+		);
+	
+	
 	@Query(
-		    value = """
-		        SELECT j
-		        FROM Jobs j
-		        WHERE j.status = :status
-		        AND (j.expirationDate IS NULL OR j.expirationDate >= :today)
-		        AND (
-		            :keyword IS NULL
-		            OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
-		            OR LOWER(j.jobRole) LIKE LOWER(CONCAT('%', :keyword, '%'))
-		            OR LOWER(j.tags) LIKE LOWER(CONCAT('%', :keyword, '%'))
-		            OR LOWER(j.companyName) LIKE LOWER(CONCAT('%', :keyword, '%'))
-		        )
-		        AND (:city IS NULL OR LOWER(j.city) = LOWER(:city))
-		        AND (:country IS NULL OR LOWER(j.country) = LOWER(:country))
-		        AND (:jobType IS NULL OR j.jobType = :jobType)
-		        ORDER BY j.createdAt DESC, j.id DESC
-		    """,
-		    countQuery = """
-		        SELECT COUNT(j)
-		        FROM Jobs j
-		        WHERE j.status = :status
-		        AND (j.expirationDate IS NULL OR j.expirationDate >= :today)
-		        AND (
-		            :keyword IS NULL
-		            OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
-		            OR LOWER(j.jobRole) LIKE LOWER(CONCAT('%', :keyword, '%'))
-		            OR LOWER(j.tags) LIKE LOWER(CONCAT('%', :keyword, '%'))
-		            OR LOWER(j.companyName) LIKE LOWER(CONCAT('%', :keyword, '%'))
-		        )
-		        AND (:city IS NULL OR LOWER(j.city) = LOWER(:city))
-		        AND (:country IS NULL OR LOWER(j.country) = LOWER(:country))
-		        AND (:jobType IS NULL OR j.jobType = :jobType)
-		    """
-		)
-	Page<Jobs> searchJobs(
+	        value = """
+	            SELECT new com.backend.jobs.dtos.JobCardResponse(
+	                j.id,
+	                j.title,
+	                j.minSalary,
+	                j.maxSalary,
+	                j.city,
+	                j.country,
+	                j.remote,
+	                j.jobType,
+	                j.companyName,
+	                j.companyLogoUrl
+	            )
+	            FROM Jobs j
+	            WHERE j.status = :status
+	            AND (j.expirationDate IS NULL OR j.expirationDate >= :today)
+	            AND (
+	                :keyword IS NULL
+	                OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+	                OR LOWER(j.jobRole) LIKE LOWER(CONCAT('%', :keyword, '%'))
+	                OR LOWER(j.tags) LIKE LOWER(CONCAT('%', :keyword, '%'))
+	                OR LOWER(j.companyName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+	            )
+	            AND (:city IS NULL OR LOWER(j.city) = LOWER(:city))
+	            AND (:country IS NULL OR LOWER(j.country) = LOWER(:country))
+	            AND (:jobType IS NULL OR j.jobType = :jobType)
+	            ORDER BY j.createdAt DESC, j.id DESC
+	        """,
+	        countQuery = """
+	            SELECT COUNT(j)
+	            FROM Jobs j
+	            WHERE j.status = :status
+	            AND (j.expirationDate IS NULL OR j.expirationDate >= :today)
+	            AND (
+	                :keyword IS NULL
+	                OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+	                OR LOWER(j.jobRole) LIKE LOWER(CONCAT('%', :keyword, '%'))
+	                OR LOWER(j.tags) LIKE LOWER(CONCAT('%', :keyword, '%'))
+	                OR LOWER(j.companyName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+	            )
+	            AND (:city IS NULL OR LOWER(j.city) = LOWER(:city))
+	            AND (:country IS NULL OR LOWER(j.country) = LOWER(:country))
+	            AND (:jobType IS NULL OR j.jobType = :jobType)
+	        """
+	)
+	Page<JobCardResponse> searchJobs(
 	        @Param("keyword") String keyword,
 	        @Param("city") String city,
 	        @Param("country") String country,
@@ -62,17 +96,24 @@ public interface JobsDao extends JpaRepository<Jobs, Long>{
 	        @Param("today") LocalDate today,
 	        Pageable pageable
 	);
-	
+
 	@Query("""
-		    SELECT j
+		    SELECT new com.backend.jobs.dtos.RecruiterJobListResp(
+		        j.id,
+		        j.title,
+		        j.jobType,
+		        j.status,
+		        j.expirationDate
+		    )
 		    FROM Jobs j
-		    WHERE j.status = :status
-		    AND (j.expirationDate IS NULL OR j.expirationDate >= :today)
-		    ORDER BY j.createdAt DESC
+		    WHERE j.recruiterId = :recruiterId
+		    AND (:status IS NULL OR j.status = :status)
+		    ORDER BY j.createdAt DESC, j.id DESC
 		""")
-	    List<Jobs> findCandidateHomeJobs(
-	            @Param("status") JobStatus status,
-	            @Param("today") LocalDate today,
-	            Pageable pageable
-	    );
+		List<RecruiterJobListResp> findRecruiterJobList(
+		        @Param("recruiterId") Long recruiterId,
+		        @Param("status") JobStatus status
+		);
+
+	
 }

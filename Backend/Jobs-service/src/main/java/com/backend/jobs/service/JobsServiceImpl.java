@@ -55,7 +55,7 @@ public class JobsServiceImpl implements JobsService{
 
 	     PageRequest pageRequest = PageRequest.of(pageNumber, pageSize);
 
-	     Page<Jobs> jobsPage = jobDao.searchJobs(
+	     Page<JobCardResponse> jobsPage = jobDao.searchJobs(
 	             keyword,
 	             city,
 	             country,
@@ -65,13 +65,8 @@ public class JobsServiceImpl implements JobsService{
 	             pageRequest
 	     );
 
-	     List<JobCardResponse> jobCards = jobsPage.getContent()
-	             .stream()
-	             .map(job -> mapper.map(job, JobCardResponse.class))
-	             .toList();
-
 	     return new PageResponse<>(
-	             jobCards,
+	             jobsPage.getContent(),
 	             jobsPage.getNumber(),
 	             jobsPage.getSize(),
 	             jobsPage.getTotalElements(),
@@ -91,21 +86,12 @@ public class JobsServiceImpl implements JobsService{
 	 
 	public List<JobCardResponse> getCandidateHomeJobs(){
 			 
-		 List<Jobs> jobs = jobDao.findCandidateHomeJobs(
+		 return jobDao.findCandidateHomeJobs(
 		            JobStatus.ACTIVE,
 		            LocalDate.now(),
 		            PageRequest.of(0, HOME_JOBS_LIMIT)
 		    );
-		
-		    return jobs.stream()
-		            .map(this::mapToCandidateHomeJobResponse)
-		            .toList();
 	 }
-	 
-	 private JobCardResponse mapToCandidateHomeJobResponse(Jobs job) {
-
-		    return mapper.map(job, JobCardResponse.class);
-		}
 	 
 	 @Override
 	 public JobDetailsResponseDto getCandidateJobDetails(Long jobId) {
@@ -123,14 +109,14 @@ public class JobsServiceImpl implements JobsService{
 	     }
 
 	     JobDetailsResponseDto response = mapper.map(job, JobDetailsResponseDto.class);
-
+	     response.setBenefits(job.getBenefits());
 	     return response;
 	 }
 	
 	
 	 
 	 //RECRUITER APIS
-	 //PostJOb API - When recruiter post, it store that data from database along with company details snapshot by calling profile service API
+	 //PostJob API - When recruiter post, it store that data from database along with company details snapshot by calling profile service API
 	 @Override
 	 public JobResponse postJob(Long recruiterId, String role, CreateJobDto dto) {
 
@@ -169,8 +155,6 @@ public class JobsServiceImpl implements JobsService{
 	     job.setStatus(JobStatus.ACTIVE);
 	     job.setFeatured(false);
 	     job.setHighlighted(false);
-	     job.setViewsCount(0L);
-
 	     if (job.getRemote() == null) {
 	         job.setRemote(false);
 	     }
@@ -188,18 +172,17 @@ public class JobsServiceImpl implements JobsService{
 	 }
 	
 	 @Override
-	 public List<RecruiterJobListResp> getMyJobs(Long recruiterId, JobStatus status, String role) {
+	 public List<RecruiterJobListResp> getMyJobs(
+	         Long recruiterId,
+	         JobStatus status,
+	         String role
+	 ) {
 	     if (!"RECRUITER".equalsIgnoreCase(role)) {
 	         throw new RuntimeException("Only recruiter can view jobs");
 	     }
 
-	     List<Jobs> jobs;
-	     	
-	     if(status!=null)
-	         jobs = jobDao.findByRecruiterIdAndStatusOrderByCreatedAtDesc(recruiterId, status);
-	     else
-	    	 jobs = jobDao.findByRecruiterIdOrderByCreatedAtDesc(recruiterId);
-	    
+	     List<RecruiterJobListResp> jobs =
+	             jobDao.findRecruiterJobList(recruiterId, status);
 
 	     List<Long> jobIds = jobs.stream()
 	             .map(job -> job.getId())
@@ -220,18 +203,14 @@ public class JobsServiceImpl implements JobsService{
 
 	     Map<Long, Long> finalCountMap = countMap;
 
-	     return jobs.stream()
-	             .map(job -> {
-	                 RecruiterJobListResp response =
-	                         mapper.map(job, RecruiterJobListResp.class);
+	     jobs.forEach(job -> {
+	         Long applicationCount =
+	                 finalCountMap.getOrDefault(job.getId(), 0L);
 
-	                 response.setApplicationCount(
-	                         finalCountMap.getOrDefault(job.getId(), 0L)
-	                 );
+	         job.setApplicationCount(applicationCount);
+	     });
 
-	                 return response;
-	             })
-	             .toList();
+	     return jobs;
 	 }
 	
 	 //Incomplete
