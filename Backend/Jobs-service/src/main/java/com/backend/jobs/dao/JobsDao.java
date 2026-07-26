@@ -1,5 +1,8 @@
 package com.backend.jobs.dao;
 
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,8 +13,19 @@ import com.backend.jobs.dtos.JobCardResponse;
 import com.backend.jobs.dtos.RecruiterJobListResp;
 import com.backend.jobs.entities.*;
 
-import java.time.LocalDate;
-import java.util.*;
+public interface JobsDao extends JpaRepository<Jobs, Long> {
+
+    List<Jobs> findByRecruiterIdOrderByCreatedAtDesc(Long recruiterId);
+
+    List<Jobs> findByRecruiterIdAndStatusOrderByCreatedAtDesc(
+            Long recruiterId,
+            JobStatus status
+    );
+
+    long countByRecruiterIdAndStatus(
+            Long recruiterId,
+            JobStatus status
+    );
 
 public interface JobsDao extends JpaRepository<Jobs, Long>{
 	

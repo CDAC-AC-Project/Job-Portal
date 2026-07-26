@@ -1,34 +1,92 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiTrendingUp } from "react-icons/fi";
 
 import RecentlyPostedJobsTable from "../../components/recruiter/RecentlyPostedJobsTable";
 import RecruiterStatCard from "../../components/recruiter/RecruiterStatCard";
 
-import { recruiterStats, recentlyPostedJobs } from "../../data/recruiterDashboardData";
+import {
+  getRecruiterStats,
+  recentlyPostedJobs,
+} from "../../data/recruiterDashboardData";
+
+import {
+  getRecruiterDashboardCounts,
+} from "../../services/recruiterDashboardService";
+
+const initialDashboardCounts = {
+  activeJobs: 0,
+  applications: 0,
+  shortlisted: 0,
+  hired: 0,
+};
 
 export default function RecruiterDashboard() {
   const navigate = useNavigate();
 
+  const [dashboardCounts, setDashboardCounts] =
+    useState(initialDashboardCounts);
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadDashboardCounts = async () => {
+      try {
+        setError("");
+
+        const response =
+          await getRecruiterDashboardCounts();
+
+        setDashboardCounts(response);
+      } catch (requestError) {
+        const errorMessage =
+          requestError.response?.data?.message ||
+          requestError.message ||
+          "Unable to load dashboard counts.";
+
+        setError(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDashboardCounts();
+  }, []);
+
+  const recruiterStats =
+    getRecruiterStats(dashboardCounts);
+
   return (
     <div>
-      <section className="mb-8 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 sm:px-8 py-8 text-white">
-        <p className="text-sm font-medium text-blue-100">Welcome back</p>
+      <section className="mb-8 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8 text-white sm:px-8">
+        <p className="text-sm font-medium text-blue-100">
+          Welcome back
+        </p>
 
-        <h1 className="mt-2 text-2xl sm:text-3xl font-bold">
-          Hello, Instagram
+        <h1 className="mt-2 text-2xl font-bold sm:text-3xl">
+          Recruiter Dashboard
         </h1>
 
         <p className="mt-2 text-blue-100">
-          Here is your daily recruitment activity and application summary.
+          Here is your daily recruitment activity and
+          application summary.
         </p>
       </section>
 
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+      {error && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <section className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {recruiterStats.map((stat) => (
           <RecruiterStatCard
             key={stat.id}
             title={stat.title}
-            value={stat.value}
+            value={isLoading ? "..." : stat.value}
             icon={stat.icon}
             bg={stat.bg}
             iconBg={stat.iconBg}
@@ -36,29 +94,34 @@ export default function RecruiterDashboard() {
         ))}
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-5 sm:px-6 py-5 border-b border-gray-100">
+      <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-5 sm:px-6">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
               Recently Posted Jobs
             </h2>
 
             <p className="text-sm text-gray-500">
-              Track your latest job postings and applications.
+              Track your latest job postings and
+              applications.
             </p>
           </div>
 
           <button
             type="button"
-            onClick={() => navigate("/recruiter/my-jobs")}
-            className="hidden sm:inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
+            onClick={() =>
+              navigate("/recruiter/my-jobs")
+            }
+            className="hidden items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 sm:inline-flex"
           >
             View all
             <FiTrendingUp />
           </button>
         </div>
 
-        <RecentlyPostedJobsTable jobs={recentlyPostedJobs} />
+        <RecentlyPostedJobsTable
+          jobs={recentlyPostedJobs}
+        />
       </section>
     </div>
   );
