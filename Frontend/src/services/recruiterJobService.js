@@ -1,4 +1,9 @@
+import axios from "axios";
+
 const STORAGE_KEY = "recruiterJobs";
+
+const RECRUITER_JOBS_API_URL =
+  "http://localhost:8083/recruiter/jobs";
 
 const defaultJobs = [
   {
@@ -35,11 +40,72 @@ const defaultJobs = [
   },
 ];
 
+const formatJobType = (jobType) => {
+  if (!jobType) {
+    return "Not specified";
+  }
+
+  return jobType
+    .toLowerCase()
+    .split("_")
+    .map(
+      (word) =>
+        word.charAt(0).toUpperCase() + word.slice(1)
+    )
+    .join(" ");
+};
+
+const formatJobStatus = (status) => {
+  if (status === "ACTIVE") {
+    return "Active";
+  }
+
+  return "Expire";
+};
+
+export const fetchRecruiterJobs = async () => {
+  const recruiterId = localStorage.getItem("userId");
+  const role = localStorage.getItem("role");
+  const token = localStorage.getItem("token");
+
+  if (!recruiterId || !role) {
+    throw new Error(
+      "Recruiter login details were not found. Please sign in again."
+    );
+  }
+
+  const response = await axios.get(
+    RECRUITER_JOBS_API_URL,
+    {
+      headers: {
+        "X-User-Id": recruiterId,
+        "X-User-Role": role,
+        ...(token && {
+          Authorization: `Bearer ${token}`,
+        }),
+      },
+    }
+  );
+
+  return response.data.map((job) => ({
+    id: job.id,
+    jobTitle: job.title,
+    jobType: formatJobType(job.jobType),
+    expirationDate: job.expirationDate,
+    status: formatJobStatus(job.status),
+    applications: job.applicationCount ?? 0,
+  }));
+};
+
 export const getRecruiterJobs = () => {
   const savedJobs = localStorage.getItem(STORAGE_KEY);
 
   if (!savedJobs) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultJobs));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(defaultJobs)
+    );
+
     return defaultJobs;
   }
 
@@ -53,7 +119,8 @@ export const saveRecruiterJob = (jobData) => {
     id: Date.now(),
     jobTitle: jobData.jobTitle,
     jobType: jobData.jobType,
-    expirationDate: jobData.expirationDate || "4 days remaining",
+    expirationDate:
+      jobData.expirationDate || "4 days remaining",
     status: "Active",
     applications: 0,
     createdAt: new Date().toISOString(),
@@ -62,19 +129,33 @@ export const saveRecruiterJob = (jobData) => {
 
   const updatedJobs = [newJob, ...jobs];
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedJobs));
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(updatedJobs)
+  );
 
   return newJob;
 };
 
-export const updateRecruiterJobStatus = (jobId, status) => {
+export const updateRecruiterJobStatus = (
+  jobId,
+  status
+) => {
   const jobs = getRecruiterJobs();
 
   const updatedJobs = jobs.map((job) =>
-    job.id === jobId ? { ...job, status } : job
+    job.id === jobId
+      ? {
+          ...job,
+          status,
+        }
+      : job
   );
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedJobs));
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(updatedJobs)
+  );
 
   return updatedJobs;
 };
@@ -82,10 +163,15 @@ export const updateRecruiterJobStatus = (jobId, status) => {
 export const getRecruiterJobById = (jobId) => {
   const jobs = getRecruiterJobs();
 
-  return jobs.find((job) => String(job.id) === String(jobId));
+  return jobs.find(
+    (job) => String(job.id) === String(jobId)
+  );
 };
 
-export const updateRecruiterJob = (jobId, updatedJobData) => {
+export const updateRecruiterJob = (
+  jobId,
+  updatedJobData
+) => {
   const jobs = getRecruiterJobs();
 
   const updatedJobs = jobs.map((job) =>
@@ -100,7 +186,12 @@ export const updateRecruiterJob = (jobId, updatedJobData) => {
       : job
   );
 
-  localStorage.setItem("recruiterJobs", JSON.stringify(updatedJobs));
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(updatedJobs)
+  );
 
-  return updatedJobs.find((job) => String(job.id) === String(jobId));
+  return updatedJobs.find(
+    (job) => String(job.id) === String(jobId)
+  );
 };
