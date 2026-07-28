@@ -93,7 +93,7 @@ public class JobsController {
 	
 	@GetMapping("/recruiter/{jobId}")
 	public ResponseEntity<?> getJobsById(@PathVariable Long jobId, @RequestHeader("X-User-Id") Long recruiterId, @RequestHeader("X-User-Role") String role){
-		
+		  
 		return ResponseEntity.ok(jobService.getJobById(jobId, recruiterId, role));
 	}
 	
