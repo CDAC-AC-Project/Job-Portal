@@ -43,7 +43,6 @@ const defaultJobs = [
 const recruiterJobStatuses = [
   "ACTIVE",
   "CLOSED",
-  "DELETED",
 ];
 
 const formatJobType = (jobType) => {
