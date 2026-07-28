@@ -7,44 +7,51 @@ import RecruiterStatCard from "../../components/recruiter/RecruiterStatCard";
 
 import {
   getRecruiterStats,
-  recentlyPostedJobs,
 } from "../../data/recruiterDashboardData";
 
 import {
   getRecruiterDashboardCounts,
 } from "../../services/recruiterDashboardService";
 
-const initialDashboardCounts = {
+const initialDashboardData = {
   activeJobs: 0,
   applications: 0,
   shortlisted: 0,
   hired: 0,
+  recentlyPostedJobs: [],
 };
 
 export default function RecruiterDashboard() {
   const navigate = useNavigate();
 
-  const [dashboardCounts, setDashboardCounts] =
-    useState(initialDashboardCounts);
+  const [dashboardData, setDashboardData] =
+    useState(initialDashboardData);
 
   const [isLoading, setIsLoading] = useState(true);
 
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const loadDashboardCounts = async () => {
+    const loadDashboard = async () => {
       try {
         setError("");
 
         const response =
           await getRecruiterDashboardCounts();
 
-        setDashboardCounts(response);
+        setDashboardData({
+          activeJobs: response.activeJobs ?? 0,
+          applications: response.applications ?? 0,
+          shortlisted: response.shortlisted ?? 0,
+          hired: response.hired ?? 0,
+          recentlyPostedJobs:
+            response.recentlyPostedJobs ?? [],
+        });
       } catch (requestError) {
         const errorMessage =
           requestError.response?.data?.message ||
           requestError.message ||
-          "Unable to load dashboard counts.";
+          "Unable to load recruiter dashboard.";
 
         setError(errorMessage);
       } finally {
@@ -52,11 +59,11 @@ export default function RecruiterDashboard() {
       }
     };
 
-    loadDashboardCounts();
+    loadDashboard();
   }, []);
 
   const recruiterStats =
-    getRecruiterStats(dashboardCounts);
+    getRecruiterStats(dashboardData);
 
   return (
     <div>
@@ -119,9 +126,15 @@ export default function RecruiterDashboard() {
           </button>
         </div>
 
-        <RecentlyPostedJobsTable
-          jobs={recentlyPostedJobs}
-        />
+        {isLoading ? (
+          <div className="px-6 py-12 text-center text-sm text-gray-500">
+            Loading recently posted jobs...
+          </div>
+        ) : (
+          <RecentlyPostedJobsTable
+            jobs={dashboardData.recentlyPostedJobs}
+          />
+        )}
       </section>
     </div>
   );
