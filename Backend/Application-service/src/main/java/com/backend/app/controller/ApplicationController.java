@@ -3,6 +3,7 @@ package com.backend.app.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -44,5 +45,13 @@ public class ApplicationController {
     	return ResponseEntity.ok(applicationService.getApplication(applicationId));
     }
     
+    @PatchMapping("/{applicationId}/withdraw")
+    public ResponseEntity<?> withdrawApplication(
+            @PathVariable Long applicationId,
+            @RequestHeader Long candidateId) {
+
+        return ResponseEntity.ok(
+                applicationService.withdrawApplication(applicationId, candidateId));
+    }
     
 }
