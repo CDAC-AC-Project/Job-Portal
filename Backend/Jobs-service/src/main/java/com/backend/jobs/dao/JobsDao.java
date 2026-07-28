@@ -27,8 +27,10 @@ public interface JobsDao extends JpaRepository<Jobs, Long> {
             JobStatus status
     );
 
-public interface JobsDao extends JpaRepository<Jobs, Long>{
-	
+    List<Jobs> findTop5ByRecruiterIdOrderByCreatedAtDesc(
+            Long recruiterId
+    );
+    
 	//Candidate
 	@Query("""
 		    SELECT new com.backend.jobs.dtos.JobCardResponse(
