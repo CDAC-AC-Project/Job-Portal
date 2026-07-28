@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   FiSearch,
   FiMapPin,
@@ -6,6 +7,7 @@ import {
   FiTarget,
   FiArrowLeft,
   FiArrowRight,
+  FiXCircle,
 } from "react-icons/fi";
 import JobCard from "../../components/candidate/JobCard";
 import { jobs } from "../../data/jobs";
@@ -24,13 +26,26 @@ const popularSearches = [
 ];
 
 export default function FindJob() {
-  const [keyword, setKeyword] = useState("");
-  const [location, setLocation] = useState("");
-  const [jobType, setJobType] = useState("ALL");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [keyword, setKeyword] = useState(searchParams.get("keyword") || "");
+  const [location, setLocation] = useState(searchParams.get("location") || "");
+  const [jobType, setJobType] = useState(searchParams.get("type") || "ALL");
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   const jobsPerPage = 15;
+
+  // Keep the URL in sync so this page can be linked/shared, and so the hero
+  // search (which just redirects here with ?keyword=&location=) actually works.
+  useEffect(() => {
+    const params = {};
+    if (keyword) params.keyword = keyword;
+    if (location) params.location = location;
+    if (jobType !== "ALL") params.type = jobType;
+    setSearchParams(params, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyword, location, jobType]);
 
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
@@ -68,19 +83,18 @@ export default function FindJob() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const hasActiveFilters = Boolean(keyword) || Boolean(location) || jobType !== "ALL";
+
+  const handleClearFilters = () => {
+    setKeyword("");
+    setLocation("");
+    setJobType("ALL");
+    setCurrentPage(1);
+  };
+
   return (
     <div className="bg-white">
-      {/* Page Title Strip */}
-      <section className="bg-gray-100 border-y border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">Find Job</h1>
-
-          <p className="text-sm text-gray-500">
-            Home / <span className="text-gray-900">Find job</span>
-          </p>
-        </div>
-      </section>
-
+      
       {/* Search Section */}
       <section className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-3 flex flex-col lg:flex-row gap-3">
@@ -171,8 +185,25 @@ export default function FindJob() {
           ))}
         </div>
 
+        {/* Results summary */}
+        <div className="mt-6 flex items-center justify-between text-sm text-gray-500">
+          <p>
+            Showing <span className="font-semibold text-gray-900">{filteredJobs.length}</span>{" "}
+            {filteredJobs.length === 1 ? "job" : "jobs"}
+          </p>
+
+          {hasActiveFilters && (
+            <button
+              onClick={handleClearFilters}
+              className="flex items-center gap-1 font-medium text-blue-600 hover:text-blue-700"
+            >
+              <FiXCircle /> Clear filters
+            </button>
+          )}
+        </div>
+
         {/* Cards */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {paginatedJobs.length > 0 ? (
             paginatedJobs.map((job, index) => (
               <JobCard

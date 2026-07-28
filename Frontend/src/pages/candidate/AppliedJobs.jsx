@@ -1,8 +1,28 @@
+import { useEffect, useState } from "react";
+
 import CandidateSidebar from "../../components/candidate/CandidateSidebar";
-import AppliedJobTable from "../../components/candidate/AppliedJobTable";
-import { recentlyAppliedJobs } from "../../data/candidateDashboardData";
+import AppliedJobTable from "../../components/candidate/applications/AppliedJobTable";
+import Loader from "../../components/common/Loader";
+import { getAppliedJobs } from "../../services/jobApplicationService";
 
 export default function AppliedJobs() {
+  const [appliedJobs, setAppliedJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAppliedJobs = async () => {
+      try {
+        setLoading(true);
+        const data = await getAppliedJobs();
+        setAppliedJobs(data);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppliedJobs();
+  }, []);
+
   return (
     <div className="bg-white">
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row border-x border-gray-200">
@@ -18,7 +38,7 @@ export default function AppliedJobs() {
             </p>
           </div>
 
-          <AppliedJobTable jobs={recentlyAppliedJobs} />
+          {loading ? <Loader /> : <AppliedJobTable jobs={appliedJobs} />}
         </section>
       </div>
     </div>

@@ -1,193 +1,135 @@
 import { useState } from "react";
-import {
-  FiPlusCircle,
-  FiXCircle,
-  FiFacebook,
-  FiTwitter,
-  FiInstagram,
-  FiYoutube,
-  FiGlobe,
-} from "react-icons/fi";
+import { FiPlus, FiTrash2, FiGithub, FiLinkedin, FiGlobe, FiTwitter, FiArrowRight, FiLink } from "react-icons/fi";
 
-import { validateSocialLinks } from "../../../utils/candidateSettingsValidation";
-import { updateCandidateSocialLinks } from "../../../services/candidateSettingsService";
+import SocialLinkModal from "./SocialLinkModal";
+import { addSocialLink, deleteSocialLink } from "../../../services/candidateSettingsService";
 
 const socialPlatforms = [
-  {
-    name: "Facebook",
-    icon: FiFacebook,
-  },
-  {
-    name: "Twitter",
-    icon: FiTwitter,
-  },
-  {
-    name: "Instagram",
-    icon: FiInstagram,
-  },
-  {
-    name: "Youtube",
-    icon: FiYoutube,
-  },
-  {
-    name: "LinkedIn",
-    icon: FiGlobe,
-  },
-  {
-    name: "Portfolio",
-    icon: FiGlobe,
-  },
+  { label: "LinkedIn", value: "LINKEDIN", icon: FiLinkedin },
+  { label: "GitHub", value: "GITHUB", icon: FiGithub },
+  { label: "Portfolio", value: "PORTFOLIO", icon: FiGlobe },
+  { label: "Twitter", value: "TWITTER", icon: FiTwitter },
 ];
 
 export default function SocialLinksSettings({
-  socialLinks,
+  candidateProfileId,
+  socialLinks = [],
   setSocialLinks,
+  onNext,
 }) {
-  const [errors, setErrors] = useState({});
-  const [saving, setSaving] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [sectionError, setSectionError] = useState("");
 
-  const handleChange = (id, field, value) => {
-    const updatedLinks = socialLinks.map((link) =>
-      link.id === id ? { ...link, [field]: value } : link
-    );
-
-    setSocialLinks(updatedLinks);
-
-    setErrors({
-      ...errors,
-      [`${field}_${id}`]: "",
-    });
+  const getPlatformMeta = (platformValue) => {
+    return socialPlatforms.find((item) => item.value === platformValue);
   };
 
-  const handleAddSocialLink = () => {
-    const newLink = {
-      id: Date.now(),
-      platform: "Facebook",
-      url: "",
-    };
-
-    setSocialLinks([...socialLinks, newLink]);
+  const handleAddSocialLink = async (form) => {
+    const created = await addSocialLink(candidateProfileId, form);
+    setSocialLinks?.([...socialLinks, created]);
+    setSectionError("");
   };
 
-  const handleRemoveSocialLink = (id) => {
-    if (socialLinks.length === 1) {
-      alert("At least one social link is required");
-      return;
-    }
-
-    setSocialLinks(socialLinks.filter((link) => link.id !== id));
-  };
-
-  const handleSaveChanges = async (e) => {
-    e.preventDefault();
-
-    const validationErrors = validateSocialLinks(socialLinks);
-
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
+  const handleDeleteSocialLink = async (link) => {
+    if (!window.confirm("Are you sure you want to remove this social link?")) return;
 
     try {
-      setSaving(true);
-      await updateCandidateSocialLinks(socialLinks);
-      alert("Social links updated successfully");
+      setDeletingId(link.id);
+      await deleteSocialLink(candidateProfileId, link.id);
+      setSocialLinks?.(socialLinks.filter((item) => item.id !== link.id));
     } catch (error) {
       console.error(error);
-      alert("Failed to update social links");
+      setSectionError("Failed to remove social link");
     } finally {
-      setSaving(false);
+      setDeletingId(null);
     }
-  };
-
-  const getPlatformIcon = (platformName) => {
-    const platform = socialPlatforms.find((item) => item.name === platformName);
-    return platform ? platform.icon : FiGlobe;
   };
 
   return (
-    <form onSubmit={handleSaveChanges} className="max-w-4xl">
-      <div className="space-y-5">
-        {socialLinks.map((link, index) => {
-          const Icon = getPlatformIcon(link.platform);
-
-          return (
-            <div key={link.id}>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Social Link {index + 1}
-              </label>
-
-              <div className="flex flex-col md:flex-row gap-3">
-                <div className="md:w-56 border border-gray-300 rounded-md flex items-center">
-                  <div className="px-4 text-blue-600">
-                    <Icon />
-                  </div>
-
-                  <select
-                    value={link.platform}
-                    onChange={(e) =>
-                      handleChange(link.id, "platform", e.target.value)
-                    }
-                    className="w-full py-3 pr-4 text-sm bg-white outline-none"
-                  >
-                    {socialPlatforms.map((platform) => (
-                      <option key={platform.name} value={platform.name}>
-                        {platform.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <input
-                  type="text"
-                  value={link.url}
-                  onChange={(e) =>
-                    handleChange(link.id, "url", e.target.value)
-                  }
-                  placeholder="Profile link/url..."
-                  className={`flex-1 border rounded-md px-4 py-3 text-sm outline-none focus:ring-2 ${
-                    errors[`url_${link.id}`]
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:ring-blue-500"
-                  }`}
-                />
-
-                <button
-                  type="button"
-                  onClick={() => handleRemoveSocialLink(link.id)}
-                  className="md:w-12 h-12 rounded-md bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-red-50 hover:text-red-500"
-                >
-                  <FiXCircle />
-                </button>
-              </div>
-
-              {(errors[`platform_${link.id}`] ||
-                errors[`url_${link.id}`]) && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors[`platform_${link.id}`] || errors[`url_${link.id}`]}
-                </p>
-              )}
+    <div className="space-y-6">
+      <section className="max-w-5xl rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-md bg-blue-100 p-2 text-blue-600">
+              <FiLink className="text-xl" />
             </div>
-          );
-        })}
+            <h2 className="text-lg font-semibold text-gray-900">Social Links</h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-50 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-100"
+          >
+            <FiPlus /> Add Social Link
+          </button>
+        </div>
+
+        {sectionError && (
+          <p className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-600">{sectionError}</p>
+        )}
+
+        {socialLinks.length > 0 ? (
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+            {socialLinks.map((link) => {
+              const meta = getPlatformMeta(link.platform);
+              const Icon = meta?.icon || FiGlobe;
+
+              return (
+                <div
+                  key={link.id}
+                  className="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 p-3"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-600">
+                      <Icon />
+                    </span>
+                    <div className="min-w-0">
+                      <h4 className="text-sm font-semibold text-gray-900">{meta?.label || link.platform}</h4>
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block truncate text-xs text-gray-500 hover:text-blue-600"
+                      >
+                        {link.url}
+                      </a>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteSocialLink(link)}
+                    disabled={deletingId === link.id}
+                    className="rounded p-1 text-red-500 hover:bg-red-50 disabled:opacity-50"
+                    aria-label="Remove social link"
+                  >
+                    <FiTrash2 />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-gray-500">No social links added yet.</p>
+        )}
+      </section>
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => onNext?.("account")}
+          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-8 py-3 font-semibold text-white hover:bg-blue-700"
+        >
+          Next <FiArrowRight />
+        </button>
       </div>
 
-      <button
-        type="button"
-        onClick={handleAddSocialLink}
-        className="w-full mt-5 bg-gray-100 text-gray-700 py-3 rounded-md text-sm font-medium flex items-center justify-center gap-2 hover:bg-blue-50 hover:text-blue-600"
-      >
-        <FiPlusCircle />
-        Add New Social Link
-      </button>
-
-      <button
-        type="submit"
-        disabled={saving}
-        className="mt-8 bg-blue-600 text-white px-8 py-3 rounded-md font-semibold hover:bg-blue-700 disabled:bg-blue-300"
-      >
-        {saving ? "Saving..." : "Save Changes"}
-      </button>
-    </form>
+      <SocialLinkModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleAddSocialLink}
+        existingLinks={socialLinks}
+      />
+    </div>
   );
 }

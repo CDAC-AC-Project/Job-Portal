@@ -1,46 +1,44 @@
-import { FiUser, FiGlobe, FiSettings, FiLink } from "react-icons/fi";
+import { FiUser, FiFileText, FiLink, FiSettings } from "react-icons/fi";
 
 const tabs = [
-  {
-    id: "personal",
-    label: "Personal",
-    icon: FiUser,
-  },
-  {
-    id: "profile",
-    label: "Profile",
-    icon: FiGlobe,
-  },
-  {
-    id: "social",
-    label: "Social Links",
-    icon: FiLink,
-  },
-  {
-    id: "account",
-    label: "Account Setting",
-    icon: FiSettings,
-  },
+  { id: "personal", label: "Personal", icon: FiUser },
+  { id: "profile", label: "Profile Details", icon: FiFileText },
+  { id: "social", label: "Social Links", icon: FiLink },
+  { id: "account", label: "Account Settings", icon: FiSettings },
 ];
 
-export default function SettingsTabs({ activeTab, setActiveTab }) {
+export default function SettingsTabs({ activeTab, setActiveTab, completedTabs = [] }) {
   return (
-    <div className="border-b border-gray-200 mb-6 overflow-x-auto">
-      <div className="flex items-center gap-6 min-w-max">
-        {tabs.map((tab) => {
+    <div className="mb-6 border-b border-gray-200 overflow-x-auto">
+      <div className="flex min-w-max items-center gap-2 sm:gap-4">
+        {tabs.map((tab, index) => {
           const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          const isCompleted = completedTabs.includes(tab.id);
 
           return (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 pb-3 text-sm font-medium border-b-2 transition ${
-                activeTab === tab.id
-                  ? "text-blue-600 border-blue-600"
-                  : "text-gray-500 border-transparent hover:text-blue-600"
+              className={`relative flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-4 text-sm font-medium transition ${
+                isActive
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-500 hover:border-blue-200 hover:text-blue-600"
               }`}
             >
-              <Icon />
+              <span
+                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs ${
+                  isActive
+                    ? "bg-blue-600 text-white"
+                    : isCompleted
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                {isCompleted && !isActive ? "✓" : index + 1}
+              </span>
+              <Icon className="text-base" />
               {tab.label}
             </button>
           );

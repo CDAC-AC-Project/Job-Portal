@@ -1,12 +1,35 @@
+import { useState } from "react";
 import {
   FiMapPin,
   FiDollarSign,
   FiCalendar,
   FiBookmark,
   FiArrowRight,
+  FiCheckCircle,
 } from "react-icons/fi";
 
+import ApplyJobModal from "./ApplyJobModal";
+import { toggleJobAlertSaved } from "../../services/jobAlertService";
+import { hasAppliedToJob } from "../../services/jobApplicationService";
+
+// Job alerts are a separate mock catalog from the real job listings (data/jobs.js) and
+// their numeric ids just happen to overlap — namespace them so "applied" state doesn't
+// collide with an unrelated real job that shares the same id.
+function alertApplicationId(alertId) {
+  return `alert-${alertId}`;
+}
+
 export default function JobAlertRow({ job }) {
+  const [saved, setSaved] = useState(job.saved);
+  const [applied, setApplied] = useState(() => hasAppliedToJob(alertApplicationId(job.id)));
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+
+  const handleToggleSave = () => {
+    setSaved(toggleJobAlertSaved(job.id));
+  };
+
+  const applyJob = { ...job, id: alertApplicationId(job.id) };
+
   return (
     <div
       className={`flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-4 sm:px-5 py-4 border-b border-gray-200 transition ${
@@ -16,7 +39,6 @@ export default function JobAlertRow({ job }) {
       }`}
     >
       <div className="flex items-start gap-4">
-        {/* FIXED LINE (IMPORTANT) */}
         <div
           className={`w-12 h-12 rounded-md flex items-center justify-center font-semibold ${job.logoBg} ${job.logoColor}`}
         >
@@ -55,26 +77,43 @@ export default function JobAlertRow({ job }) {
 
       <div className="flex items-center justify-end gap-4">
         <button
-          className={`hover:text-blue-600 ${
-            job.saved ? "text-gray-900" : "text-gray-400"
-          }`}
+          type="button"
+          onClick={handleToggleSave}
+          aria-label={saved ? "Unsave job alert" : "Save job alert"}
+          className={`hover:text-blue-600 ${saved ? "text-gray-900" : "text-gray-400"}`}
         >
-          <FiBookmark
-            className={job.saved ? "fill-current text-lg" : "text-lg"}
-          />
+          <FiBookmark className={saved ? "fill-current text-lg" : "text-lg"} />
         </button>
 
-        <button
-          className={`px-5 py-3 rounded-md font-semibold flex items-center gap-2 transition ${
-            job.highlighted
-              ? "bg-blue-600 text-white hover:bg-blue-700"
-              : "bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white"
-          }`}
-        >
-          Apply Now
-          <FiArrowRight />
-        </button>
+        {applied ? (
+          <span className="flex items-center gap-2 px-5 py-3 rounded-md bg-green-50 font-semibold text-green-600">
+            <FiCheckCircle /> Applied
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsApplyModalOpen(true)}
+            className={`px-5 py-3 rounded-md font-semibold flex items-center gap-2 transition ${
+              job.highlighted
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white"
+            }`}
+          >
+            Apply Now
+            <FiArrowRight />
+          </button>
+        )}
       </div>
+
+      <ApplyJobModal
+        isOpen={isApplyModalOpen}
+        job={applyJob}
+        onClose={() => setIsApplyModalOpen(false)}
+        onApplied={() => {
+          setApplied(true);
+          setIsApplyModalOpen(false);
+        }}
+      />
     </div>
   );
 }

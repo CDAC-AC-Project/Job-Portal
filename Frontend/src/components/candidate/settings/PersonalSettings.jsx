@@ -1,82 +1,78 @@
-import { useState } from "react";
-import { FiUploadCloud, FiLink } from "react-icons/fi";
+import { useEffect, useMemo, useState } from "react";
+import { FiUploadCloud, FiMapPin, FiPhone, FiBriefcase } from "react-icons/fi";
 
 import ResumeCard from "./ResumeCard";
 import ResumeUploadBox from "./ResumeUploadBox";
 import ResumeUploadModal from "./ResumeUploadModal";
 
 import {
-  validatePersonalSettings,
+  validatePersonalInfo,
   validateProfileImage,
 } from "../../../utils/candidateSettingsValidation";
 
 import {
-  updateCandidateProfile,
+  updateCandidatePersonalInfo,
   uploadCandidateResume,
   deleteCandidateResume,
+  setDefaultCandidateResume,
 } from "../../../services/candidateSettingsService";
 
+const experienceLevels = ["FRESHER", "ONE_TO_TWO_YEARS", "TWO_TO_FOUR_YEARS", "FIVE_PLUS_YEARS"];
+const expectedSalary = ["2-3 LPA", "3-4 LPA", "5-7 LPA", "above 7 LPA"];
+
 export default function PersonalSettings({
-  profile,
+  candidateProfileId,
+  profile = {},
   setProfile,
-  resumes,
+  resumes = [],
   setResumes,
+  onNext,
 }) {
+  const [form, setForm] = useState(() => buildInitialForm(profile));
   const [errors, setErrors] = useState({});
   const [resumeError, setResumeError] = useState("");
   const [activeMenuId, setActiveMenuId] = useState(null);
-  const [previewImage, setPreviewImage] = useState(profile.profilePicture || "");
+  const [previewImage, setPreviewImage] = useState(profile.profileImageUrl || "");
   const [saving, setSaving] = useState(false);
+  const [uploadingResume, setUploadingResume] = useState(false);
   const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
-  const [selectedResume, setSelectedResume] = useState(null);
-  
+
+  useEffect(() => {
+    setForm(buildInitialForm(profile));
+    setPreviewImage(profile.profileImageUrl || "");
+  }, [profile]);
+
+  const defaultResume = useMemo(
+    () => resumes.find((resume) => resume.defaultResume) || resumes[0],
+    [resumes]
+  );
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    setProfile({
-      ...profile,
-      [name]: value,
-    });
-
-    setErrors({
-      ...errors,
-      [name]: "",
-    });
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleProfileImageChange = (e) => {
-    const file = e.target.files[0];
-
+    const file = e.target.files?.[0];
     const validationErrors = validateProfileImage(file);
 
     if (Object.keys(validationErrors).length > 0) {
-      setErrors({
-        ...errors,
-        ...validationErrors,
-      });
+      setErrors((prev) => ({ ...prev, ...validationErrors }));
       return;
     }
 
-    const imagePreviewUrl = URL.createObjectURL(file);
-
-    setPreviewImage(imagePreviewUrl);
-
-    setProfile({
-      ...profile,
-      profilePicture: file,
-    });
-
-    setErrors({
-      ...errors,
-      profilePicture: "",
-    });
+    if (file) {
+      setPreviewImage(URL.createObjectURL(file));
+      setForm((prev) => ({ ...prev, profileImage: file }));
+      setErrors((prev) => ({ ...prev, profileImage: "" }));
+    }
   };
 
-  const handleSaveChanges = async (e) => {
+  const handleSaveAndNext = async (e) => {
     e.preventDefault();
 
-    const validationErrors = validatePersonalSettings(profile);
-
+    const validationErrors = validatePersonalInfo(form);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -84,38 +80,60 @@ export default function PersonalSettings({
 
     try {
       setSaving(true);
-      await updateCandidateProfile(profile);
-      alert("Profile updated successfully");
+
+      const payload = new FormData();
+      payload.append("phone", form.phone);
+      payload.append("profileTitle", form.profileTitle);
+      payload.append("location", form.location);
+      payload.append("expectedSalary", form.expectedSalary || "");
+      payload.append("experienceLevel", form.experienceLevel);
+      payload.append("bio", form.bio || "");
+      if (form.profileImage) payload.append("profileImage", form.profileImage);
+
+      const response = await updateCandidatePersonalInfo(candidateProfileId, payload);
+
+      const updatedProfile = {
+        ...profile,
+        phone: response.phone ?? form.phone,
+        profileTitle: response.profileTitle ?? form.profileTitle,
+        location: response.location ?? form.location,
+        bio: response.bio ?? form.bio,
+        expectedSalary: response.expectedSalary ?? form.expectedSalary,
+        experienceLevel: response.experienceLevel ?? form.experienceLevel,
+        profileImageUrl: response.profileImageUrl ?? profile.profileImageUrl,
+      };
+
+      setProfile?.(updatedProfile);
+      onNext?.("profile");
     } catch (error) {
       console.error(error);
-      alert("Failed to update profile");
+      alert("Failed to save personal information");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleResumeUpload = async (file) => {
+  const handleResumeUploadFromModal = async ({ file, defaultResume }) => {
     try {
-      const uploadedResume = await uploadCandidateResume(file);
-
-      setResumes([uploadedResume, ...resumes]);
+      setUploadingResume(true);
+      const uploadedResume = await uploadCandidateResume(candidateProfileId, file, defaultResume);
+      setResumes?.([uploadedResume, ...resumes]);
+      setIsResumeModalOpen(false);
+      setResumeError("");
     } catch (error) {
       console.error(error);
       setResumeError("Failed to upload resume");
+    } finally {
+      setUploadingResume(false);
     }
   };
 
   const handleDeleteResume = async (resumeId) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this resume?"
-    );
-
-    if (!confirmDelete) return;
+    if (!window.confirm("Are you sure you want to delete this resume?")) return;
 
     try {
       await deleteCandidateResume(resumeId);
-
-      setResumes(resumes.filter((resume) => resume.id !== resumeId));
+      setResumes?.(resumes.filter((resume) => resume.id !== resumeId));
       setActiveMenuId(null);
     } catch (error) {
       console.error(error);
@@ -123,274 +141,214 @@ export default function PersonalSettings({
     }
   };
 
-  const handleRenameResume = (resumeId, newName) => {
-    setResumes(
-      resumes.map((resume) =>
-        resume.id === resumeId ? { ...resume, name: newName } : resume
-      )
-    );
+  const handleSetDefaultResume = async (resumeId) => {
+    try {
+      await setDefaultCandidateResume(candidateProfileId, resumeId);
+      setResumes?.(
+        resumes.map((resume) => ({
+          ...resume,
+          defaultResume: resume.id === resumeId,
+        }))
+      );
+    } catch (error) {
+      console.error(error);
+      setResumeError("Failed to set default resume");
+    }
   };
-  const handleOpenAddResumeModal = () => {
-  setSelectedResume(null);
-  setIsResumeModalOpen(true);
- };
-
- const handleOpenEditResumeModal = (resume) => {
-  setSelectedResume(resume);
-  setIsResumeModalOpen(true);
- };
-
- const handleSaveResumeFromModal = (resumeData) => {
-  if (selectedResume) {
-    setResumes(
-      resumes.map((resume) =>
-        resume.id === selectedResume.id
-          ? {
-              ...resume,
-              name: resumeData.name,
-              size: resumeData.size,
-              fileType: resumeData.fileType,
-            }
-          : resume
-      )
-    );
-  } else {
-    setResumes([
-      {
-        id: resumeData.id,
-        name: resumeData.name,
-        size: resumeData.size,
-        fileType: resumeData.fileType,
-      },
-      ...resumes,
-    ]);
-  }
-};
 
   return (
-    <div>
-      <form onSubmit={handleSaveChanges}>
-        <h2 className="text-base font-semibold text-gray-900 mb-5">
-          Basic Information
-        </h2>
+    <form onSubmit={handleSaveAndNext} className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-gray-900">Personal Information</h2>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8">
-          {/* Profile Picture */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[220px_1fr]">
+        <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Profile Picture
-            </label>
-
-            <label className="h-48 border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 overflow-hidden">
+            <label className="mb-2 block text-sm font-medium text-gray-700">Profile Image</label>
+            <label className="flex h-52 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-gray-300 text-center transition hover:bg-gray-50">
               {previewImage ? (
-                <img
-                  src={previewImage}
-                  alt="profile preview"
-                  className="w-full h-full object-cover"
-                />
+                <img src={previewImage} alt="Profile preview" className="h-full w-full object-cover" />
               ) : (
                 <>
-                  <FiUploadCloud className="text-4xl text-gray-400 mb-3" />
-                  <p className="text-sm font-medium text-gray-700">
-                    Browse photo or drop here
-                  </p>
-                  <p className="text-xs text-gray-400 mt-2 max-w-[160px]">
-                    Photo larger than 400 pixels works best. Max photo size 5 MB.
-                  </p>
+                  <FiUploadCloud className="mb-3 text-4xl text-gray-400" />
+                  <p className="text-sm font-medium text-gray-700">Browse photo or drop here</p>
+                  <p className="mt-2 max-w-[170px] text-xs text-gray-400">JPG, PNG, WEBP. Max 2 MB.</p>
                 </>
               )}
-
               <input
                 type="file"
-                accept="image/png,image/jpeg,image/jpg"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
                 onChange={handleProfileImageChange}
                 className="hidden"
               />
             </label>
+            {errors.profileImage && <p className="mt-2 text-xs text-red-500">{errors.profileImage}</p>}
+          </div>
 
-            {errors.profilePicture && (
-              <p className="text-red-500 text-xs mt-2">
-                {errors.profilePicture}
-              </p>
+          <div>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <label className="block text-sm font-medium text-gray-700">CV/Resume</label>
+            </div>
+            <ResumeUploadBox onClick={() => setIsResumeModalOpen(true)} disabled={uploadingResume} />
+
+            {resumeError && <p className="mt-2 text-xs text-red-500">{resumeError}</p>}
+
+            {resumes.length > 0 ? (
+              <div className="mt-3 space-y-3">
+                {resumes.map((resume) => (
+                  <ResumeCard
+                    key={resume.id}
+                    resume={resume}
+                    activeMenuId={activeMenuId}
+                    setActiveMenuId={setActiveMenuId}
+                    onDelete={handleDeleteResume}
+                    onSetDefault={handleSetDefaultResume}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="mt-3 rounded-lg border border-dashed border-gray-300 p-4 text-center text-xs text-gray-500">
+                No resume uploaded yet.
+              </div>
             )}
           </div>
+        </div>
 
-          {/* Form Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full name
-              </label>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <InputField
+            label="Phone"
+            name="phone"
+            value={form.phone}
+            onChange={handleChange}
+            error={errors.phone}
+            icon={<FiPhone />}
+            placeholder="9876543210"
+          />
 
-              <input
-                type="text"
-                name="fullName"
-                value={profile.fullName}
-                onChange={handleChange}
-                className={`w-full border rounded-md px-4 py-3 text-sm outline-none focus:ring-2 ${
-                  errors.fullName
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-blue-500"
-                }`}
-              />
+          <InputField
+            label="Profile Title"
+            name="profileTitle"
+            value={form.profileTitle}
+            onChange={handleChange}
+            error={errors.profileTitle}
+            icon={<FiBriefcase />}
+            placeholder="Java Full Stack Developer"
+          />
 
-              {errors.fullName && (
-                <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
-              )}
-            </div>
+          <InputField
+            label="Location"
+            name="location"
+            value={form.location}
+            onChange={handleChange}
+            error={errors.location}
+            icon={<FiMapPin />}
+            placeholder="Pune, Maharashtra"
+          />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Title/headline
-              </label>
+          <SelectField
+            label="Experience Level"
+            name="experienceLevel"
+            value={form.experienceLevel}
+            onChange={handleChange}
+            options={experienceLevels}
+            error={errors.experienceLevel}
+          />
 
-              <input
-                type="text"
-                name="headline"
-                value={profile.headline}
-                onChange={handleChange}
-                className={`w-full border rounded-md px-4 py-3 text-sm outline-none focus:ring-2 ${
-                  errors.headline
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-blue-500"
-                }`}
-              />
+          <SelectField
+            label="Expected Salary"
+            name="expectedSalary"
+            value={form.expectedSalary}
+            onChange={handleChange}
+            options={expectedSalary}
+            error={errors.expectedSalary}
+          />
 
-              {errors.headline && (
-                <p className="text-red-500 text-xs mt-1">{errors.headline}</p>
-              )}
-            </div>
+          <div className="md:col-span-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700">Bio</label>
+            <textarea
+              name="bio"
+              value={form.bio}
+              onChange={handleChange}
+              rows={5}
+              placeholder="Write a short professional summary..."
+              className="w-full resize-none rounded-md border border-gray-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Experience
-              </label>
-
-              <select
-                name="experience"
-                value={profile.experience}
-                onChange={handleChange}
-                className={`w-full border rounded-md px-4 py-3 text-sm outline-none focus:ring-2 bg-white ${
-                  errors.experience
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-blue-500"
-                }`}
-              >
-                <option value="">Select...</option>
-                <option value="Fresher">Fresher</option>
-                <option value="1-2 Years">1-2 Years</option>
-                <option value="2-4 Years">2-4 Years</option>
-                <option value="5+ Years">5+ Years</option>
-              </select>
-
-              {errors.experience && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.experience}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Educations
-              </label>
-
-              <select
-                name="education"
-                value={profile.education}
-                onChange={handleChange}
-                className={`w-full border rounded-md px-4 py-3 text-sm outline-none focus:ring-2 bg-white ${
-                  errors.education
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-blue-500"
-                }`}
-              >
-                <option value="">Select...</option>
-                <option value="Diploma">Diploma</option>
-                <option value="Bachelor Degree">Bachelor Degree</option>
-                <option value="Master Degree">Master Degree</option>
-                <option value="PhD">PhD</option>
-              </select>
-
-              {errors.education && (
-                <p className="text-red-500 text-xs mt-1">{errors.education}</p>
-              )}
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Personal Website
-              </label>
-
-              <div className="relative">
-                <FiLink className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600" />
-
-                <input
-                  type="text"
-                  name="website"
-                  value={profile.website}
-                  onChange={handleChange}
-                  placeholder="Website url..."
-                  className={`w-full border rounded-md pl-11 pr-4 py-3 text-sm outline-none focus:ring-2 ${
-                    errors.website
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:ring-blue-500"
-                  }`}
-                />
-              </div>
-
-              {errors.website && (
-                <p className="text-red-500 text-xs mt-1">{errors.website}</p>
-              )}
-            </div>
-
-            <div className="md:col-span-2">
-              <button
-                type="submit"
-                disabled={saving}
-                className="bg-blue-600 text-white px-8 py-3 rounded-md font-semibold hover:bg-blue-700 disabled:bg-blue-300"
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
-            </div>
+          <div className="md:col-span-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full rounded-md bg-blue-600 px-8 py-3 font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300 sm:w-auto"
+            >
+              {saving ? "Saving..." : "Save & Next"}
+            </button>
           </div>
         </div>
-      </form>
-
-      {/* Resume Section */}
-      <div className="mt-12">
-        <h2 className="text-base font-semibold text-gray-900 mb-5">
-          Your Cv/Resume
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mb-5">
-          {resumes.map((resume) => (
-            <ResumeCard
-                key={resume.id}
-                resume={resume}
-                activeMenuId={activeMenuId}
-                setActiveMenuId={setActiveMenuId}
-                onDelete={handleDeleteResume}
-                onEdit={handleOpenEditResumeModal}
-            />
-            ))}
-        </div>
-
-        <div className="max-w-sm">
-          <ResumeUploadBox onClick={handleOpenAddResumeModal} />
-
-          {resumeError && (
-            <p className="text-red-500 text-xs mt-2">{resumeError}</p>
-          )}
-        </div>
       </div>
-              {/* Resume Modal */}
-            <ResumeUploadModal
-                isOpen={isResumeModalOpen}
-                onClose={() => setIsResumeModalOpen(false)}
-                onSave={handleSaveResumeFromModal}
-                selectedResume={selectedResume}
-            />
+
+      <ResumeUploadModal
+        isOpen={isResumeModalOpen}
+        onClose={() => setIsResumeModalOpen(false)}
+        onSave={handleResumeUploadFromModal}
+        uploading={uploadingResume}
+      />
+    </form>
+  );
+}
+
+function buildInitialForm(profile) {
+  return {
+    phone: profile.phone || "",
+    profileTitle: profile.profileTitle || "",
+    location: profile.location || "",
+    bio: profile.bio || "",
+    expectedSalary: profile.expectedSalary || "",
+    experienceLevel: profile.experienceLevel || "",
+    profileImage: null,
+  };
+}
+
+function InputField({ label, name, value, onChange, error, icon, placeholder }) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium text-gray-700">{label}</label>
+      <div className="relative">
+        {icon && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600">{icon}</span>}
+        <input
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className={`w-full rounded-md border py-3 pr-4 text-sm outline-none focus:ring-2 ${
+            icon ? "pl-11" : "pl-4"
+          } ${error ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"}`}
+        />
+      </div>
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+    </div>
+  );
+}
+
+function SelectField({ label, name, value, onChange, options, error }) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium text-gray-700">{label}</label>
+      <select
+        name={name}
+        value={value}
+        onChange={onChange}
+        className={`w-full rounded-md border bg-white px-4 py-3 text-sm outline-none focus:ring-2 ${
+          error ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
+        }`}
+      >
+        <option value="">Select...</option>
+        {options.map((option) => (
+          <option key={option} value={option}>{option.replaceAll("_", " ")}</option>
+        ))}
+      </select>
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
 }
