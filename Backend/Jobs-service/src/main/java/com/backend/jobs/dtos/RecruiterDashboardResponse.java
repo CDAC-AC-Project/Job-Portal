@@ -1,5 +1,7 @@
 package com.backend.jobs.dtos;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -8,7 +10,12 @@ import lombok.Getter;
 public class RecruiterDashboardResponse {
 
     private long activeJobs;
+
     private long applications;
+
     private long shortlisted;
+
     private long hired;
+
+    private List<RecruiterJobListResp> recentlyPostedJobs;
 }
