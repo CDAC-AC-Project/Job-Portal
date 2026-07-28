@@ -1,21 +1,17 @@
 import { FiPlusCircle } from "react-icons/fi";
 
-export default function ResumeUploadBox({ onClick }) {
+export default function ResumeUploadBox({ onClick, disabled = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full border border-dashed border-gray-300 rounded-md p-4 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition text-left"
+      disabled={disabled}
+      className="flex w-full cursor-pointer items-center gap-3 rounded-lg border border-dashed border-gray-300 p-4 text-left transition hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      <FiPlusCircle className="text-blue-600 text-xl" />
-
+      <FiPlusCircle className="text-xl text-blue-600" />
       <div>
-        <h3 className="text-sm font-semibold text-gray-900">
-          Add Cv/Resume
-        </h3>
-        <p className="text-xs text-gray-500">
-          Browse file or drop here. Only PDF.
-        </p>
+        <h3 className="text-sm font-semibold text-gray-900">Add CV/Resume</h3>
+        <p className="text-xs text-gray-500">PDF, DOC, or DOCX. Max 5 MB.</p>
       </div>
     </button>
   );

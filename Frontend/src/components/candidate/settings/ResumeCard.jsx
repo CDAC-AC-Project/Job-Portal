@@ -1,79 +1,83 @@
-import { useState } from "react";
-import { FiFileText, FiMoreHorizontal, FiEdit2, FiTrash2 } from "react-icons/fi";
+import { FiFileText, FiMoreHorizontal, FiTrash2, FiStar, FiExternalLink } from "react-icons/fi";
 
-export default function ResumeCard( {resume,
+export default function ResumeCard({
+  resume,
   activeMenuId,
   setActiveMenuId,
   onDelete,
-  onEdit,
+  onSetDefault,
 }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [resumeName, setResumeName] = useState(resume.name);
-
   const isMenuOpen = activeMenuId === resume.id;
-
-  const handleRename = () => {
-    if (!resumeName.trim()) return;
-
-    onRename(resume.id, resumeName);
-    setIsEditing(false);
-    setActiveMenuId(null);
-  };
+  const fileName = resume.fileName || resume.name || "Resume";
+  const fileUrl = resume.fileUrl || resume.url;
 
   return (
-    <div className="relative bg-gray-50 rounded-md p-4 min-h-[76px]">
+    <div className="relative rounded-lg border border-gray-200 bg-gray-50 p-4 transition hover:border-blue-200 hover:bg-blue-50/30">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="text-blue-600 mt-1">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="mt-1 rounded-md bg-blue-100 p-2 text-blue-600">
             <FiFileText className="text-xl" />
           </div>
 
-          <div>
-            {isEditing ? (
-              <input
-                value={resumeName}
-                onChange={(e) => setResumeName(e.target.value)}
-                onBlur={handleRename}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleRename();
-                }}
-                autoFocus
-                className="border border-blue-400 rounded px-2 py-1 text-sm outline-none"
-              />
-            ) : (
-              <h3 className="text-sm font-semibold text-gray-900">
-                {resume.name}
-              </h3>
-            )}
-
-            <p className="text-xs text-gray-500 mt-1">{resume.size}</p>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="truncate text-sm font-semibold text-gray-900">{fileName}</h3>
+              {resume.defaultResume && (
+                <span className="rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-700">
+                  Default
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              {resume.resourceType || resume.fileType || "Document"}
+              {resume.size ? ` • ${resume.size}` : ""}
+            </p>
           </div>
         </div>
 
         <button
+          type="button"
           onClick={() => setActiveMenuId(isMenuOpen ? null : resume.id)}
-          className="text-gray-500 hover:text-blue-600"
+          className="rounded-md p-2 text-gray-500 hover:bg-white hover:text-blue-600"
+          aria-label="Open resume menu"
         >
           <FiMoreHorizontal />
         </button>
       </div>
 
       {isMenuOpen && (
-        <div className="absolute right-4 top-12 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-20 overflow-hidden">
-          <button
-                onClick={() => {
-                    onEdit(resume);
-                    setActiveMenuId(null);
-                }}
-                className="w-full px-4 py-3 text-sm flex items-center gap-2 text-blue-600 hover:bg-blue-50"
-                >
-                <FiEdit2 />
-                Edit Resume
-         </button>
+        <div className="absolute right-4 top-14 z-20 w-44 overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg">
+          {fileUrl && (
+            <a
+              href={fileUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex w-full items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+              onClick={() => setActiveMenuId(null)}
+            >
+              <FiExternalLink />
+              View Resume
+            </a>
+          )}
+
+          {!resume.defaultResume && (
+            <button
+              type="button"
+              onClick={() => {
+                onSetDefault?.(resume.id);
+                setActiveMenuId(null);
+              }}
+              className="flex w-full items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+            >
+              <FiStar />
+              Set Default
+            </button>
+          )}
 
           <button
-            onClick={() => onDelete(resume.id)}
-            className="w-full px-4 py-3 text-sm flex items-center gap-2 text-red-500 hover:bg-red-50"
+            type="button"
+            onClick={() => onDelete?.(resume.id)}
+            className="flex w-full items-center gap-2 px-4 py-3 text-sm text-red-500 hover:bg-red-50"
           >
             <FiTrash2 />
             Delete

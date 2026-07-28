@@ -1,16 +1,38 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FiMapPin, FiBookmark } from "react-icons/fi";
 
+import { isJobFavorited, toggleFavoriteJob } from "../../services/favoriteJobService";
+
 export default function JobCard({ job, highlighted = false }) {
+  const navigate = useNavigate();
+  const [isFavorited, setIsFavorited] = useState(() => isJobFavorited(job.id));
+
   const typeColors = {
     "FULL-TIME": "bg-green-100 text-green-700",
     "PART-TIME": "bg-blue-100 text-blue-700",
     INTERNSHIP: "bg-emerald-100 text-emerald-700",
   };
 
+  const handleOpenDetails = () => {
+    navigate(`/candidate/job/${job.id}`);
+  };
+
+  const handleToggleFavorite = (e) => {
+    e.stopPropagation();
+    setIsFavorited(toggleFavoriteJob(job.id));
+  };
+
   return (
     <div
-      className={`border rounded-lg p-5 transition hover:shadow-md ${
+      onClick={handleOpenDetails}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") handleOpenDetails();
+      }}
+      className={`border rounded-lg p-5 transition hover:shadow-md cursor-pointer ${
         highlighted
           ? "bg-orange-50 border-orange-100"
           : "bg-white border-gray-200"
@@ -33,8 +55,12 @@ export default function JobCard({ job, highlighted = false }) {
           </div>
         </div>
 
-        <button className="text-gray-400 hover:text-blue-600">
-          <FiBookmark />
+        <button
+          onClick={handleToggleFavorite}
+          aria-label={isFavorited ? "Remove from favorites" : "Save job"}
+          className={isFavorited ? "text-blue-600" : "text-gray-400 hover:text-blue-600"}
+        >
+          <FiBookmark className={isFavorited ? "fill-current" : ""} />
         </button>
       </div>
 

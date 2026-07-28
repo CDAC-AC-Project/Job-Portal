@@ -1,618 +1,156 @@
 import { useState } from "react";
-import {
-  FiMail,
-  FiBriefcase,
-  FiMapPin,
-  FiEye,
-  FiEyeOff,
-  FiXCircle,
-} from "react-icons/fi";
+import { FiEye, FiEyeOff, FiBell, FiBellOff, FiMail, FiShield, FiCheckCircle } from "react-icons/fi";
 
-import {
-  validateContactInfo,
-  validateJobAlertsSettings,
-  validatePasswordSettings,
-} from "../../../utils/candidateSettingsValidation";
-
-import {
-  updateCandidateContactInfo,
-  updateCandidateNotifications,
-  updateCandidateJobAlerts,
-  updateCandidatePrivacy,
-  updateCandidatePassword,
-  deleteCandidateAccount,
-} from "../../../services/candidateSettingsService";
+import { validateAccountSettings } from "../../../utils/candidateSettingsValidation";
+import { updateCandidateAccountSettings } from "../../../services/candidateSettingsService";
 
 export default function AccountSettings({
-  accountSettings,
+  candidateProfileId,
+  accountSettings = {},
   setAccountSettings,
+  onFinish,
 }) {
-  const [contactErrors, setContactErrors] = useState({});
-  const [jobAlertErrors, setJobAlertErrors] = useState({});
-  const [passwordErrors, setPasswordErrors] = useState({});
-
-  const [showPassword, setShowPassword] = useState({
-    currentPassword: false,
-    newPassword: false,
-    confirmPassword: false,
+  const [settings, setSettings] = useState({
+    profileVisible: accountSettings.profileVisible ?? true,
+    jobAlertEnabled: accountSettings.jobAlertEnabled ?? true,
+    emailNotificationEnabled: accountSettings.emailNotificationEnabled ?? true,
   });
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [savedMessage, setSavedMessage] = useState("");
 
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-
-  const handleContactChange = (e) => {
-    const { name, value } = e.target;
-
-    setAccountSettings({
-      ...accountSettings,
-      [name]: value,
-    });
-
-    setContactErrors({
-      ...contactErrors,
-      [name]: "",
-    });
+  const handleToggle = (field) => {
+    setSettings((prev) => ({ ...prev, [field]: !prev[field] }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+    setSavedMessage("");
   };
 
-  const handleNotificationChange = (name) => {
-    setAccountSettings({
-      ...accountSettings,
-      notifications: {
-        ...accountSettings.notifications,
-        [name]: !accountSettings.notifications[name],
-      },
-    });
-  };
-
-  const handleJobAlertChange = (e) => {
-    const { name, value } = e.target;
-
-    setAccountSettings({
-      ...accountSettings,
-      jobAlerts: {
-        ...accountSettings.jobAlerts,
-        [name]: value,
-      },
-    });
-
-    setJobAlertErrors({
-      ...jobAlertErrors,
-      [name]: "",
-    });
-  };
-
-  const handlePrivacyChange = (name) => {
-    setAccountSettings({
-      ...accountSettings,
-      privacy: {
-        ...accountSettings.privacy,
-        [name]: !accountSettings.privacy[name],
-      },
-    });
-  };
-
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-
-    setPasswordData({
-      ...passwordData,
-      [name]: value,
-    });
-
-    setPasswordErrors({
-      ...passwordErrors,
-      [name]: "",
-    });
-  };
-
-  const saveContactInfo = async (e) => {
+  const handleFinish = async (e) => {
     e.preventDefault();
 
-    const errors = validateContactInfo(accountSettings);
-
-    if (Object.keys(errors).length > 0) {
-      setContactErrors(errors);
+    const validationErrors = validateAccountSettings(settings);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
 
-    await updateCandidateContactInfo({
-      mapLocation: accountSettings.mapLocation,
-      countryCode: accountSettings.countryCode,
-      phone: accountSettings.phone,
-      email: accountSettings.email,
-    });
-
-    alert("Contact info updated successfully");
-  };
-
-  const saveNotifications = async () => {
-    await updateCandidateNotifications(accountSettings.notifications);
-    alert("Notification settings updated successfully");
-  };
-
-  const saveJobAlerts = async (e) => {
-    e.preventDefault();
-
-    const errors = validateJobAlertsSettings(accountSettings.jobAlerts);
-
-    if (Object.keys(errors).length > 0) {
-      setJobAlertErrors(errors);
-      return;
+    try {
+      setSaving(true);
+      const response = await updateCandidateAccountSettings(candidateProfileId, settings);
+      setAccountSettings?.(response.accountSettings || settings);
+      setSavedMessage("Your account settings have been saved.");
+      onFinish?.(response);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to update account settings");
+    } finally {
+      setSaving(false);
     }
-
-    await updateCandidateJobAlerts(accountSettings.jobAlerts);
-    alert("Job alerts updated successfully");
-  };
-
-  const savePrivacy = async () => {
-    await updateCandidatePrivacy(accountSettings.privacy);
-    alert("Privacy settings updated successfully");
-  };
-
-  const savePassword = async (e) => {
-    e.preventDefault();
-
-    const errors = validatePasswordSettings(passwordData);
-
-    if (Object.keys(errors).length > 0) {
-      setPasswordErrors(errors);
-      return;
-    }
-
-    await updateCandidatePassword(passwordData);
-
-    alert("Password changed successfully");
-
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
-  };
-
-  const handleDeleteAccount = async () => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to close your account?"
-    );
-
-    if (!confirmDelete) return;
-
-    await deleteCandidateAccount();
-    alert("Account closed successfully");
   };
 
   return (
-    <div className="max-w-5xl">
-      {/* Contact Info */}
-      <section className="border-b border-gray-200 pb-8 mb-8">
-        <h2 className="text-base font-semibold text-gray-900 mb-5">
-          Contact Info
-        </h2>
-
-        <form onSubmit={saveContactInfo}>
-          <div className="space-y-5">
-            <InputField
-              label="Map Location"
-              name="mapLocation"
-              value={accountSettings.mapLocation}
-              onChange={handleContactChange}
-              error={contactErrors.mapLocation}
-            />
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone
-              </label>
-
-              <div className="flex">
-                <select
-                  name="countryCode"
-                  value={accountSettings.countryCode}
-                  onChange={handleContactChange}
-                  className="w-28 border border-gray-300 rounded-l-md px-3 py-3 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="+880">🇧🇩 +880</option>
-                  <option value="+91">🇮🇳 +91</option>
-                  <option value="+1">🇺🇸 +1</option>
-                  <option value="+44">🇬🇧 +44</option>
-                </select>
-
-                <input
-                  type="text"
-                  name="phone"
-                  value={accountSettings.phone}
-                  onChange={handleContactChange}
-                  placeholder="Phone number..."
-                  className={`flex-1 border border-l-0 rounded-r-md px-4 py-3 text-sm outline-none focus:ring-2 ${
-                    contactErrors.phone
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:ring-blue-500"
-                  }`}
-                />
-              </div>
-
-              {contactErrors.phone && (
-                <p className="text-red-500 text-xs mt-1">
-                  {contactErrors.phone}
-                </p>
-              )}
-            </div>
-
-            <IconInputField
-              label="Email"
-              name="email"
-              value={accountSettings.email}
-              onChange={handleContactChange}
-              error={contactErrors.email}
-              placeholder="Email address"
-              icon={<FiMail />}
-            />
+    <form onSubmit={handleFinish} className="max-w-5xl space-y-6">
+      <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+        <div className="mb-6 flex items-start gap-3">
+          <div className="rounded-md bg-blue-100 p-2 text-blue-600">
+            <FiShield className="text-xl" />
           </div>
-
-          <button className="mt-6 bg-blue-600 text-white px-8 py-3 rounded-md font-semibold hover:bg-blue-700">
-            Save Changes
-          </button>
-        </form>
-      </section>
-
-      {/* Notification */}
-      <section className="border-b border-gray-200 pb-8 mb-8">
-        <h2 className="text-base font-semibold text-gray-900 mb-5">
-          Notification
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <CheckboxField
-            label="Notify me when employers shortlisted me"
-            checked={accountSettings.notifications.shortlisted}
-            onChange={() => handleNotificationChange("shortlisted")}
-          />
-
-          <CheckboxField
-            label="Notify me when employers saved my profile"
-            checked={accountSettings.notifications.savedProfile}
-            onChange={() => handleNotificationChange("savedProfile")}
-          />
-
-          <CheckboxField
-            label="Notify me when my applied jobs are expire"
-            checked={accountSettings.notifications.appliedJobsExpire}
-            onChange={() => handleNotificationChange("appliedJobsExpire")}
-          />
-
-          <CheckboxField
-            label="Notify me when employers rejected me"
-            checked={accountSettings.notifications.rejected}
-            onChange={() => handleNotificationChange("rejected")}
-          />
-
-          <CheckboxField
-            label="Notify me when i have up to 5 job alerts"
-            checked={accountSettings.notifications.jobAlerts}
-            onChange={() => handleNotificationChange("jobAlerts")}
-          />
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Privacy</h2>
+            <p className="mt-1 text-sm text-gray-500">Control who can see your profile on the platform.</p>
+          </div>
         </div>
 
-        <button
-          type="button"
-          onClick={saveNotifications}
-          className="mt-6 bg-blue-600 text-white px-8 py-3 rounded-md font-semibold hover:bg-blue-700"
-        >
-          Save Changes
-        </button>
-      </section>
-
-      {/* Job Alerts */}
-      <section className="border-b border-gray-200 pb-8 mb-8">
-        <h2 className="text-base font-semibold text-gray-900 mb-5">
-          Job Alerts
-        </h2>
-
-        <form onSubmit={saveJobAlerts}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <IconInputField
-              label="Role"
-              name="role"
-              value={accountSettings.jobAlerts.role}
-              onChange={handleJobAlertChange}
-              error={jobAlertErrors.role}
-              placeholder="Your job roles"
-              icon={<FiBriefcase />}
-            />
-
-            <IconInputField
-              label="Location"
-              name="location"
-              value={accountSettings.jobAlerts.location}
-              onChange={handleJobAlertChange}
-              error={jobAlertErrors.location}
-              placeholder="City, state, country name"
-              icon={<FiMapPin />}
-            />
-          </div>
-
-          <button className="mt-6 bg-blue-600 text-white px-8 py-3 rounded-md font-semibold hover:bg-blue-700">
-            Save Changes
-          </button>
-        </form>
-      </section>
-
-      {/* Privacy */}
-      <section className="border-b border-gray-200 pb-8 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <PrivacyToggle
-            title="Profile Privacy"
-            enabled={accountSettings.privacy.profilePublic}
-            yesText="YES"
-            noText="NO"
-            description={
-              accountSettings.privacy.profilePublic
-                ? "Your profile is public now"
-                : "Your profile is private now"
-            }
-            onChange={() => handlePrivacyChange("profilePublic")}
-          />
-
-          <PrivacyToggle
-            title="Resume Privacy"
-            enabled={!accountSettings.privacy.resumePrivate}
-            yesText="YES"
-            noText="NO"
-            description={
-              accountSettings.privacy.resumePrivate
-                ? "Your resume is private now"
-                : "Your resume is public now"
-            }
-            onChange={() => handlePrivacyChange("resumePrivate")}
-          />
-        </div>
-
-        <button
-          type="button"
-          onClick={savePrivacy}
-          className="mt-6 bg-blue-600 text-white px-8 py-3 rounded-md font-semibold hover:bg-blue-700"
-        >
-          Save Changes
-        </button>
-      </section>
-
-      {/* Change Password */}
-      <section className="border-b border-gray-200 pb-8 mb-8">
-        <h2 className="text-base font-semibold text-gray-900 mb-5">
-          Change Password
-        </h2>
-
-        <form onSubmit={savePassword}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <PasswordField
-              label="Current Password"
-              name="currentPassword"
-              value={passwordData.currentPassword}
-              onChange={handlePasswordChange}
-              visible={showPassword.currentPassword}
-              onToggle={() =>
-                setShowPassword({
-                  ...showPassword,
-                  currentPassword: !showPassword.currentPassword,
-                })
-              }
-              error={passwordErrors.currentPassword}
-            />
-
-            <PasswordField
-              label="New Password"
-              name="newPassword"
-              value={passwordData.newPassword}
-              onChange={handlePasswordChange}
-              visible={showPassword.newPassword}
-              onToggle={() =>
-                setShowPassword({
-                  ...showPassword,
-                  newPassword: !showPassword.newPassword,
-                })
-              }
-              error={passwordErrors.newPassword}
-            />
-
-            <PasswordField
-              label="Confirm Password"
-              name="confirmPassword"
-              value={passwordData.confirmPassword}
-              onChange={handlePasswordChange}
-              visible={showPassword.confirmPassword}
-              onToggle={() =>
-                setShowPassword({
-                  ...showPassword,
-                  confirmPassword: !showPassword.confirmPassword,
-                })
-              }
-              error={passwordErrors.confirmPassword}
-            />
-          </div>
-
-          <button className="mt-6 bg-blue-600 text-white px-8 py-3 rounded-md font-semibold hover:bg-blue-700">
-            Save Changes
-          </button>
-        </form>
-      </section>
-
-      {/* Delete Account */}
-      <section>
-        <h2 className="text-base font-semibold text-gray-900 mb-3">
-          Delete Your Account
-        </h2>
-
-        <p className="text-sm text-gray-500 leading-6 max-w-xl mb-5">
-          If you delete your Jobpilot account, you will no longer be able to get
-          information about the matched jobs, following employers, and job alert,
-          shortlisted jobs and more. You will be abandoned from all the services
-          of Jobpilot.com.
-        </p>
-
-        <button
-          onClick={handleDeleteAccount}
-          className="text-red-500 text-sm font-medium flex items-center gap-2 hover:underline"
-        >
-          <FiXCircle />
-          Close Account
-        </button>
-      </section>
-    </div>
-  );
-}
-
-function InputField({ label, name, value, onChange, error }) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label}
-      </label>
-
-      <input
-        name={name}
-        value={value}
-        onChange={onChange}
-        className={`w-full border rounded-md px-4 py-3 text-sm outline-none focus:ring-2 ${
-          error
-            ? "border-red-500 focus:ring-red-500"
-            : "border-gray-300 focus:ring-blue-500"
-        }`}
-      />
-
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-    </div>
-  );
-}
-
-function IconInputField({
-  label,
-  name,
-  value,
-  onChange,
-  error,
-  placeholder,
-  icon,
-}) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label}
-      </label>
-
-      <div className="relative">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600">
-          {icon}
-        </span>
-
-        <input
-          name={name}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          className={`w-full border rounded-md pl-11 pr-4 py-3 text-sm outline-none focus:ring-2 ${
-            error
-              ? "border-red-500 focus:ring-red-500"
-              : "border-gray-300 focus:ring-blue-500"
-          }`}
+        <SettingRow
+          icon={settings.profileVisible ? <FiEye /> : <FiEyeOff />}
+          title="Profile Visibility"
+          description={settings.profileVisible ? "Recruiters can find and view your profile." : "Your profile is hidden from recruiter search."}
+          checked={settings.profileVisible}
+          onChange={() => handleToggle("profileVisible")}
+          error={errors.profileVisible}
         />
+      </section>
+
+      <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+        <div className="mb-6 flex items-start gap-3">
+          <div className="rounded-md bg-blue-100 p-2 text-blue-600">
+            <FiBell className="text-xl" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
+            <p className="mt-1 text-sm text-gray-500">Choose how you want to hear about new opportunities.</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <SettingRow
+            icon={settings.jobAlertEnabled ? <FiBell /> : <FiBellOff />}
+            title="Job Alerts"
+            description={settings.jobAlertEnabled ? "You will receive job alerts matched to your profile." : "Job alerts are disabled."}
+            checked={settings.jobAlertEnabled}
+            onChange={() => handleToggle("jobAlertEnabled")}
+            error={errors.jobAlertEnabled}
+          />
+
+          <SettingRow
+            icon={<FiMail />}
+            title="Email Notifications"
+            description={settings.emailNotificationEnabled ? "Application updates will be emailed to you." : "Email notifications are disabled."}
+            checked={settings.emailNotificationEnabled}
+            onChange={() => handleToggle("emailNotificationEnabled")}
+            error={errors.emailNotificationEnabled}
+          />
+        </div>
+      </section>
+
+      <div className="rounded-lg bg-green-50 p-4 text-sm text-green-700">
+        <div className="flex items-start gap-3">
+          <FiCheckCircle className="mt-0.5 flex-shrink-0" />
+          <p>
+            Password, email change, and account deletion are managed from your account security settings, not here.
+          </p>
+        </div>
       </div>
 
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-    </div>
+      <div className="flex flex-col-reverse items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {savedMessage && (
+          <p className="flex items-center gap-2 text-sm font-medium text-green-600">
+            <FiCheckCircle /> {savedMessage}
+          </p>
+        )}
+        <button
+          type="submit"
+          disabled={saving}
+          className="ml-auto w-full rounded-md bg-blue-600 px-8 py-3 font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300 sm:w-auto"
+        >
+          {saving ? "Saving..." : "Save Settings"}
+        </button>
+      </div>
+    </form>
   );
 }
 
-function CheckboxField({ label, checked, onChange }) {
+function SettingRow({ icon, title, description, checked, onChange, error }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-gray-600">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="w-4 h-4 accent-blue-600"
-      />
-      {label}
-    </label>
-  );
-}
-
-function PrivacyToggle({
-  title,
-  enabled,
-  yesText,
-  noText,
-  description,
-  onChange,
-}) {
-  return (
-    <div>
-      <h3 className="text-sm font-medium text-gray-900 mb-2">{title}</h3>
+    <div className="flex items-start justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 rounded-md bg-blue-100 p-2 text-blue-600">{icon}</div>
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+          <p className="mt-1 text-sm text-gray-500">{description}</p>
+          {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+        </div>
+      </div>
 
       <button
         type="button"
         onClick={onChange}
-        className="w-full border border-gray-300 rounded-md px-4 py-3 flex items-center gap-3 text-sm"
+        className={`flex h-6 w-11 flex-shrink-0 items-center rounded-full px-0.5 transition ${checked ? "justify-end bg-blue-600" : "justify-start bg-gray-300"}`}
+        aria-pressed={checked}
+        aria-label={title}
       >
-        <span
-          className={`w-9 h-5 rounded-full flex items-center px-0.5 transition ${
-            enabled ? "bg-blue-600 justify-end" : "bg-gray-300 justify-start"
-          }`}
-        >
-          <span className="w-4 h-4 bg-white rounded-full"></span>
-        </span>
-
-        <span className={enabled ? "text-blue-600 font-semibold" : "text-red-500 font-semibold"}>
-          {enabled ? yesText : noText}
-        </span>
-
-        <span className="text-gray-500">{description}</span>
+        <span className="h-5 w-5 rounded-full bg-white shadow" />
       </button>
-    </div>
-  );
-}
-
-function PasswordField({
-  label,
-  name,
-  value,
-  onChange,
-  visible,
-  onToggle,
-  error,
-}) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label}
-      </label>
-
-      <div className="relative">
-        <input
-          type={visible ? "text" : "password"}
-          name={name}
-          value={value}
-          onChange={onChange}
-          placeholder="Password"
-          className={`w-full border rounded-md px-4 py-3 pr-11 text-sm outline-none focus:ring-2 ${
-            error
-              ? "border-red-500 focus:ring-red-500"
-              : "border-gray-300 focus:ring-blue-500"
-          }`}
-        />
-
-        <button
-          type="button"
-          onClick={onToggle}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
-        >
-          {visible ? <FiEyeOff /> : <FiEye />}
-        </button>
-      </div>
-
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
   );
 }

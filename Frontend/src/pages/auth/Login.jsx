@@ -13,6 +13,7 @@ import { FaFacebookF } from "react-icons/fa";
 
 import authBg from "../../assets/images/register-bg.png";
 import { validateLoginForm } from "../../utils/loginValidation";
+import { login as loginUser, ROLES, roleHomePath } from "../../utils/authStorage";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -66,21 +67,12 @@ export default function Login() {
       return;
     }
 
-    console.log("Login Data:", formData);
+    // No backend auth API yet — persist the session locally so route guards work.
+    // TODO: replace with a real Spring Boot login call once Auth_User-Service is implemented.
+    const role = formData.role === "candidate" ? ROLES.CANDIDATE : ROLES.RECRUITER;
+    const authUser = loginUser(role, { email: formData.email });
 
-    /*
-      Later backend flow:
-      1. Call Spring Boot login API
-      2. Get JWT token
-      3. Store token
-      4. Redirect according to role
-    */
-
-    if (formData.role === "candidate") {
-      navigate("/candidate/find-job");
-    } else if (formData.role === "employer") {
-      navigate("/recruiter/dashboard");
-    }
+    navigate(roleHomePath[authUser.role]);
   };
 
   return (

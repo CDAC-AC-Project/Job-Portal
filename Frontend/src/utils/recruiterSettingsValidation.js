@@ -42,56 +42,21 @@ export const validateFoundingInfo = (data) => {
     }
   }
 
-  if (!data.companyVision.trim()) {
-    errors.companyVision = "Company vision is required";
-  }
-
   return errors;
 };
 
+// socialLinks is {facebook, twitter, linkedin, instagram} - Company stores these
+// as 4 fixed columns, not a list, and none of them are required.
 export const validateRecruiterSocialLinks = (socialLinks) => {
   const errors = {};
+  const urlRegex =
+    /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/[\w\-._~:/?#[\]@!$&'()*+,;=]*)?$/;
 
-  socialLinks.forEach((link) => {
-    if (!link.platform) {
-      errors[`platform_${link.id}`] = "Please select platform";
-    }
-
-    if (link.url.trim()) {
-      const urlRegex =
-        /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/[\w\-._~:/?#[\]@!$&'()*+,;=]*)?$/;
-
-      if (!urlRegex.test(link.url.trim())) {
-        errors[`url_${link.id}`] = "Enter a valid profile URL";
-      }
+  Object.entries(socialLinks).forEach(([platform, url]) => {
+    if (url?.trim() && !urlRegex.test(url.trim())) {
+      errors[platform] = "Enter a valid profile URL";
     }
   });
-
-  return errors;
-};
-
-export const validateRecruiterAccountSettings = (data) => {
-  const errors = {};
-
-  if (!data.mapLocation.trim()) {
-    errors.mapLocation = "Map location is required";
-  }
-
-  if (!data.phone.trim()) {
-    errors.phone = "Phone number is required";
-  } else if (data.phone.trim().length < 8) {
-    errors.phone = "Enter a valid phone number";
-  }
-
-  if (!data.email.trim()) {
-    errors.email = "Email address is required";
-  } else {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(data.email.trim())) {
-      errors.email = "Enter a valid email address";
-    }
-  }
 
   return errors;
 };

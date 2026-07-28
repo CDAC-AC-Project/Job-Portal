@@ -1,73 +1,177 @@
-import {
-  recruiterCompanyInfoData,
-  recruiterFoundingInfoData,
-  recruiterSocialLinksData,
-  recruiterAccountSettingsData,
-} from "../data/recruiterSettingsData";
+import axios from "axios";
 
-export const getRecruiterSettings = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        companyInfo: recruiterCompanyInfoData,
-        foundingInfo: recruiterFoundingInfoData,
-        socialLinks: recruiterSocialLinksData,
-        accountSettings: recruiterAccountSettingsData,
-      });
-    }, 300);
+import { getAuthUser } from "../utils/authStorage";
+
+const API_BASE_URL =
+  import.meta.env.VITE_PROFILE_SERVICE_URL ||
+  "http://localhost:8080/api/profile";
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+});
+
+
+/* ===============================
+   BOOTSTRAP: resolve this browser's recruiterProfileId
+================================
+   Same reasoning as candidateSettingsService.resolveCandidateProfileId -
+   there is no Auth Service session yet to hand back "your" recruiter profile
+   id, so it's resolved via the idempotent internal create-or-get endpoint
+   and cached per-user.
+*/
+
+const RECRUITER_PROFILE_ID_KEY = "recruiterProfileId";
+
+export const resolveRecruiterProfileId = async () => {
+  const authUser = getAuthUser();
+
+  if (!authUser?.userId) {
+    throw new Error("No authenticated user found");
+  }
+
+  const cacheKey = `${RECRUITER_PROFILE_ID_KEY}:${authUser.userId}`;
+  const cached = localStorage.getItem(cacheKey);
+
+  if (cached) {
+    return Number(cached);
+  }
+
+  const response = await api.post("/internal/recruiters", {
+    userId: authUser.userId,
   });
+
+  const recruiterProfileId = response.data.recruiterProfileId;
+
+  localStorage.setItem(cacheKey, String(recruiterProfileId));
+
+  return recruiterProfileId;
 };
 
-export const updateRecruiterCompanyInfo = async (companyInfo) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log("Company info updated:", companyInfo);
-      resolve({ success: true });
-    }, 300);
-  });
+
+/* ===============================
+   GET COMPLETE PROFILE
+================================ */
+
+export const getRecruiterSettings = async (recruiterProfileId) => {
+  const response = await api.get(`/recruiters/${recruiterProfileId}`);
+  return response.data;
 };
 
-export const updateRecruiterFoundingInfo = async (foundingInfo) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log("Founding info updated:", foundingInfo);
-      resolve({ success: true });
-    }, 300);
-  });
+
+/* ===============================
+   PERSONAL INFO
+================================ */
+
+export const updateRecruiterPersonalInfo = async (recruiterProfileId, personalInfo) => {
+  const response = await api.put(
+    `/recruiters/${recruiterProfileId}/personal-info`,
+    personalInfo
+  );
+  return response.data;
 };
 
-export const updateRecruiterSocialLinks = async (socialLinks) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log("Social links updated:", socialLinks);
-      resolve({ success: true });
-    }, 300);
-  });
+
+/* ===============================
+   COMPANY INFO
+================================
+   Maps to Company.companyName/about/logo/banner. logo/banner are only sent
+   when the user picked a new file (see CompanyInfoSettings.jsx - existing
+   images are represented as a plain url string, new picks as {file,...}).
+*/
+
+export const updateRecruiterCompanyInfo = async (recruiterProfileId, companyInfo) => {
+  const formData = new FormData();
+  formData.append("companyName", companyInfo.companyName || "");
+  formData.append("about", companyInfo.aboutUs || "");
+
+  if (companyInfo.logo?.file) formData.append("logo", companyInfo.logo.file);
+  if (companyInfo.banner?.file) formData.append("banner", companyInfo.banner.file);
+
+  const response = await api.put(
+    `/recruiters/${recruiterProfileId}/company/info`,
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  );
+  return response.data;
 };
 
-export const updateRecruiterAccountSettings = async (accountSettings) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log("Account settings updated:", accountSettings);
-      resolve({ success: true });
-    }, 300);
-  });
+
+/* ===============================
+   FOUNDING INFO
+================================
+   Company has no "companyVision" field and yearOfEstablishment is an
+   Integer, not a date - the founding info form still collects a date
+   picker value, so it's converted here rather than reshaping that UI.
+*/
+
+export const updateRecruiterFoundingInfo = async (recruiterProfileId, foundingInfo) => {
+  const yearOfEstablishment = foundingInfo.yearOfEstablishment
+    ? new Date(foundingInfo.yearOfEstablishment).getFullYear()
+    : null;
+
+  const payload = {
+    organizationType: foundingInfo.organizationType,
+    industryType: foundingInfo.industryType,
+    teamSize: foundingInfo.teamSize,
+    yearOfEstablishment,
+    website: foundingInfo.companyWebsite,
+  };
+
+  const response = await api.put(
+    `/recruiters/${recruiterProfileId}/company/founding-info`,
+    payload
+  );
+  return response.data;
 };
 
-export const updateRecruiterPassword = async (passwordData) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log("Password updated:", passwordData);
-      resolve({ success: true });
-    }, 300);
-  });
+
+/* ===============================
+   SOCIAL LINKS
+================================
+   Company models these as 4 fixed columns (facebook/twitter/linkedin/
+   instagram), not a list - this is a single PUT with all 4, not add/delete.
+*/
+
+export const updateRecruiterSocialLinks = async (recruiterProfileId, socialLinks) => {
+  const response = await api.put(
+    `/recruiters/${recruiterProfileId}/company/social-links`,
+    socialLinks
+  );
+  return response.data;
 };
 
-export const deleteRecruiterCompany = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log("Company account deleted");
-      resolve({ success: true });
-    }, 300);
-  });
+
+/* ===============================
+   ACCOUNT SETTINGS
+================================ */
+
+export const updateRecruiterAccountSettings = async (recruiterProfileId, accountSettings) => {
+  const response = await api.put(
+    `/recruiters/${recruiterProfileId}/account-settings`,
+    accountSettings
+  );
+  return response.data;
+};
+
+
+/* ===============================
+   COMPANY DELETE
+================================ */
+
+export const deleteRecruiterCompany = async (recruiterProfileId) => {
+  const response = await api.delete(`/recruiters/${recruiterProfileId}/company`);
+  return response.data;
+};
+
+
+/* ===============================
+   PASSWORD
+================================
+   Not a Profile-Service concern - this belongs to Auth Service, which
+   doesn't exist yet. Left as a stub so the UI flow doesn't break.
+*/
+
+export const updateRecruiterPassword = async () => {
+  console.warn("updateRecruiterPassword: Auth Service is not implemented yet");
+  return { success: false, message: "Password changes are not available yet" };
 };

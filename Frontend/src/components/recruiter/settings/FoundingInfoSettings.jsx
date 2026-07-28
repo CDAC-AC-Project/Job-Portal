@@ -8,7 +8,7 @@ const organizationTypes = ["Private", "Public", "Government", "Non-Profit"];
 const industryTypes = ["IT & Software", "Healthcare", "Finance", "Education"];
 const teamSizes = ["1-10", "11-50", "51-100", "101-500", "500+"];
 
-export default function FoundingInfoSettings({ foundingInfo, setFoundingInfo }) {
+export default function FoundingInfoSettings({ recruiterProfileId, foundingInfo, setFoundingInfo }) {
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
@@ -38,7 +38,15 @@ export default function FoundingInfoSettings({ foundingInfo, setFoundingInfo }) 
 
     try {
       setSaving(true);
-      await updateRecruiterFoundingInfo(foundingInfo);
+      const updated = await updateRecruiterFoundingInfo(recruiterProfileId, foundingInfo);
+      setFoundingInfo((prev) => ({
+        ...prev,
+        organizationType: updated.organizationType || "",
+        industryType: updated.industryType || "",
+        teamSize: updated.teamSize || "",
+        yearOfEstablishment: updated.yearOfEstablishment ? `${updated.yearOfEstablishment}-01-01` : "",
+        companyWebsite: updated.website || "",
+      }));
       alert("Founding info updated successfully");
     } catch (error) {
       console.error(error);
@@ -97,39 +105,6 @@ export default function FoundingInfoSettings({ foundingInfo, setFoundingInfo }) 
           placeholder="Website url..."
           icon={<FiLink />}
         />
-      </div>
-
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Company Vision
-        </label>
-
-        <textarea
-          name="companyVision"
-          value={foundingInfo.companyVision}
-          onChange={handleChange}
-          placeholder="Tell us what Vision of your company..."
-          rows={6}
-          className={`w-full border rounded-t-md px-4 py-3 text-sm outline-none resize-none focus:ring-2 ${
-            errors.companyVision
-              ? "border-red-500 focus:ring-red-500"
-              : "border-gray-300 focus:ring-blue-500"
-          }`}
-        />
-
-        <div className="border border-t-0 border-gray-300 rounded-b-md px-4 py-3 flex gap-5 text-gray-400 text-sm">
-          <span>B</span>
-          <span>I</span>
-          <span>U</span>
-          <span>S</span>
-          <span>🔗</span>
-          <span>☷</span>
-          <span>☰</span>
-        </div>
-
-        {errors.companyVision && (
-          <p className="text-red-500 text-xs mt-1">{errors.companyVision}</p>
-        )}
       </div>
 
       <button

@@ -64,7 +64,13 @@ export default function FavoriteJobs() {
             <>
               <div className="bg-white border border-gray-100 rounded-lg overflow-hidden">
                 {paginatedJobs.map((job) => (
-                  <FavoriteJobRow key={job.id} job={job} />
+                  <FavoriteJobRow
+                    key={job.id}
+                    job={job}
+                    onRemove={(id) =>
+                      setFavoriteJobs((prev) => prev.filter((favorite) => favorite.id !== id))
+                    }
+                  />
                 ))}
               </div>
 

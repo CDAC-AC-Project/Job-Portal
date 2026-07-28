@@ -1,22 +1,68 @@
-import { favoriteJobsData } from "../data/favoriteJobsData.js";
+import { jobs } from "../data/jobs.js";
+import { getCompanyInitials, getCompanyLogoStyle, formatJobType } from "../utils/jobDisplay.js";
+
+const STORAGE_KEY = "favoriteJobIds";
+
+function readIds() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeIds(ids) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+}
+
+function toRowShape(job) {
+  const logoStyle = getCompanyLogoStyle(job.id);
+
+  return {
+    id: job.id,
+    title: job.title,
+    company: job.company,
+    type: formatJobType(job.type),
+    location: job.location,
+    salary: job.salary,
+    remaining: "Posted recently",
+    expired: false,
+    logoText: getCompanyInitials(job.company),
+    logoBg: logoStyle.bg,
+    logoColor: logoStyle.text,
+  };
+}
 
 export const getFavoriteJobs = async () => {
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve(favoriteJobsData);
+      const ids = readIds();
+      const favorites = ids
+        .map((id) => jobs.find((job) => job.id === id))
+        .filter(Boolean)
+        .map(toRowShape);
+      resolve(favorites);
     }, 400);
   });
 };
 
-/*
-Later when backend is ready, replace above code with axios:
+export function isJobFavorited(jobId) {
+  return readIds().includes(jobId);
+}
 
-import axios from "axios";
+export function toggleFavoriteJob(jobId) {
+  const ids = readIds();
+  const isFavorited = ids.includes(jobId);
 
-const API_URL = "http://localhost:8080/api/candidate/favorite-jobs";
+  const updated = isFavorited
+    ? ids.filter((id) => id !== jobId)
+    : [...ids, jobId];
 
-export const getFavoriteJobs = async () => {
-  const response = await axios.get(API_URL);
-  return response.data;
-};
-*/
+  writeIds(updated);
+  return !isFavorited;
+}
+
+export function removeFavoriteJob(jobId) {
+  writeIds(readIds().filter((id) => id !== jobId));
+}
