@@ -90,22 +90,16 @@ public class Jobs extends BaseEntity {
     @Column(name = "status", length = 30)
     private JobStatus status = JobStatus.ACTIVE;
 
-    @Column(name = "is_featured")
-    private Boolean featured = false;
-
-    @Column(name = "is_highlighted")
-    private Boolean highlighted = false;
-
     @ElementCollection
     @CollectionTable(
             name = "job_benefits",
             joinColumns = @JoinColumn(name = "job_id")
     )
-    @Column(name = "benefit_name", nullable = false)
+    @Column(name = "benefit_name")
     private List<String> benefits = new ArrayList<>();
     
     //Company Snapshot
-    @Column(name = "company_name", nullable = false, length = 200)
+    @Column(name = "company_name", length = 200)
     private String companyName;
 
     @Column(name = "company_logo_url", length = 1000)

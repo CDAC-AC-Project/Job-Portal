@@ -153,8 +153,6 @@ public class JobsServiceImpl implements JobsService{
 	     job.setCompanyIndustry(companySummary.getCompanyIndustry());
 
 	     job.setStatus(JobStatus.ACTIVE);
-	     job.setFeatured(false);
-	     job.setHighlighted(false);
 	     if (job.getRemote() == null) {
 	         job.setRemote(false);
 	     }

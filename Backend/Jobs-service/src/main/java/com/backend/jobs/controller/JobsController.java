@@ -47,7 +47,7 @@ public class JobsController {
 		return ResponseEntity.ok(response);
 	}
 	
-	@GetMapping("/candidate/home")
+	@GetMapping("/home")
 	public ResponseEntity<?> getCandidateHomeJobs() {
 
 	    List<JobCardResponse> response = jobService.getCandidateHomeJobs();
@@ -55,7 +55,7 @@ public class JobsController {
 	    return ResponseEntity.ok(response);
 	}
 	
-	@GetMapping("/candidate/{jobId}")
+	@GetMapping("/{jobId}")
 	public ResponseEntity<JobDetailsResponseDto> getCandidateJobDetails(
 	        @PathVariable Long jobId
 	) {
@@ -67,14 +67,14 @@ public class JobsController {
 	
 	//Recruiter Jobs API
 	
-	@GetMapping("/recruiter/{recruiterId}/{status}")
-	public ResponseEntity<?> getMyJobs(@RequestParam Long recruiterId, @RequestParam JobStatus status, @RequestHeader("X-User-Role") String role){
+	@GetMapping("/recruiter/my-jobs")
+	public ResponseEntity<?> getMyJobs(@RequestHeader("X-User-Id") Long recruiterId, @RequestHeader("X-User-Role") String role, @RequestParam JobStatus status){
 		
 		return ResponseEntity.ok(jobService.getMyJobs(recruiterId, status, role));
 	}
 	
 	
-	@PostMapping
+	@PostMapping("/recruiter")
     public ResponseEntity<JobResponse> createJob(
             @RequestHeader("X-User-Id") Long recruiterId,
             @RequestHeader("X-User-Role") String role,
@@ -85,13 +85,13 @@ public class JobsController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 	
-	@PutMapping
-	public ResponseEntity<?> editjob(@RequestParam Long jobId, @RequestHeader("recruiterId") Long recruiterId ,@RequestBody CreateJobDto dto){
+	@PutMapping("/recruiter/{jobId}")
+	public ResponseEntity<?> editjob(@PathVariable Long jobId, @RequestHeader("recruiterId") Long recruiterId ,@RequestBody CreateJobDto dto){
 		
 		return ResponseEntity.ok(jobService.editMyJob(jobId, recruiterId, dto));
 	}
 	
-	@GetMapping("/recruiter/{jobId}")
+	@GetMapping("/recruiter/my-jobs/{jobId}")
 	public ResponseEntity<?> getJobsById(@PathVariable Long jobId, @RequestHeader("X-User-Id") Long recruiterId, @RequestHeader("X-User-Role") String role){
 		  
 		return ResponseEntity.ok(jobService.getJobById(jobId, recruiterId, role));
@@ -100,8 +100,8 @@ public class JobsController {
 	@PatchMapping("/recruiter/{jobId}/close")
 	public ResponseEntity<?> closeJob(
 	        @PathVariable Long jobId,
-	        @RequestHeader("User-Id") Long recruiterId,
-	        @RequestHeader("User-Role") String userRole
+	        @RequestHeader("X-User-Id") Long recruiterId,
+	        @RequestHeader("X-User-Role") String userRole
 	) {
 	    return ResponseEntity.ok(
 	            jobService.closeJob(jobId, recruiterId, userRole)
@@ -116,15 +116,6 @@ public class JobsController {
 	) {
 	    jobService.deleteJob(jobId, recruiterId, role);
 	    return ResponseEntity.ok("Job deleted successfully");
-	}
-	
-	
-	//Internal API
-	
-	@GetMapping("/internal/{jobId}")
-	public ResponseEntity<?> getInternalJobDetails(@PathVariable Long jobId){
-		
-		return ResponseEntity.ok(jobService.getJobInternalDetails(jobId));
 	}
 }
 
