@@ -2,6 +2,14 @@ import { jobAlertsData } from "../data/jobAlertsData";
 
 const SAVED_KEY = "savedJobAlertIds";
 
+export const getJobAlertCount = () => {
+  return jobAlertsData.length;
+};
+
+export const getSavedJobAlertCount = () => {
+    return readSavedIds().length;
+};
+
 function readSavedIds() {
   try {
     const raw = localStorage.getItem(SAVED_KEY);

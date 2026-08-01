@@ -11,6 +11,7 @@ export default function JobAlerts() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
+
   const jobsPerPage = 10;
 
   useEffect(() => {

@@ -20,9 +20,17 @@ export default function JobCard({ job, highlighted = false }) {
   };
 
   const handleToggleFavorite = (e) => {
-    e.stopPropagation();
-    setIsFavorited(toggleFavoriteJob(job.id));
-  };
+  e.stopPropagation();
+
+  console.log("Bookmark clicked");
+  console.log("Job ID:", job.id);
+
+  const result = toggleFavoriteJob(job.id);
+
+  console.log("After Save:", localStorage.getItem("favoriteJobIds"));
+
+  setIsFavorited(result);
+};
 
   return (
     <div
