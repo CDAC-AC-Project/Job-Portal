@@ -38,6 +38,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
     	http.csrf(csrf -> csrf.disable());
+    	http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
 		// 2. Retain basic auth scheme (disable form based auth)
 	//	http.httpBasic(Customizer.withDefaults());
 		// 3. Disable HttpSession (Tell Spring sec - DO NOT create HttpSession object
@@ -49,8 +50,10 @@ public class SecurityConfig {
 				.requestMatchers("/login").permitAll()
 				.requestMatchers("/register").permitAll()
 				.requestMatchers("/actuator/health").permitAll()
-				.requestMatchers(HttpMethod.GET,"/products/**").hasAnyRole("CUSTOMER","ADMIN")
-				.requestMatchers(HttpMethod.POST,"/products/**").hasRole("ADMIN")
+				.requestMatchers(HttpMethod.GET,"/jobs/search").permitAll()
+				.requestMatchers(HttpMethod.GET,"/jobs/home").permitAll()
+				.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+				.requestMatchers(HttpMethod.POST,"/jobs/recruiter").hasRole("RECRUITER")
 				.anyRequest().authenticated()
 				)
 
