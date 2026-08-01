@@ -1,13 +1,7 @@
-import { FiBriefcase, FiBookmark, FiBell } from "react-icons/fi";
-
-const icons = {
-  "Applied jobs": FiBriefcase,
-  "Favorite jobs": FiBookmark,
-  "Job Alerts": FiBell,
-};
+import { FiBriefcase } from "react-icons/fi";
 
 export default function DashboardStatCard({ stat }) {
-  const Icon = icons[stat.title] || FiBriefcase;
+  const Icon = stat.icon || FiBriefcase;
 
   return (
     <div

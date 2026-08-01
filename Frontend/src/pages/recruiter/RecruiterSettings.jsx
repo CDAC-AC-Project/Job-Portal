@@ -10,11 +10,13 @@ import RecruiterSocialSettings from "../../components/recruiter/settings/Recruit
 import RecruiterAccountSettings from "../../components/recruiter/settings/RecruiterAccountSettings";
 import Footer from "../../components/layout/Footer";
 
-import { getRecruiterSettings } from "../../services/recruiterSettingsService";
+import { getRecruiterSettings, resolveRecruiterProfileId } from "../../services/recruiterSettingsService";
 
 export default function RecruiterSettings() {
   const [activeTab, setActiveTab] = useState("company");
   const [loading, setLoading] = useState(true);
+
+  const [recruiterProfileId, setRecruiterProfileId] = useState(null);
 
   const [companyInfo, setCompanyInfo] = useState({
     logo: "",
@@ -29,16 +31,19 @@ export default function RecruiterSettings() {
     teamSize: "",
     yearOfEstablishment: "",
     companyWebsite: "",
-    companyVision: "",
   });
 
-  const [socialLinks, setSocialLinks] = useState([]);
+  const [socialLinks, setSocialLinks] = useState({
+    facebook: "",
+    twitter: "",
+    linkedin: "",
+    instagram: "",
+  });
 
   const [accountSettings, setAccountSettings] = useState({
-    mapLocation: "",
-    countryCode: "+880",
-    phone: "",
-    email: "",
+    companyVisible: true,
+    applicantEmailEnabled: true,
+    emailNotificationEnabled: true,
   });
 
   useEffect(() => {
@@ -46,12 +51,39 @@ export default function RecruiterSettings() {
       try {
         setLoading(true);
 
-        const data = await getRecruiterSettings();
+        const resolvedRecruiterProfileId = await resolveRecruiterProfileId();
+        setRecruiterProfileId(resolvedRecruiterProfileId);
 
-        setCompanyInfo(data.companyInfo);
-        setFoundingInfo(data.foundingInfo);
-        setSocialLinks(data.socialLinks);
-        setAccountSettings(data.accountSettings);
+        const recruiter = await getRecruiterSettings(resolvedRecruiterProfileId);
+        const company = recruiter.company || {};
+
+        setCompanyInfo({
+          logo: company.logo || "",
+          banner: company.banner || "",
+          companyName: company.companyName || "",
+          aboutUs: company.about || "",
+        });
+
+        setFoundingInfo({
+          organizationType: company.organizationType || "",
+          industryType: company.industryType || "",
+          teamSize: company.teamSize || "",
+          yearOfEstablishment: company.yearOfEstablishment ? `${company.yearOfEstablishment}-01-01` : "",
+          companyWebsite: company.website || "",
+        });
+
+        setSocialLinks({
+          facebook: company.facebook || "",
+          twitter: company.twitter || "",
+          linkedin: company.linkedin || "",
+          instagram: company.instagram || "",
+        });
+
+        setAccountSettings({
+          companyVisible: recruiter.accountSetting?.companyVisible ?? true,
+          applicantEmailEnabled: recruiter.accountSetting?.applicantEmailEnabled ?? true,
+          emailNotificationEnabled: recruiter.accountSetting?.emailNotificationEnabled ?? true,
+        });
       } catch (error) {
         console.error("Failed to fetch recruiter settings:", error);
       } finally {
@@ -66,6 +98,7 @@ export default function RecruiterSettings() {
     if (activeTab === "company") {
       return (
         <CompanyInfoSettings
+          recruiterProfileId={recruiterProfileId}
           companyInfo={companyInfo}
           setCompanyInfo={setCompanyInfo}
         />
@@ -75,6 +108,7 @@ export default function RecruiterSettings() {
     if (activeTab === "founding") {
       return (
         <FoundingInfoSettings
+          recruiterProfileId={recruiterProfileId}
           foundingInfo={foundingInfo}
           setFoundingInfo={setFoundingInfo}
         />
@@ -84,6 +118,7 @@ export default function RecruiterSettings() {
     if (activeTab === "social") {
       return (
         <RecruiterSocialSettings
+          recruiterProfileId={recruiterProfileId}
           socialLinks={socialLinks}
           setSocialLinks={setSocialLinks}
         />
@@ -93,6 +128,7 @@ export default function RecruiterSettings() {
     if (activeTab === "account") {
       return (
         <RecruiterAccountSettings
+          recruiterProfileId={recruiterProfileId}
           accountSettings={accountSettings}
           setAccountSettings={setAccountSettings}
         />

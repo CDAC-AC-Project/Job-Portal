@@ -1,64 +1,42 @@
-export const validatePersonalSettings = (formData) => {
+export function validatePersonalInfo(form) {
   const errors = {};
 
-  if (!formData.fullName.trim()) {
-    errors.fullName = "Full name is required";
-  } else if (formData.fullName.trim().length < 3) {
-    errors.fullName = "Full name must be at least 3 characters";
+  if (!form.phone?.trim()) errors.phone = "Phone number is required";
+  else if (!/^[0-9+\-\s]{8,20}$/.test(form.phone.trim())) {
+    errors.phone = "Enter a valid phone number";
   }
 
-  if (!formData.headline.trim()) {
-    errors.headline = "Title/headline is required";
-  }
+  if (!form.profileTitle?.trim()) errors.profileTitle = "Profile title is required";
+  if (!form.location?.trim()) errors.location = "Location is required";
+  if (!form.experienceLevel?.trim()) errors.experienceLevel = "Experience level is required";
 
-  if (!formData.experience) {
-    errors.experience = "Please select experience";
-  }
-
-  if (!formData.education) {
-    errors.education = "Please select education";
-  }
-
-  if (formData.website.trim()) {
-    const websiteRegex =
-      /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/[\w\-._~:/?#[\]@!$&'()*+,;=]*)?$/;
-
-    if (!websiteRegex.test(formData.website.trim())) {
-      errors.website = "Enter a valid website URL";
-    }
+  if (form.expectedSalary && form.expectedSalary.length > 50) {
+    errors.expectedSalary = "Expected salary must be less than 50 characters";
   }
 
   return errors;
-};
+}
 
-export const validateProfileImage = (file) => {
+export function validateProfileImage(file) {
   const errors = {};
+  if (!file) return errors;
 
-  if (!file) {
-    errors.profilePicture = "Please select an image";
-    return errors;
-  }
-
-  const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
-
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
   if (!allowedTypes.includes(file.type)) {
-    errors.profilePicture = "Only JPG, JPEG, and PNG images are allowed";
+    errors.profileImage = "Only JPG, PNG, or WEBP images are allowed";
   }
 
-  const maxSize = 5 * 1024 * 1024;
-
-  if (file.size > maxSize) {
-    errors.profilePicture = "Image size must be less than 5 MB";
+  if (file.size > 2 * 1024 * 1024) {
+    errors.profileImage = "Profile image must be less than 2 MB";
   }
 
   return errors;
-};
+}
 
-export const validateResumeFile = (file) => {
+export function validateResumeFile(file) {
   const errors = {};
-
   if (!file) {
-    errors.resume = "Please select a resume file";
+    errors.resume = "Resume file is required";
     return errors;
   }
 
@@ -68,131 +46,59 @@ export const validateResumeFile = (file) => {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ];
 
-  if (!allowedTypes.includes(file.type)) {
-    errors.resume = "Only PDF, DOC, and DOCX files are allowed";
+  const allowedExtensions = ["pdf", "doc", "docx"];
+  const extension = file.name.split(".").pop()?.toLowerCase();
+
+  if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(extension)) {
+    errors.resume = "Only PDF, DOC, or DOCX files are allowed";
   }
 
-  const maxSize = 5 * 1024 * 1024;
-
-  if (file.size > maxSize) {
+  if (file.size > 5 * 1024 * 1024) {
     errors.resume = "Resume size must be less than 5 MB";
   }
 
   return errors;
-};
-export const validateProfileSettings = (formData) => {
+}
+
+export function validateEducation(education) {
+  const errors = {};
+  if (!education.degree?.trim()) errors.degree = "Degree is required";
+  if (!education.institute?.trim()) errors.institute = "Institute is required";
+  if (!education.passingYear?.trim()) errors.passingYear = "Passing year is required";
+  return errors;
+}
+
+export function validateExperience(experience) {
+  const errors = {};
+  if (!experience.companyName?.trim()) errors.companyName = "Company name is required";
+  if (!experience.jobTitle?.trim()) errors.jobTitle = "Job title is required";
+  if (!experience.startDate?.trim()) errors.startDate = "Start date is required";
+  return errors;
+}
+
+export function validateSocialLink(link, existingLinks = []) {
   const errors = {};
 
-  if (!formData.nationality) {
-    errors.nationality = "Please select nationality";
+  if (!link.platform) errors.platform = "Platform is required";
+
+  if (!link.url?.trim()) errors.url = "URL is required";
+  else if (!/^https?:\/\/.+/i.test(link.url.trim())) {
+    errors.url = "URL must start with http:// or https://";
   }
 
-  if (!formData.dateOfBirth) {
-    errors.dateOfBirth = "Date of birth is required";
-  }
-
-  if (!formData.gender) {
-    errors.gender = "Please select gender";
-  }
-
-  if (!formData.maritalStatus) {
-    errors.maritalStatus = "Please select marital status";
-  }
-
-  if (!formData.education) {
-    errors.education = "Please select education";
-  }
-
-  if (!formData.experience) {
-    errors.experience = "Please select experience";
-  }
-
-  if (!formData.biography.trim()) {
-    errors.biography = "Biography is required";
-  } else if (formData.biography.trim().length < 30) {
-    errors.biography = "Biography must be at least 30 characters";
+  if (link.platform && existingLinks.some((existing) => existing.platform === link.platform)) {
+    errors.platform = "This platform is already added";
   }
 
   return errors;
-};
-export const validateSocialLinks = (socialLinks) => {
+}
+
+export function validateAccountSettings(settings) {
   const errors = {};
-
-  socialLinks.forEach((link) => {
-    if (!link.platform) {
-      errors[`platform_${link.id}`] = "Please select platform";
-    }
-
-    if (link.url.trim()) {
-      const urlRegex =
-        /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/[\w\-._~:/?#[\]@!$&'()*+,;=]*)?$/;
-
-      if (!urlRegex.test(link.url.trim())) {
-        errors[`url_${link.id}`] = "Enter a valid profile URL";
-      }
+  ["profileVisible", "jobAlertEnabled", "emailNotificationEnabled"].forEach((field) => {
+    if (typeof settings[field] !== "boolean") {
+      errors[field] = "Invalid value";
     }
   });
-
   return errors;
-};
-export const validateContactInfo = (contactInfo) => {
-  const errors = {};
-
-  if (!contactInfo.mapLocation.trim()) {
-    errors.mapLocation = "Map location is required";
-  }
-
-  if (!contactInfo.phone.trim()) {
-    errors.phone = "Phone number is required";
-  } else if (contactInfo.phone.trim().length < 8) {
-    errors.phone = "Enter a valid phone number";
-  }
-
-  if (!contactInfo.email.trim()) {
-    errors.email = "Email address is required";
-  } else {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(contactInfo.email.trim())) {
-      errors.email = "Enter a valid email address";
-    }
-  }
-
-  return errors;
-};
-
-export const validateJobAlertsSettings = (jobAlerts) => {
-  const errors = {};
-
-  if (!jobAlerts.role.trim()) {
-    errors.role = "Job role is required";
-  }
-
-  if (!jobAlerts.location.trim()) {
-    errors.location = "Location is required";
-  }
-
-  return errors;
-};
-
-export const validatePasswordSettings = (passwordData) => {
-  const errors = {};
-
-  if (!passwordData.currentPassword.trim()) {
-    errors.currentPassword = "Current password is required";
-  }
-
-  if (!passwordData.newPassword.trim()) {
-    errors.newPassword = "New password is required";
-  } else if (passwordData.newPassword.length < 6) {
-    errors.newPassword = "Password must be at least 6 characters";
-  }
-
-  if (!passwordData.confirmPassword.trim()) {
-    errors.confirmPassword = "Confirm password is required";
-  } else if (passwordData.newPassword !== passwordData.confirmPassword) {
-    errors.confirmPassword = "Passwords do not match";
-  }
-
-  return errors;
-};
+}

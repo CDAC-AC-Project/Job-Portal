@@ -16,5 +16,7 @@ public interface ApplicationService {
     List<MyApplicationResponse> getMyApplication(Long candidateId);
     
     ApplicationDetailsResponse getApplication(Long applicationId);
+    
+    ApplicationResponse withdrawApplication(Long applicationId, Long candidateId);
 
 }

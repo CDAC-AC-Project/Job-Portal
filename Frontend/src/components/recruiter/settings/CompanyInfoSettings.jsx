@@ -4,7 +4,7 @@ import { FiUploadCloud } from "react-icons/fi";
 import { validateCompanyInfo } from "../../../utils/recruiterSettingsValidation";
 import { updateRecruiterCompanyInfo } from "../../../services/recruiterSettingsService";
 
-export default function CompanyInfoSettings({ companyInfo, setCompanyInfo }) {
+export default function CompanyInfoSettings({ recruiterProfileId, companyInfo, setCompanyInfo }) {
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
@@ -56,7 +56,13 @@ export default function CompanyInfoSettings({ companyInfo, setCompanyInfo }) {
 
     try {
       setSaving(true);
-      await updateRecruiterCompanyInfo(companyInfo);
+      const updated = await updateRecruiterCompanyInfo(recruiterProfileId, companyInfo);
+      setCompanyInfo({
+        logo: updated.logo || "",
+        banner: updated.banner || "",
+        companyName: updated.companyName || "",
+        aboutUs: updated.about || "",
+      });
       alert("Company info updated successfully");
     } catch (error) {
       console.error(error);
@@ -165,6 +171,10 @@ function ImageUploadPreview({
   onRemove,
   boxClassName = "",
 }) {
+  // value is either a plain URL string (already-saved image from the backend)
+  // or {file, previewUrl, size} for a newly picked, not-yet-saved file.
+  const previewSrc = typeof value === "string" ? value : value?.previewUrl;
+
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -174,9 +184,9 @@ function ImageUploadPreview({
       <label
         className={`border border-gray-200 rounded-md overflow-hidden bg-gray-50 cursor-pointer flex items-center justify-center ${boxClassName}`}
       >
-        {value?.previewUrl ? (
+        {previewSrc ? (
           <img
-            src={value.previewUrl}
+            src={previewSrc}
             alt={label}
             className="w-full h-full object-cover"
           />
@@ -198,9 +208,9 @@ function ImageUploadPreview({
         />
       </label>
 
-      {value?.previewUrl && (
+      {previewSrc && (
         <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-          <span>{value.size}</span>
+          {value?.size && <span>{value.size}</span>}
 
           <button
             type="button"

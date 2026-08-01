@@ -1,11 +1,11 @@
 import { NavLink } from "react-router-dom";
 import {
   FiBriefcase,
-  FiSearch,
-  FiBell,
   FiPhone,
   FiChevronDown,
 } from "react-icons/fi";
+
+import NotificationsPanel from "./notifications/NotificationsPanel";
 
 export default function CandidateHeader() {
   const navLinks = [
@@ -56,7 +56,7 @@ export default function CandidateHeader() {
       <div className="max-w-7xl mx-auto px-4 lg:px-6 py-5 flex flex-col lg:flex-row lg:items-center gap-5">
         <div className="flex items-center justify-between">
           <NavLink
-            to="/candidate/find-job"
+            to="/candidate/home"
             className="flex items-center gap-2 text-xl font-semibold text-gray-900"
           >
             <FiBriefcase className="text-blue-600 text-2xl" />
@@ -64,30 +64,19 @@ export default function CandidateHeader() {
           </NavLink>
 
           <div className="lg:hidden flex items-center gap-4">
-            <FiBell className="text-gray-500" />
+            <NotificationsPanel />
             <div className="w-9 h-9 rounded-full bg-gray-300"></div>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col sm:flex-row gap-3">
-          <div className="sm:w-40 border border-gray-200 rounded-md px-3 py-3 flex items-center gap-2 text-sm">
-            <span>🇮🇳</span>
-            <span>India</span>
-            <FiChevronDown className="ml-auto text-gray-400" />
-          </div>
-
-          <div className="flex-1 border border-gray-200 rounded-md px-4 py-3 flex items-center gap-3">
-            <FiSearch className="text-blue-600" />
-            <input
-              type="text"
-              placeholder="Job title, keyword, company"
-              className="w-full outline-none text-sm"
-            />
-          </div>
+        <div className="sm:w-40 border border-gray-200 rounded-md px-3 py-3 flex items-center gap-2 text-sm">
+          <span>🇮🇳</span>
+          <span>India</span>
+          <FiChevronDown className="ml-auto text-gray-400" />
         </div>
 
-        <div className="hidden lg:flex items-center gap-5">
-          <FiBell className="text-gray-500 text-xl" />
+        <div className="hidden lg:flex items-center gap-5 lg:ml-auto">
+          <NotificationsPanel />
           <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden">
             <img
               src="https://i.pravatar.cc/100?img=12"

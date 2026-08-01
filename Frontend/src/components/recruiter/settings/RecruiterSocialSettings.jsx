@@ -1,64 +1,27 @@
 import { useState } from "react";
-import {
-  FiPlusCircle,
-  FiXCircle,
-  FiFacebook,
-  FiTwitter,
-  FiInstagram,
-  FiYoutube,
-  FiGlobe,
-} from "react-icons/fi";
+import { FiFacebook, FiTwitter, FiInstagram, FiLinkedin } from "react-icons/fi";
 
 import { validateRecruiterSocialLinks } from "../../../utils/recruiterSettingsValidation";
 import { updateRecruiterSocialLinks } from "../../../services/recruiterSettingsService";
 
-const socialPlatforms = [
-  { name: "Facebook", icon: FiFacebook },
-  { name: "Twitter", icon: FiTwitter },
-  { name: "Instagram", icon: FiInstagram },
-  { name: "Youtube", icon: FiYoutube },
-  { name: "LinkedIn", icon: FiGlobe },
-  { name: "Website", icon: FiGlobe },
+const socialFields = [
+  { name: "facebook", label: "Facebook", icon: FiFacebook, placeholder: "https://facebook.com/your-company" },
+  { name: "twitter", label: "Twitter", icon: FiTwitter, placeholder: "https://twitter.com/your-company" },
+  { name: "linkedin", label: "LinkedIn", icon: FiLinkedin, placeholder: "https://linkedin.com/company/your-company" },
+  { name: "instagram", label: "Instagram", icon: FiInstagram, placeholder: "https://instagram.com/your-company" },
 ];
 
 export default function RecruiterSocialSettings({
+  recruiterProfileId,
   socialLinks,
   setSocialLinks,
 }) {
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
-  const handleChange = (id, field, value) => {
-    setSocialLinks(
-      socialLinks.map((link) =>
-        link.id === id ? { ...link, [field]: value } : link
-      )
-    );
-
-    setErrors({
-      ...errors,
-      [`${field}_${id}`]: "",
-    });
-  };
-
-  const handleAddLink = () => {
-    setSocialLinks([
-      ...socialLinks,
-      {
-        id: Date.now(),
-        platform: "Facebook",
-        url: "",
-      },
-    ]);
-  };
-
-  const handleRemoveLink = (id) => {
-    if (socialLinks.length === 1) {
-      alert("At least one social link is required");
-      return;
-    }
-
-    setSocialLinks(socialLinks.filter((link) => link.id !== id));
+  const handleChange = (name, value) => {
+    setSocialLinks({ ...socialLinks, [name]: value });
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSave = async (e) => {
@@ -73,7 +36,13 @@ export default function RecruiterSocialSettings({
 
     try {
       setSaving(true);
-      await updateRecruiterSocialLinks(socialLinks);
+      const updated = await updateRecruiterSocialLinks(recruiterProfileId, socialLinks);
+      setSocialLinks({
+        facebook: updated.facebook || "",
+        twitter: updated.twitter || "",
+        linkedin: updated.linkedin || "",
+        instagram: updated.instagram || "",
+      });
       alert("Social media profile updated successfully");
     } catch (error) {
       console.error(error);
@@ -83,85 +52,42 @@ export default function RecruiterSocialSettings({
     }
   };
 
-  const getPlatformIcon = (platformName) => {
-    const platform = socialPlatforms.find((item) => item.name === platformName);
-    return platform ? platform.icon : FiGlobe;
-  };
-
   return (
     <form onSubmit={handleSave} className="max-w-5xl">
       <div className="space-y-5">
-        {socialLinks.map((link, index) => {
-          const Icon = getPlatformIcon(link.platform);
+        {socialFields.map((field) => {
+          const Icon = field.icon;
 
           return (
-            <div key={link.id}>
+            <div key={field.name}>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Social Link {index + 1}
+                {field.label}
               </label>
 
               <div className="flex flex-col md:flex-row gap-3">
-                <div className="md:w-56 border border-gray-300 rounded-md flex items-center">
-                  <div className="px-4 text-blue-600">
-                    <Icon />
-                  </div>
-
-                  <select
-                    value={link.platform}
-                    onChange={(e) =>
-                      handleChange(link.id, "platform", e.target.value)
-                    }
-                    className="w-full py-3 pr-4 text-sm bg-white outline-none"
-                  >
-                    {socialPlatforms.map((platform) => (
-                      <option key={platform.name} value={platform.name}>
-                        {platform.name}
-                      </option>
-                    ))}
-                  </select>
+                <div className="md:w-14 h-12 border border-gray-300 rounded-md flex items-center justify-center text-blue-600">
+                  <Icon />
                 </div>
 
                 <input
-                  value={link.url}
-                  onChange={(e) =>
-                    handleChange(link.id, "url", e.target.value)
-                  }
-                  placeholder="Profile link/url..."
+                  value={socialLinks[field.name] || ""}
+                  onChange={(e) => handleChange(field.name, e.target.value)}
+                  placeholder={field.placeholder}
                   className={`flex-1 border rounded-md px-4 py-3 text-sm outline-none focus:ring-2 ${
-                    errors[`url_${link.id}`]
+                    errors[field.name]
                       ? "border-red-500 focus:ring-red-500"
                       : "border-gray-300 focus:ring-blue-500"
                   }`}
                 />
-
-                <button
-                  type="button"
-                  onClick={() => handleRemoveLink(link.id)}
-                  className="md:w-12 h-12 rounded-md bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-red-50 hover:text-red-500"
-                >
-                  <FiXCircle />
-                </button>
               </div>
 
-              {(errors[`platform_${link.id}`] ||
-                errors[`url_${link.id}`]) && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors[`platform_${link.id}`] || errors[`url_${link.id}`]}
-                </p>
+              {errors[field.name] && (
+                <p className="text-red-500 text-xs mt-1">{errors[field.name]}</p>
               )}
             </div>
           );
         })}
       </div>
-
-      <button
-        type="button"
-        onClick={handleAddLink}
-        className="w-full mt-5 bg-gray-100 text-gray-700 py-3 rounded-md text-sm font-medium flex items-center justify-center gap-2 hover:bg-blue-50 hover:text-blue-600"
-      >
-        <FiPlusCircle />
-        Add New Social Link
-      </button>
 
       <button
         type="submit"

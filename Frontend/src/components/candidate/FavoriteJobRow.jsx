@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   FiMapPin,
   FiDollarSign,
@@ -5,9 +6,22 @@ import {
   FiBookmark,
   FiArrowRight,
   FiXCircle,
+  FiCheckCircle,
 } from "react-icons/fi";
 
-export default function FavoriteJobRow({ job }) {
+import ApplyJobModal from "./ApplyJobModal";
+import { toggleFavoriteJob } from "../../services/favoriteJobService";
+import { hasAppliedToJob } from "../../services/jobApplicationService";
+
+export default function FavoriteJobRow({ job, onRemove }) {
+  const [applied, setApplied] = useState(() => hasAppliedToJob(job.id));
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+
+  const handleRemoveFavorite = () => {
+    toggleFavoriteJob(job.id);
+    onRemove?.(job.id);
+  };
+
   return (
     <div
       className={`flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-4 sm:px-5 py-4 border-b border-gray-200 transition ${
@@ -58,7 +72,12 @@ export default function FavoriteJobRow({ job }) {
       </div>
 
       <div className="flex items-center justify-end gap-4">
-        <button className="text-gray-900 hover:text-blue-600">
+        <button
+          type="button"
+          onClick={handleRemoveFavorite}
+          aria-label="Remove from favorites"
+          className="text-gray-900 hover:text-red-500"
+        >
           <FiBookmark className="text-lg fill-current" />
         </button>
 
@@ -69,8 +88,14 @@ export default function FavoriteJobRow({ job }) {
           >
             Deadline Expired
           </button>
+        ) : applied ? (
+          <span className="flex items-center gap-2 px-5 py-3 rounded-md bg-green-50 font-semibold text-green-600">
+            <FiCheckCircle /> Applied
+          </span>
         ) : (
           <button
+            type="button"
+            onClick={() => setIsApplyModalOpen(true)}
             className={`px-5 py-3 rounded-md font-semibold flex items-center gap-2 transition ${
               job.highlighted
                 ? "bg-blue-600 text-white hover:bg-blue-700"
@@ -82,6 +107,16 @@ export default function FavoriteJobRow({ job }) {
           </button>
         )}
       </div>
+
+      <ApplyJobModal
+        isOpen={isApplyModalOpen}
+        job={job}
+        onClose={() => setIsApplyModalOpen(false)}
+        onApplied={() => {
+          setApplied(true);
+          setIsApplyModalOpen(false);
+        }}
+      />
     </div>
   );
 }

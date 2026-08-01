@@ -101,4 +101,35 @@ public class ApplicationServiceImpl implements ApplicationService {
 	response.setApplicationId(application.getId());
 	return response;
 	}
+	
+	@Override
+	public ApplicationResponse withdrawApplication(Long applicationId, Long candidateId) {
+
+	    JobApplication application = applicationRepository
+	            .findById(applicationId)
+	            .orElseThrow(() ->
+	                    new RuntimeException("Application not found"));
+
+	    if (!application.getCandidateId().equals(candidateId)) {
+	        throw new RuntimeException(
+	                "You are not allowed to withdraw this application");
+	    }
+
+	    if (application.getStatus() == ApplicationStatus.WITHDRAWN) {
+	        throw new RuntimeException(
+	                "Application already withdrawn");
+	    }
+
+	    application.setStatus(ApplicationStatus.WITHDRAWN);
+
+	    JobApplication updatedApplication =
+	            applicationRepository.save(application);
+
+	    ApplicationResponse response =
+	            mapper.map(updatedApplication, ApplicationResponse.class);
+
+	    response.setMessage("Application withdrawn successfully.");
+
+	    return response;
+	}
 }
