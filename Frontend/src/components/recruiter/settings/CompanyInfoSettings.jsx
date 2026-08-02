@@ -170,7 +170,9 @@ export default function CompanyInfoSettings({
       setSaving(false);
     }
   };
-
+    console.log("Company Info:", companyInfo);
+  console.log("Logo:", companyInfo.logo);
+  console.log("Banner:", companyInfo.banner);
   return (
     <form onSubmit={handleSave} className="space-y-10">
 

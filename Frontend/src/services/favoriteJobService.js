@@ -13,7 +13,14 @@ function readIds() {
 }
 
 function writeIds(ids) {
+  console.log("Writing:", ids);
+
   localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+
+  console.log(
+    "Stored:",
+    localStorage.getItem(STORAGE_KEY)
+  );
 }
 
 function toRowShape(job) {
@@ -52,17 +59,31 @@ export function isJobFavorited(jobId) {
 }
 
 export function toggleFavoriteJob(jobId) {
+
+  console.log("Received jobId:", jobId);
+
   const ids = readIds();
+  console.log("Before:", ids);
+
   const isFavorited = ids.includes(jobId);
 
   const updated = isFavorited
-    ? ids.filter((id) => id !== jobId)
-    : [...ids, jobId];
+      ? ids.filter(id => id !== jobId)
+      : [...ids, jobId];
+
+  console.log("After:", updated);
 
   writeIds(updated);
+
+  console.log("Saved:", localStorage.getItem("favoriteJobIds"));
+
   return !isFavorited;
 }
 
 export function removeFavoriteJob(jobId) {
   writeIds(readIds().filter((id) => id !== jobId));
+}
+
+export function getFavoriteJobCount() {
+    return readIds().length;
 }

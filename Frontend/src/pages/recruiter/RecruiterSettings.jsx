@@ -51,13 +51,10 @@ export default function RecruiterSettings() {
         setLoading(true);
 
         const profileId = await resolveRecruiterProfileId();
-
         setRecruiterProfileId(profileId);
 
         const recruiter = await getRecruiterSettings(profileId);
-
-        const company = recruiter?.company || {};
-        const accountSetting = recruiter?.accountSetting || {};
+        const company = recruiter.company || {};
 
         setCompanyInfo({
           logo: company.logo || "",
@@ -84,11 +81,12 @@ export default function RecruiterSettings() {
         });
 
         setAccountSettings({
-          companyVisible: accountSetting.companyVisible ?? true,
+          companyVisible:
+            recruiter.accountSetting?.companyVisible ?? true,
           applicantEmailEnabled:
-            accountSetting.applicantEmailEnabled ?? true,
+            recruiter.accountSetting?.applicantEmailEnabled ?? true,
           emailNotificationEnabled:
-            accountSetting.emailNotificationEnabled ?? true,
+            recruiter.accountSetting?.emailNotificationEnabled ?? true,
         });
       } catch (error) {
         console.error("Failed to fetch recruiter settings:", error);
@@ -101,14 +99,6 @@ export default function RecruiterSettings() {
   }, []);
 
   const renderTabContent = () => {
-    if (loading) {
-      return (
-        <div className="py-20 text-center text-gray-500">
-          Loading settings...
-        </div>
-      );
-    }
-
     switch (activeTab) {
       case "company":
         return (
@@ -152,23 +142,23 @@ export default function RecruiterSettings() {
   };
 
   return (
-    <section className="flex-1 px-6 sm:px-8 lg:px-12 py-8">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-          Settings
-        </h1>
+    <>
+      <h1 className="text-2xl font-semibold text-gray-900 mb-6">
+        Settings
+      </h1>
 
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-          <RecruiterSettingsTabs
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-          />
+      <RecruiterSettingsTabs
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
 
-          <div className="p-6 sm:p-8 lg:p-10">
-            {renderTabContent()}
-          </div>
+      {loading ? (
+        <div className="py-20 text-center text-gray-500">
+          Loading settings...
         </div>
-      </div>
-    </section>
+      ) : (
+        renderTabContent()
+      )}
+    </>
   );
 }

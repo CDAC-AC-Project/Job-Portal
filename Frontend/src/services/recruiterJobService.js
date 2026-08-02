@@ -3,42 +3,7 @@ import axios from "axios";
 const STORAGE_KEY = "recruiterJobs";
 
 const JOBS_API_URL =
-  "http://localhost:8083/jobs/recruiter";
-
-const defaultJobs = [
-  {
-    id: 1,
-    jobTitle: "UI/UX Designer",
-    jobType: "Full Time",
-    expirationDate: "27 days remaining",
-    status: "Active",
-    applications: 798,
-  },
-  {
-    id: 2,
-    jobTitle: "Senior UX Designer",
-    jobType: "Internship",
-    expirationDate: "8 days remaining",
-    status: "Active",
-    applications: 185,
-  },
-  {
-    id: 3,
-    jobTitle: "Junior Graphic Designer",
-    jobType: "Full Time",
-    expirationDate: "24 days remaining",
-    status: "Active",
-    applications: 583,
-  },
-  {
-    id: 4,
-    jobTitle: "Front End Developer",
-    jobType: "Full Time",
-    expirationDate: "Dec 7, 2019",
-    status: "Expire",
-    applications: 740,
-  },
-];
+  "http://localhost:8083/jobs/recruiter/my-jobs";
 
 const recruiterJobStatuses = [
   "ACTIVE",
@@ -81,9 +46,15 @@ const mapBackendJob = (job) => ({
   id: job.id,
   jobTitle: job.title,
   jobType: formatJobType(job.jobType),
-  expirationDate: job.expirationDate,
+  expirationDate:
+    job.expirationDate ||
+    job.expiryDate ||
+    "Not specified",
   status: formatJobStatus(job.status),
-  applications: job.applicationCount ?? 0,
+  applications:
+    job.applicationCount ??
+    job.applications ??
+    0,
   createdAt: job.createdAt,
 });
 
@@ -104,166 +75,102 @@ export const fetchRecruiterJobs = async () => {
   }
 
   const headers = {
+    "X-User-Id": recruiterId,
     "X-User-Role": role,
-    ...(token && {
-      Authorization: `Bearer ${token}`,
-    }),
   };
 
-  const requests = recruiterJobStatuses.map(
-    (status) =>
-      axios.get(
-        `${JOBS_API_URL}/${status}`,
-        {
-          params: {
-            recruiterId,
-          },
-          headers,
-        }
-      )
-  );
-
-  const responses = await Promise.all(requests);
-
-  const mergedJobs = responses.flatMap(
-    (response) => response.data
-  );
-
-  const uniqueJobs = Array.from(
-    new Map(
-      mergedJobs.map((job) => [
-        job.id,
-        job,
-      ])
-    ).values()
-  );
-
-  return uniqueJobs
-    .sort((firstJob, secondJob) => {
-      const firstCreatedAt =
-        firstJob.createdAt
-          ? new Date(firstJob.createdAt).getTime()
-          : 0;
-
-      const secondCreatedAt =
-        secondJob.createdAt
-          ? new Date(secondJob.createdAt).getTime()
-          : 0;
-
-      return secondCreatedAt - firstCreatedAt;
-    })
-    .map(mapBackendJob);
-};
-
-export const getRecruiterJobs = () => {
-  const savedJobs =
-    localStorage.getItem(STORAGE_KEY);
-
-  if (!savedJobs) {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(defaultJobs)
-    );
-
-    return defaultJobs;
+  if (token) {
+    headers.Authorization =
+      `Bearer ${token}`;
   }
 
-  return JSON.parse(savedJobs);
-};
+  try {
+    const requests =
+      recruiterJobStatuses.map(
+        (status) =>
+          axios.get(JOBS_API_URL, {
+            params: {
+              status,
+            },
+            headers,
+          })
+      );
 
-export const saveRecruiterJob = (
-  jobData
-) => {
-  const jobs = getRecruiterJobs();
+    const responses =
+      await Promise.all(requests);
 
-  const newJob = {
-    id: Date.now(),
-    jobTitle: jobData.jobTitle,
-    jobType: jobData.jobType,
-    expirationDate:
-      jobData.expirationDate ||
-      "4 days remaining",
-    status: "Active",
-    applications: 0,
-    createdAt: new Date().toISOString(),
-    ...jobData,
-  };
+    const mergedJobs =
+      responses.flatMap((response) => {
+        const responseData =
+          response.data;
 
-  const updatedJobs = [
-    newJob,
-    ...jobs,
-  ];
+        if (Array.isArray(responseData)) {
+          return responseData;
+        }
 
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(updatedJobs)
-  );
+        if (
+          Array.isArray(
+            responseData?.content
+          )
+        ) {
+          return responseData.content;
+        }
 
-  return newJob;
-};
+        if (
+          Array.isArray(responseData?.data)
+        ) {
+          return responseData.data;
+        }
 
-export const updateRecruiterJobStatus = (
-  jobId,
-  status
-) => {
-  const jobs = getRecruiterJobs();
+        return [];
+      });
 
-  const updatedJobs = jobs.map(
-    (job) =>
-      job.id === jobId
-        ? {
-            ...job,
-            status,
-          }
-        : job
-  );
+    const uniqueJobs = Array.from(
+      new Map(
+        mergedJobs.map((job) => [
+          job.id,
+          job,
+        ])
+      ).values()
+    );
 
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(updatedJobs)
-  );
+    return uniqueJobs
+      .sort(
+        (
+          firstJob,
+          secondJob
+        ) => {
+          const firstCreatedAt =
+            firstJob.createdAt
+              ? new Date(
+                  firstJob.createdAt
+                ).getTime()
+              : 0;
 
-  return updatedJobs;
-};
+          const secondCreatedAt =
+            secondJob.createdAt
+              ? new Date(
+                  secondJob.createdAt
+                ).getTime()
+              : 0;
 
-export const getRecruiterJobById = (
-  jobId
-) => {
-  const jobs = getRecruiterJobs();
+          return (
+            secondCreatedAt -
+            firstCreatedAt
+          );
+        }
+      )
+      .map(mapBackendJob);
+  } catch (error) {
+    console.error(
+      "Failed to fetch recruiter jobs:",
+      error.response?.data ||
+        error.message
+    );
 
-  return jobs.find(
-    (job) =>
-      String(job.id) === String(jobId)
-  );
-};
-
-export const updateRecruiterJob = (
-  jobId,
-  updatedJobData
-) => {
-  const jobs = getRecruiterJobs();
-
-  const updatedJobs = jobs.map(
-    (job) =>
-      String(job.id) === String(jobId)
-        ? {
-            ...job,
-            ...updatedJobData,
-            id: job.id,
-            status: job.status,
-            applications:
-              job.applications,
-          }
-        : job
-  );
-
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(updatedJobs)
-  );
-
-  return updatedJobs.find(
-    (job) =>
-      String(job.id) === String(jobId)
-  );
+    throw new Error(
+      error.response?.data?.message ||
+        "Unable to fetch recruiter jobs."
+    );
+  }
 };

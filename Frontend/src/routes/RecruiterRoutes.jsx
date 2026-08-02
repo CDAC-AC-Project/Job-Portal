@@ -2,7 +2,6 @@ import { Route } from "react-router-dom";
 import RecruiterLayout from "../components/layout/RecruiterLayout";
 import { Navigate } from "react-router-dom";
 import RecruiterDashboard from "../pages/recruiter/RecruiterDashboard";
-import PlansBilling from "../pages/recruiter/PlansBilling";
 import PostJob from "../pages/recruiter/PostJob";
 import MyJobs from "../pages/recruiter/MyJobs";
 import Applications from "../pages/recruiter/Applications";
@@ -23,7 +22,6 @@ const RecruiterRoutes = (
     <Route path="post-job" element={<PostJob />} />
     <Route path="my-jobs" element={<MyJobs />} />
     <Route path="applications" element={<Applications />} />
-    <Route path="plans-billing" element={<PlansBilling />} />
     <Route path="settings" element={<RecruiterSettings />} />
     <Route path="saved-candidate" element={<SavedCandidates />} />
     <Route path="candidate-profile/:id" element={<CandidateProfile />} />
