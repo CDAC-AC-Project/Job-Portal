@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FiInfo, FiArrowLeft, FiArrowRight } from "react-icons/fi";
 
-import RecruiterHeader from "../../components/recruiter/RecruiterHeader";
-import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
 import SavedCandidateRow from "../../components/recruiter/SavedCandidateRow";
-import Footer from "../../components/layout/Footer";
-
 import { getSavedCandidates } from "../../services/recruiterCandidateService";
 
 export default function SavedCandidates() {
@@ -16,8 +12,12 @@ export default function SavedCandidates() {
 
   useEffect(() => {
     const fetchCandidates = async () => {
-      const data = await getSavedCandidates();
-      setCandidates(data);
+      try {
+        const data = await getSavedCandidates();
+        setCandidates(data);
+      } catch (error) {
+        console.error("Failed to fetch saved candidates:", error);
+      }
     };
 
     fetchCandidates();
@@ -36,74 +36,62 @@ export default function SavedCandidates() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <RecruiterHeader />
+    <>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Saved Candidates
+        </h1>
 
-      <main className="flex-1">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row border-x border-gray-200">
-          <RecruiterSidebar />
+        <p className="text-sm text-gray-500 flex items-center gap-2">
+          <FiInfo />
+          All of the candidates are visible until 24 March, 2025
+        </p>
+      </div>
 
-          <section className="flex-1 px-4 sm:px-6 lg:px-10 py-10">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-              <h1 className="text-xl font-semibold text-gray-900">
-                Saved Candidates
-              </h1>
+      <div className="bg-white border border-gray-100 rounded-lg overflow-visible">
+        {paginatedCandidates.map((candidate) => (
+          <SavedCandidateRow
+            key={candidate.id}
+            candidate={candidate}
+          />
+        ))}
+      </div>
 
-              <p className="text-sm text-gray-500 flex items-center gap-2">
-                <FiInfo />
-                All of the candidates are visible until 24 march, 2025
-              </p>
-            </div>
+      {totalPages > 1 && (
+        <div className="mt-10 flex justify-center items-center gap-3">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => handlePageChange(currentPage - 1)}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-blue-600 hover:bg-blue-50 disabled:text-gray-300"
+          >
+            <FiArrowLeft />
+          </button>
 
-            <div className="bg-white border border-gray-100 rounded-lg overflow-visible">
-              {paginatedCandidates.map((candidate, index) => (
-                <SavedCandidateRow
-                  key={candidate.id}
-                  candidate={candidate}
-                />
-              ))}
-            </div>
+          {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+            (page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`w-10 h-10 rounded-full text-sm font-medium ${
+                  currentPage === page
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                {String(page).padStart(2, "0")}
+              </button>
+            )
+          )}
 
-            {totalPages > 1 && (
-              <div className="mt-10 flex justify-center items-center gap-3">
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-blue-600 hover:bg-blue-50 disabled:text-gray-300"
-                >
-                  <FiArrowLeft />
-                </button>
-
-                {Array.from({ length: totalPages }, (_, index) => index + 1).map(
-                  (page) => (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`w-10 h-10 rounded-full text-sm font-medium ${
-                        currentPage === page
-                          ? "bg-blue-600 text-white"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
-                    >
-                      {String(page).padStart(2, "0")}
-                    </button>
-                  )
-                )}
-
-                <button
-                  disabled={currentPage === totalPages}
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-blue-600 bg-blue-50 hover:bg-blue-100 disabled:text-gray-300"
-                >
-                  <FiArrowRight />
-                </button>
-              </div>
-            )}
-          </section>
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => handlePageChange(currentPage + 1)}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-blue-600 bg-blue-50 hover:bg-blue-100 disabled:text-gray-300"
+          >
+            <FiArrowRight />
+          </button>
         </div>
-      </main>
-
-      <footer/>
-    </div>
+      )}
+    </>
   );
 }
