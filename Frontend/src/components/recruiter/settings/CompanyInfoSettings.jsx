@@ -71,7 +71,9 @@ export default function CompanyInfoSettings({ recruiterProfileId, companyInfo, s
       setSaving(false);
     }
   };
-
+    console.log("Company Info:", companyInfo);
+  console.log("Logo:", companyInfo.logo);
+  console.log("Banner:", companyInfo.banner);
   return (
     <form onSubmit={handleSave}>
       <h2 className="text-base font-semibold text-gray-900 mb-5">

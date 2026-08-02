@@ -133,14 +133,33 @@ public interface JobsDao extends JpaRepository<Jobs, Long> {
 		);
 
 	//Internal APIS Queries
+	// Internal APIs Queries
 	@Query("""
-	        SELECT new com.jobportal.jobservice.dto.JobInternalResponse(
-	            j.id, j.title, j.recruiterId, j.companyName, j.location, j.status
-	        )
-	        FROM Job j
-	        WHERE j.id IN :jobIds
-	        AND j.status = 'ACTIVE'
-	        """)
-	    List<JobInternalResponse> findJobCardsByIds(@Param("jobIds") List<Long> jobIds);
+	    SELECT new com.backend.jobs.dtos.JobInternalResponse(
+	        j.id,
+	        j.title,
+	        j.recruiterId,
+	        j.companyName,
+	        CASE
+	            WHEN j.remote = true THEN 'Remote'
+	            ELSE CONCAT(
+	                COALESCE(j.city, ''),
+	                CASE
+	                    WHEN j.state IS NOT NULL AND j.state <> '' THEN CONCAT(', ', j.state)
+	                    ELSE ''
+	                END,
+	                CASE
+	                    WHEN j.country IS NOT NULL AND j.country <> '' THEN CONCAT(', ', j.country)
+	                    ELSE ''
+	                END
+	            )
+	        END,
+	        j.status
+	    )
+	    FROM Jobs j
+	    WHERE j.id IN :jobIds
+	    AND j.status = com.backend.jobs.entities.JobStatus.ACTIVE
+	    """)
+	List<JobInternalResponse> findJobCardsByIds(@Param("jobIds") List<Long> jobIds);
 	
 }
