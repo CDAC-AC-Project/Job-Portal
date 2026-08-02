@@ -6,7 +6,6 @@ import {
   FiBriefcase,
   FiBookmark,
   FiCreditCard,
-  FiUsers,
   FiSettings,
   FiLogOut,
 } from "react-icons/fi";
@@ -36,16 +35,6 @@ const sidebarLinks = [
     label: "Saved Candidate",
     path: "/recruiter/saved-candidates",
     icon: FiBookmark,
-  },
-  {
-    label: "Plans & Billing",
-    path: "/recruiter/plans-billing",
-    icon: FiCreditCard,
-  },
-  {
-    label: "All Companies",
-    path: "/recruiter/companies",
-    icon: FiUsers,
   },
   {
     label: "Settings",
