@@ -132,9 +132,9 @@ public interface JobsDao extends JpaRepository<Jobs, Long> {
 		        @Param("status") JobStatus status
 		);
 
-	//Internal APIS Queries
+	//Internal APIS Queries   (this is "JPQL constructor expression")
 	@Query("""
-	        SELECT new com.jobportal.jobservice.dto.JobInternalResponse(
+	        SELECT new com.backend.jobs.dtos.JobInternalResponse(
 	            j.id, j.title, j.recruiterId, j.companyName, j.location, j.status
 	        )
 	        FROM Job j
