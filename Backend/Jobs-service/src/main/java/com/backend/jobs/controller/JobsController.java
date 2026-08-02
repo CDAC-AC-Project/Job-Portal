@@ -86,9 +86,13 @@ public class JobsController {
     }
 	
 	@PutMapping("/recruiter/{jobId}")
-	public ResponseEntity<?> editjob(@PathVariable Long jobId, @RequestHeader("recruiterId") Long recruiterId ,@RequestBody CreateJobDto dto){
-		
-		return ResponseEntity.ok(jobService.editMyJob(jobId, recruiterId, dto));
+	public ResponseEntity<?> editjob(
+	        @PathVariable Long jobId,
+	        @RequestHeader("X-User-Id") Long recruiterId,
+	        @RequestHeader("X-User-Role") String role,
+	        @RequestBody CreateJobDto dto){
+
+	    return ResponseEntity.ok(jobService.editMyJob(jobId, recruiterId, dto));
 	}
 	
 	@GetMapping("/recruiter/my-jobs/{jobId}")
