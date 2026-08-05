@@ -10,6 +10,7 @@ import CandidateProfile from "../pages/recruiter/CandidateProfile";
 import RecruiterSettings from "../pages/recruiter/RecruiterSettings";
 import Home from "../pages/Home";
 import FindCandidate from "../pages/recruiter/FindCandidates";
+import RecruiterProfile from "../pages/recruiter/RecruiterProfile";
 
 
 const RecruiterRoutes = (
@@ -23,9 +24,10 @@ const RecruiterRoutes = (
     <Route path="my-jobs" element={<MyJobs />} />
     <Route path="applications" element={<Applications />} />
     <Route path="settings" element={<RecruiterSettings />} />
-    <Route path="saved-candidate" element={<SavedCandidates />} />
+    <Route path="saved-candidates" element={<SavedCandidates />} />
     <Route path="candidate-profile/:id" element={<CandidateProfile />} />
     <Route path="recruiter/edit-job/:jobId" element={<PostJob />} />
+    <Route path="profile" element={<RecruiterProfile />} />
   </Route>
   
 );

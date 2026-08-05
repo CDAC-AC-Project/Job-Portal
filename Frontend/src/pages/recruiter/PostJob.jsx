@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FiArrowRight, FiAlertCircle } from "react-icons/fi";
 import axios from "axios";
- 
+
 import JobPostedSuccessModal from "../../components/recruiter/JobPostedSuccessModal";
- 
+
 import {
   jobRoles,
   salaryTypes,
@@ -17,9 +17,9 @@ import {
   cityOptions,
   jobBenefits,
 } from "../../data/postJobOptions";
- 
+
 import { validatePostJobForm } from "../../utils/postJobValidation";
- 
+
 import {
   canPostJob,
   getRecruiterPlan,
@@ -27,10 +27,10 @@ import {
   incrementPostedJobCount,
   getPostedJobCount,
 } from "../../services/recruiterPlanService";
- 
+
 export default function PostJob() {
   const navigate = useNavigate();
- 
+
   const { jobId } = useParams();
   const isEditMode = Boolean(jobId);
   const [errors, setErrors] = useState({});
@@ -41,7 +41,17 @@ export default function PostJob() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [postedJob, setPostedJob] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
- 
+
+  const requestHeaders = {
+    "Content-Type": "application/json",
+
+    // Temporary until JWT integration
+    "X-User-Id": 1,
+    "X-User-Role": "RECRUITER",
+  };
+
+  const JOBS_API = "http://localhost:8080/jobs/recruiter";
+
   const [formData, setFormData] = useState({
     jobTitle: "",
     tags: "",
@@ -60,27 +70,27 @@ export default function PostJob() {
     isRemote: true,
     description: "",
   });
- 
+
   useEffect(() => {
     setPlan(getRecruiterPlan());
     setRemainingPosts(getRemainingJobPosts());
     setPostedCount(getPostedJobCount());
   }, []);
- 
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
- 
+
     setFormData({
       ...formData,
       [name]: type === "checkbox" ? checked : value,
     });
- 
+
     setErrors({
       ...errors,
       [name]: "",
     });
   };
- 
+
   const handleBenefitToggle = (benefit) => {
     if (selectedBenefits.includes(benefit)) {
       setSelectedBenefits(selectedBenefits.filter((item) => item !== benefit));
@@ -88,7 +98,7 @@ export default function PostJob() {
       setSelectedBenefits([...selectedBenefits, benefit]);
     }
   };
- 
+
   const resetForm = () => {
     setFormData({
       jobTitle: "",
@@ -108,10 +118,10 @@ export default function PostJob() {
       isRemote: true,
       description: "",
     });
- 
+
     setSelectedBenefits([]);
   };
- 
+
   const convertToEnumValue = (value) => {
     return value
       .trim()
@@ -119,69 +129,68 @@ export default function PostJob() {
       .replaceAll(" ", "_")
       .replaceAll("-", "_");
   };
- 
+
   const buildBackendPayload = () => {
     return {
       companyId: 1, // temporary. Later get this from logged-in recruiter's company profile
- 
+
       title: formData.jobTitle,
       tags: formData.tags,
       jobRole: formData.jobRole,
- 
+
       minSalary: Number(formData.minSalary),
       maxSalary: Number(formData.maxSalary),
       salaryType: convertToEnumValue(formData.salaryType),
- 
+
       education: formData.education,
       experience: formData.experience,
- 
+
       jobType: convertToEnumValue(formData.jobType),
       vacancies: Number(formData.vacancies),
       expirationDate: formData.expirationDate,
       jobLevel: convertToEnumValue(formData.jobLevel),
- 
+
       description: formData.description,
- 
+
       country: formData.isRemote ? "Worldwide" : formData.country,
       state: "",
       city: formData.isRemote ? "Remote" : formData.city,
       remote: formData.isRemote,
- 
+
       benefits: selectedBenefits,
     };
   };
- 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
- 
+
     const validationErrors = validatePostJobForm(formData);
- 
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
- 
+
     const payload = buildBackendPayload();
- 
+
     try {
       setIsSubmitting(true);
- 
+
       // EDIT JOB MODE
       if (isEditMode) {
-        await axios.put(`http://localhost:8080/jobs/${jobId}`, payload, {
-          headers: {
-            "Content-Type": "application/json",
- 
-            // Temporary until Spring Security/JWT is added
-            userId: 1,
-          },
-        });
- 
+        await axios.put(
+          `${JOBS_API}/${jobId}`,
+          payload,
+          {
+            headers: requestHeaders,
+          }
+        );
+
         alert("Job updated successfully");
         navigate("/recruiter/my-jobs");
         return;
       }
- 
+
       // CREATE JOB MODE
       if (!canPostJob()) {
         alert(
@@ -190,27 +199,26 @@ export default function PostJob() {
         navigate("/recruiter/plans-billing");
         return;
       }
- 
-      const response = await axios.post("http://localhost:8080/jobs", payload, {
-        headers: {
-          "Content-Type": "application/json",
- 
-          // Temporary until Spring Security/JWT is added
-          userId: 1,
-        },
-      });
- 
+
+      const response = await axios.post(
+        JOBS_API,
+        payload,
+        {
+          headers: requestHeaders,
+        }
+      );
+
       incrementPostedJobCount();
- 
+
       setPostedJob(response.data);
       setRemainingPosts(getRemainingJobPosts());
       setPostedCount(getPostedJobCount());
       setShowSuccessModal(true);
- 
+
       resetForm();
     } catch (error) {
       console.error("Job save failed:", error);
- 
+
       if (error.response) {
         alert(error.response.data.message || "Failed to save job");
       } else {
@@ -220,12 +228,12 @@ export default function PostJob() {
       setIsSubmitting(false);
     }
   };
- 
+
   const renderInputError = (fieldName) => {
     if (!errors[fieldName]) {
       return null;
     }
- 
+
     return (
       <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
         <FiAlertCircle />
@@ -233,30 +241,30 @@ export default function PostJob() {
       </p>
     );
   };
- 
+
   return (
     <div>
       <div className="max-w-5xl">
         <h1 className="text-2xl font-semibold text-gray-900 mb-6">
           {isEditMode ? "Edit Job" : "Post a Job"}
         </h1>
- 
+
         {!isEditMode && (
           <div className="mb-6 border border-blue-100 bg-blue-50 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-start gap-3">
               <FiAlertCircle className="text-blue-600 text-xl mt-0.5" />
- 
+
               <div>
                 <p className="font-semibold text-gray-900">
                   Current Plan: <span className="text-blue-600">{plan}</span>
                 </p>
- 
+
                 <p className="text-sm text-gray-600 mt-1">
                   Jobs posted: {postedCount} | Remaining posts: {remainingPosts}
                 </p>
               </div>
             </div>
- 
+
             {remainingPosts === 0 && (
               <button
                 type="button"
@@ -268,51 +276,49 @@ export default function PostJob() {
             )}
           </div>
         )}
- 
+
         <form onSubmit={handleSubmit}>
           <div className="mb-5">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Job Title
             </label>
- 
+
             <input
               type="text"
               name="jobTitle"
               value={formData.jobTitle}
               onChange={handleChange}
               placeholder="Add job title, role, vacancies etc"
-              className={`w-full border rounded-md px-4 py-3 text-sm outline-none focus:ring-2 ${
-                errors.jobTitle
-                  ? "border-red-500 focus:ring-red-500"
-                  : "border-gray-300 focus:ring-blue-500"
-              }`}
+              className={`w-full border rounded-md px-4 py-3 text-sm outline-none focus:ring-2 ${errors.jobTitle
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-300 focus:ring-blue-500"
+                }`}
             />
- 
+
             {renderInputError("jobTitle")}
           </div>
- 
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Tags
               </label>
- 
+
               <input
                 type="text"
                 name="tags"
                 value={formData.tags}
                 onChange={handleChange}
                 placeholder="Job keyword, tags etc..."
-                className={`w-full border rounded-md px-4 py-3 text-sm outline-none focus:ring-2 ${
-                  errors.tags
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-blue-500"
-                }`}
+                className={`w-full border rounded-md px-4 py-3 text-sm outline-none focus:ring-2 ${errors.tags
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-blue-500"
+                  }`}
               />
- 
+
               {renderInputError("tags")}
             </div>
- 
+
             <SelectField
               label="Job Role"
               name="jobRole"
@@ -322,9 +328,9 @@ export default function PostJob() {
               error={errors.jobRole}
             />
           </div>
- 
+
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Salary</h2>
- 
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-7">
             <SalaryInput
               label="Min Salary"
@@ -334,7 +340,7 @@ export default function PostJob() {
               placeholder="Minimum salary..."
               error={errors.minSalary}
             />
- 
+
             <SalaryInput
               label="Max Salary"
               name="maxSalary"
@@ -343,7 +349,7 @@ export default function PostJob() {
               placeholder="Maximum salary..."
               error={errors.maxSalary}
             />
- 
+
             <SelectField
               label="Salary Type"
               name="salaryType"
@@ -353,11 +359,11 @@ export default function PostJob() {
               error={errors.salaryType}
             />
           </div>
- 
+
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Advance Information
           </h2>
- 
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-7">
             <SelectField
               label="Education"
@@ -367,7 +373,7 @@ export default function PostJob() {
               options={educationOptions}
               error={errors.education}
             />
- 
+
             <SelectField
               label="Experience"
               name="experience"
@@ -376,7 +382,7 @@ export default function PostJob() {
               options={experienceOptions}
               error={errors.experience}
             />
- 
+
             <SelectField
               label="Job Type"
               name="jobType"
@@ -385,7 +391,7 @@ export default function PostJob() {
               options={jobTypes}
               error={errors.jobType}
             />
- 
+
             <SelectField
               label="Vacancies"
               name="vacancies"
@@ -394,27 +400,26 @@ export default function PostJob() {
               options={vacanciesOptions}
               error={errors.vacancies}
             />
- 
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Expiration Date
               </label>
- 
+
               <input
                 type="date"
                 name="expirationDate"
                 value={formData.expirationDate}
                 onChange={handleChange}
-                className={`w-full border rounded-md px-4 py-3 text-sm outline-none focus:ring-2 ${
-                  errors.expirationDate
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-blue-500"
-                }`}
+                className={`w-full border rounded-md px-4 py-3 text-sm outline-none focus:ring-2 ${errors.expirationDate
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-blue-500"
+                  }`}
               />
- 
+
               {renderInputError("expirationDate")}
             </div>
- 
+
             <SelectField
               label="Job Level"
               name="jobLevel"
@@ -424,12 +429,12 @@ export default function PostJob() {
               error={errors.jobLevel}
             />
           </div>
- 
+
           <div className="bg-gray-100 rounded-lg p-5 mb-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               Location
             </h2>
- 
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
               <SelectField
                 label="Country"
@@ -440,7 +445,7 @@ export default function PostJob() {
                 error={errors.country}
                 disabled={formData.isRemote}
               />
- 
+
               <SelectField
                 label="City"
                 name="city"
@@ -451,7 +456,7 @@ export default function PostJob() {
                 disabled={formData.isRemote}
               />
             </div>
- 
+
             <label className="flex items-center gap-2 text-sm text-gray-700">
               <input
                 type="checkbox"
@@ -463,48 +468,46 @@ export default function PostJob() {
               Fully Remote Position - <span className="font-semibold">Worldwide</span>
             </label>
           </div>
- 
+
           <div className="mb-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               Job Benefits
             </h2>
- 
+
             <div className="flex flex-wrap gap-3">
               {jobBenefits.map((benefit) => (
                 <button
                   type="button"
                   key={benefit}
                   onClick={() => handleBenefitToggle(benefit)}
-                  className={`px-4 py-2 rounded-md border text-sm transition ${
-                    selectedBenefits.includes(benefit)
-                      ? "border-blue-600 text-blue-600 bg-blue-50"
-                      : "border-gray-300 text-gray-600 hover:border-blue-500 hover:text-blue-600"
-                  }`}
+                  className={`px-4 py-2 rounded-md border text-sm transition ${selectedBenefits.includes(benefit)
+                    ? "border-blue-600 text-blue-600 bg-blue-50"
+                    : "border-gray-300 text-gray-600 hover:border-blue-500 hover:text-blue-600"
+                    }`}
                 >
                   {benefit}
                 </button>
               ))}
             </div>
           </div>
- 
+
           <div className="mb-8">
             <label className="block text-lg font-semibold text-gray-900 mb-4">
               Job Description
             </label>
- 
+
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
               placeholder="Add your job description..."
               rows={12}
-              className={`w-full border rounded-md px-4 py-3 text-sm outline-none resize-none focus:ring-2 ${
-                errors.description
-                  ? "border-red-500 focus:ring-red-500"
-                  : "border-gray-300 focus:ring-blue-500"
-              }`}
+              className={`w-full border rounded-md px-4 py-3 text-sm outline-none resize-none focus:ring-2 ${errors.description
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-300 focus:ring-blue-500"
+                }`}
             />
- 
+
             <div className="border border-t-0 border-gray-300 rounded-b-md px-4 py-3 flex gap-5 text-gray-400 text-sm">
               <span>B</span>
               <span>I</span>
@@ -514,10 +517,10 @@ export default function PostJob() {
               <span>☷</span>
               <span>☰</span>
             </div>
- 
+
             {renderInputError("description")}
           </div>
- 
+
           <button
             type="submit"
             disabled={isSubmitting}
@@ -528,14 +531,14 @@ export default function PostJob() {
                 ? "Updating..."
                 : "Posting..."
               : isEditMode
-              ? "Update Job"
-              : "Post Job"}
- 
+                ? "Update Job"
+                : "Post Job"}
+
             <FiArrowRight />
           </button>
         </form>
       </div>
- 
+
       <JobPostedSuccessModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
@@ -544,7 +547,7 @@ export default function PostJob() {
     </div>
   );
 }
- 
+
 function SelectField({
   label,
   name,
@@ -559,17 +562,16 @@ function SelectField({
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {label}
       </label>
- 
+
       <select
         name={name}
         value={value}
         onChange={onChange}
         disabled={disabled}
-        className={`w-full border rounded-md px-4 py-3 text-sm bg-white outline-none focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed ${
-          error
-            ? "border-red-500 focus:ring-red-500"
-            : "border-gray-300 focus:ring-blue-500"
-        }`}
+        className={`w-full border rounded-md px-4 py-3 text-sm bg-white outline-none focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed ${error
+          ? "border-red-500 focus:ring-red-500"
+          : "border-gray-300 focus:ring-blue-500"
+          }`}
       >
         <option value="">Select...</option>
         {options.map((option) => (
@@ -578,19 +580,19 @@ function SelectField({
           </option>
         ))}
       </select>
- 
+
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
   );
 }
- 
+
 function SalaryInput({ label, name, value, onChange, placeholder, error }) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {label}
       </label>
- 
+
       <div className="flex">
         <input
           type="number"
@@ -598,18 +600,17 @@ function SalaryInput({ label, name, value, onChange, placeholder, error }) {
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className={`w-full border rounded-l-md px-4 py-3 text-sm outline-none focus:ring-2 ${
-            error
-              ? "border-red-500 focus:ring-red-500"
-              : "border-gray-300 focus:ring-blue-500"
-          }`}
+          className={`w-full border rounded-l-md px-4 py-3 text-sm outline-none focus:ring-2 ${error
+            ? "border-red-500 focus:ring-red-500"
+            : "border-gray-300 focus:ring-blue-500"
+            }`}
         />
- 
+
         <span className="border border-l-0 border-gray-300 rounded-r-md px-4 py-3 bg-gray-50 text-sm text-gray-600">
           USD
         </span>
       </div>
- 
+
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
   );
