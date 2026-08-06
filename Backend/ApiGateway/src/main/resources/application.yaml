@@ -7,33 +7,54 @@ spring:
 
   cloud:
     gateway:
-      routes:
-        - id: auth-user-service
-          uri: lb://AUTH-USER-SERVICE
-          predicates:
-            - Path=/auth/**
+      server:
+        webmvc:
+          routes:
+            - id: auth-service
+              uri: lb://AUTH-SERVICE
+              predicates:
+                - Path=/auth/**
 
-        - id: profile-service
-          uri: lb://PROFILE-SERVICE
-          predicates:
-            - Path=/profiles/**
+            - id: profile-service
+              uri: lb://PROFILE-SERVICE
+              predicates:
+                - Path=/profiles/**
 
-        - id: job-service
-          uri: lb://JOB-SERVICE
-          predicates:
-            - Path=/jobs/**
+            - id: job-service
+              uri: lb://JOB-SERVICE
+              predicates:
+                - Path=/jobs/**
 
-        - id: application-service
-          uri: lb://APPLICATION-SERVICE
-          predicates:
-            - Path=/applications/**
+            - id: application-service
+              uri: lb://APPLICATION-SERVICE
+              predicates:
+                - Path=/applications/**
 
-        - id: notification-service
-          uri: lb://NOTIFICATION-SERVICE
-          predicates:
-            - Path=/notifications/**
+            - id: notification-service
+              uri: lb://NOTIFICATION-SERVICE
+              predicates:
+                - Path=/notifications/**
 
 eureka:
   client:
+    register-with-eureka: true
+    fetch-registry: true
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+logging:
+  level:
+    org.springframework.security: TRACE
+    org.springframework.cloud.gateway: TRACE
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+  endpoint:
+    health:
+      show-details: always

@@ -42,8 +42,7 @@ public class SecurityConfig {
 		session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 		// 4. Add a rule - all endpoints - secured (requires Authentication)
 		http.authorizeHttpRequests(auth -> auth
-				.requestMatchers("/login").permitAll()
-				.requestMatchers("/register").permitAll()
+				.requestMatchers("/auth/**").permitAll()
 				.requestMatchers("/actuator/health").permitAll()
 				.requestMatchers(HttpMethod.GET,"/jobs/search").permitAll()
 				.requestMatchers(HttpMethod.GET,"/jobs/home").permitAll()

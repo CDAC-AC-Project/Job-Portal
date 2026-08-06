@@ -11,14 +11,16 @@ import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
 import registerBg from "../../assets/images/register-bg.png";
 import { validateRegisterForm } from "../../utils/registerValidation";
+import api from "../../services/api";
 
 export default function Register() {
   const navigate = useNavigate();
 
-  const [role, setRole] = useState("user");
+  const [role, setRole] = useState("CANDIDATE");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -43,33 +45,73 @@ export default function Register() {
     });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
 
-    const validationErrors = validateRegisterForm(formData);
+  //   const validationErrors = validateRegisterForm(formData);
 
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
+  //   if (Object.keys(validationErrors).length > 0) {
+  //     setErrors(validationErrors);
+  //     return;
+  //   }
 
-    const registerData = {
-      fullName: formData.fullName,
-      username: formData.username,
-      email: formData.email,
-      password: formData.password,
-      role,
-    };
+  //   const registerData = {
+  //     fullName: formData.fullName,
+  //     username: formData.username,
+  //     email: formData.email,
+  //     password: formData.password,
+  //     role,
+  //   };
 
-    console.log("Register Data:", registerData);
+  //   console.log("Register Data:", registerData);
 
-    navigate("/verify-email", {
-      state: {
-        email: formData.email,
-        role,
-      },
-    });
+  //   navigate("/verify-email", {
+  //     state: {
+  //       email: formData.email,
+  //       role,
+  //     },
+  //   });
+  // };
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const validationErrors = validateRegisterForm(formData);
+
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    return;
+  }
+
+  const registerData = {
+    fullName: formData.fullName,
+    email: formData.email,
+    password: formData.password,
+    role,
   };
+
+try {
+  setLoading(true);
+
+  const response = await api.post("/auth/register", registerData);
+
+  console.log("Registration Successful:", response.data);
+
+  alert("Registration successful! Please login to continue.");
+
+  navigate("/login");
+} catch (error) {
+  console.error(error);
+
+  if (error.response) {
+    alert(error.response.data.message || "Registration Failed");
+  } else {
+    alert("Unable to connect to server.");
+  }
+} finally {
+  setLoading(false);
+}
+};
 
   return (
     <div className="min-h-screen bg-gray-200 flex items-center justify-center px-4 py-8">
@@ -105,9 +147,9 @@ export default function Register() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setRole("user")}
+                  onClick={() => setRole("CANDIDATE")}
                   className={`flex items-center justify-center gap-2 py-3 rounded-md text-sm font-medium transition ${
-                    role === "user"
+                    role === "CANDIDATE"
                       ? "bg-blue-700 text-white shadow-sm"
                       : "bg-transparent text-gray-600 hover:bg-white"
                   }`}
@@ -118,9 +160,9 @@ export default function Register() {
 
                 <button
                   type="button"
-                  onClick={() => setRole("recruiter")}
+                  onClick={() => setRole("RECRUITER")}
                   className={`flex items-center justify-center gap-2 py-3 rounded-md text-sm font-medium transition ${
-                    role === "recruiter"
+                    role === "RECRUITER"
                       ? "bg-blue-700 text-white shadow-sm"
                       : "bg-transparent text-gray-600 hover:bg-white"
                   }`}
@@ -284,10 +326,11 @@ export default function Register() {
                 <p className="text-red-500 text-xs mb-4">{errors.agree}</p>
               )}
 
-              <button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-md flex items-center justify-center gap-2 transition"
-              >
+             <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-3 rounded-md flex items-center justify-center gap-2 transition"
+            >
                 Create Account
                 <FiArrowRight />
               </button>
