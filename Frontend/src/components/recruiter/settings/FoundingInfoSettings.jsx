@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { FiCalendar, FiLink } from "react-icons/fi";
 
 import { validateFoundingInfo } from "../../../utils/recruiterSettingsValidation";
@@ -47,10 +48,10 @@ export default function FoundingInfoSettings({ recruiterProfileId, foundingInfo,
         yearOfEstablishment: updated.yearOfEstablishment ? `${updated.yearOfEstablishment}-01-01` : "",
         companyWebsite: updated.website || "",
       }));
-      alert("Founding info updated successfully");
+      toast.success("Founding info updated successfully");
     } catch (error) {
       console.error(error);
-      alert("Failed to update founding info");
+      toast.error("Failed to update founding info");
     } finally {
       setSaving(false);
     }

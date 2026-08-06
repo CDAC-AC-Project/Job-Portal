@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.backend.app.enums.ApplicationStatus;
@@ -43,6 +44,18 @@ public class JobApplication extends BaseEntity {
 
     @Column(name = "job_location_snapshot")
     private String jobLocationSnapshot;
+
+    @Column(name = "min_salary_snapshot")
+    private BigDecimal minSalarySnapshot;
+
+    @Column(name = "max_salary_snapshot")
+    private BigDecimal maxSalarySnapshot;
+
+    @Column(name = "job_type_snapshot")
+    private String jobTypeSnapshot;
+
+    @Column(name = "note", length = 1000)
+    private String note;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

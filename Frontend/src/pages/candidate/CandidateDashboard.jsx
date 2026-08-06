@@ -10,17 +10,20 @@ import Loader from "../../components/common/Loader";
 import { getAppliedJobs } from "../../services/jobApplicationService";
 import { getFavoriteJobs } from "../../services/favoriteJobService";
 import { getJobAlerts } from "../../services/jobAlertService";
-import { getCandidateSettings } from "../../services/candidateSettingsService";
+import { getCandidateSettings, resolveCandidateProfileId } from "../../services/candidateSettingsService";
+import { getAuthUser } from "../../utils/authStorage";
 
 export default function CandidateDashboard() {
   const navigate = useNavigate();
+
+  const authUser = getAuthUser();
 
   const [appliedJobs, setAppliedJobs] = useState([]);
   const [favoriteJobsCount, setFavoriteJobsCount] = useState(0);
   const [jobAlertsCount, setJobAlertsCount] = useState(0);
 
   const [candidate, setCandidate] = useState({
-    fullName: "Candidate",
+    fullName: authUser?.name || "Candidate",
     profileImageUrl: "",
     profileCompleted: false,
   });
@@ -32,11 +35,13 @@ export default function CandidateDashboard() {
       try {
         setLoading(true);
 
+        const candidateProfileId = await resolveCandidateProfileId();
+
         const [applied, favorites, alerts, profile] = await Promise.all([
           getAppliedJobs(),
           getFavoriteJobs(),
           getJobAlerts(),
-          getCandidateSettings(),
+          getCandidateSettings(candidateProfileId),
         ]);
 
         setAppliedJobs(applied);
@@ -44,7 +49,7 @@ export default function CandidateDashboard() {
         setJobAlertsCount(alerts.length);
 
         setCandidate({
-          fullName: profile.fullName || "Candidate",
+          fullName: authUser?.name || "Candidate",
           profileImageUrl: profile.profileImageUrl || "",
           profileCompleted: profile.profileCompleted || false,
         });
@@ -111,6 +116,7 @@ export default function CandidateDashboard() {
                 ))}
               </div>
 
+              {!candidate.profileCompleted && (
               <div className="bg-red-500 rounded-lg px-6 py-5 mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
                 <div className="flex items-center gap-4">
                   {candidate.profileImageUrl ? (
@@ -127,9 +133,7 @@ export default function CandidateDashboard() {
 
                   <div>
                     <h2 className="text-white font-semibold">
-                      {candidate.profileCompleted
-                        ? "Your profile is completed"
-                        : "Your profile editing is not completed."}
+                      Your profile editing is not completed.
                     </h2>
 
                     <p className="text-red-100 text-sm mt-1">
@@ -138,7 +142,6 @@ export default function CandidateDashboard() {
                   </div>
                 </div>
 
-                {!candidate.profileCompleted && (
                   <NavLink
                     to="/candidate/settings"
                     className="bg-white text-red-500 px-5 py-3 rounded-md font-medium flex items-center justify-center gap-2 hover:bg-red-50"
@@ -146,8 +149,8 @@ export default function CandidateDashboard() {
                     Edit Profile
                     <FiArrowRight />
                   </NavLink>
-                )}
               </div>
+              )}
 
               <AppliedJobTable
                 jobs={appliedJobs.slice(0, 5)}

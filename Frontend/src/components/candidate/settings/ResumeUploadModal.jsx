@@ -31,9 +31,7 @@ export default function ResumeUploadModal({ isOpen, onClose, onSave, uploading =
     setError("");
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
+  const handleSubmit = () => {
     if (!resumeFile) {
       setError("Please upload your CV/Resume");
       return;
@@ -41,6 +39,7 @@ export default function ResumeUploadModal({ isOpen, onClose, onSave, uploading =
 
     onSave({ file: resumeFile, defaultResume });
   };
+  
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
@@ -55,7 +54,7 @@ export default function ResumeUploadModal({ isOpen, onClose, onSave, uploading =
           <FiX className="text-xl" />
         </button>
 
-        <form onSubmit={handleSubmit} className="p-6">
+        <div className="p-6">
           <h2 className="mb-5 text-lg font-semibold text-gray-900">Upload CV/Resume</h2>
 
           <label className="flex h-40 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 px-4 text-center transition hover:bg-gray-50">
@@ -100,14 +99,15 @@ export default function ResumeUploadModal({ isOpen, onClose, onSave, uploading =
             </button>
 
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               disabled={uploading}
               className="rounded-md bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300"
             >
               {uploading ? "Uploading..." : "Upload Resume"}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

@@ -1,11 +1,44 @@
+import { useState } from "react";
 import { FaFacebookF } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { BriefcaseBusiness, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+
+import { validateForgotPasswordForm } from "../../utils/resetPasswordValidation";
+import { forgotPassword, extractAuthErrorMessage } from "../../services/authService";
 
 const ForgotPasswordForm = () => {
-  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSent, setIsSent] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const validationErrors = validateForgotPasswordForm({ email });
+
+    if (validationErrors.email) {
+      setError(validationErrors.email);
+      return;
+    }
+
+    setError("");
+    setSubmitError("");
+    setIsSubmitting(true);
+
+    try {
+      // Backend always returns the same generic message whether or not the
+      // email exists, so there is nothing to branch on besides success/failure.
+      await forgotPassword(email);
+      setIsSent(true);
+    } catch (err) {
+      setSubmitError(extractAuthErrorMessage(err));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return  (
     <div className="flex flex-col justify-center px-10 lg:px-24">
@@ -42,21 +75,46 @@ const ForgotPasswordForm = () => {
           </Link>
         </p>
 
-        {/* Email */}
-        <input
-          type="email"
-          placeholder="Email address"
-          className="w-full border border-gray-300 rounded-md px-4 py-3 outline-none focus:border-blue-500"
-        />
+        {isSent ? (
+          <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-4 py-3">
+            If an account with that email exists, a password reset link has
+            been sent. Please check your inbox.
+          </p>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            {submitError && (
+              <p className="text-red-500 text-sm mb-4 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+                {submitError}
+              </p>
+            )}
 
-        {/* Button */}
-        <button
-         onClick={() => navigate("/reset-password")}
-         className="mt-5 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md flex items-center justify-center gap-2 transition"
-        >
-       Reset Password
-       <ArrowRight size={18} />
-       </button>
+            {/* Email */}
+            <input
+              type="email"
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError("");
+              }}
+              className={`w-full border rounded-md px-4 py-3 outline-none focus:border-blue-500 ${
+                error ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+
+            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+
+            {/* Button */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="mt-5 w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white py-3 rounded-md flex items-center justify-center gap-2 transition"
+            >
+              {isSubmitting ? "Sending..." : "Send Reset Link"}
+              <ArrowRight size={18} />
+            </button>
+          </form>
+        )}
 
         {/* Divider */}
         <div className="flex items-center my-8">

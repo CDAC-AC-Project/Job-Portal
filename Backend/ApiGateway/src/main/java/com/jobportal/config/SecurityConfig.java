@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
@@ -46,13 +47,21 @@ public class SecurityConfig {
 		session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 		// 4. Add a rule - all endpoints - secured (requires Authentication)
 		http.authorizeHttpRequests(auth -> auth
-				.requestMatchers("/login").permitAll()
-				.requestMatchers("/register").permitAll()
+				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 				.requestMatchers("/actuator/health").permitAll()
-				.requestMatchers(HttpMethod.GET,"/products/**").hasAnyRole("CUSTOMER","ADMIN")
-				.requestMatchers(HttpMethod.POST,"/products/**").hasRole("ADMIN")
+				.requestMatchers(
+						"/auth/register",
+						"/auth/login",
+						"/auth/verify-email",
+						"/auth/forgot-password",
+						"/auth/reset-password",
+						"/auth/refresh-token",
+						"/auth/logout"
+				).permitAll()
 				.anyRequest().authenticated()
 				)
+
+			.cors(Customizer.withDefaults())
 
 			.addFilterBefore(jwtAuthenticationFilter,
 				UsernamePasswordAuthenticationFilter.class);
@@ -65,7 +74,10 @@ public class SecurityConfig {
         return request -> {
             CorsConfiguration config = new CorsConfiguration();
 
-            config.setAllowedOrigins(List.of("http://localhost:5173"));
+            // Both origins allowed: localhost for browsing directly on this PC, and the
+            // LAN IP for other devices (e.g. a phone) on the same network reaching the
+            // Vite dev server started with `host: true`.
+            config.setAllowedOrigins(List.of("http://localhost:5173", "http://192.168.0.102:5173"));
             config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
             config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
             config.setExposedHeaders(List.of("Authorization"));

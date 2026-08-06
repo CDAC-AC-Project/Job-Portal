@@ -11,6 +11,15 @@ import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
 import registerBg from "../../assets/images/register-bg.png";
 import { validateRegisterForm } from "../../utils/registerValidation";
+import { setSession } from "../../utils/authStorage";
+import { registerUser, extractAuthErrorMessage } from "../../services/authService";
+
+// The role toggle uses "user"/"recruiter" for historical UI reasons; the
+// backend's Role enum is CANDIDATE/RECRUITER.
+const ROLE_TO_BACKEND = {
+  user: "CANDIDATE",
+  recruiter: "RECRUITER",
+};
 
 export default function Register() {
   const navigate = useNavigate();
@@ -19,6 +28,8 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -43,7 +54,7 @@ export default function Register() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const validationErrors = validateRegisterForm(formData);
@@ -53,22 +64,36 @@ export default function Register() {
       return;
     }
 
-    const registerData = {
-      fullName: formData.fullName,
-      username: formData.username,
-      email: formData.email,
-      password: formData.password,
-      role,
-    };
+    setSubmitError("");
+    setIsSubmitting(true);
 
-    console.log("Register Data:", registerData);
-
-    navigate("/verify-email", {
-      state: {
+    try {
+      // Note: Auth_User-Service's RegisterDto has no "username" field — the
+      // account is keyed by fullName/email/password/role, so username is
+      // collected in the form but intentionally not sent.
+      const authResponse = await registerUser({
+        fullName: formData.fullName,
         email: formData.email,
-        role,
-      },
-    });
+        password: formData.password,
+        role: ROLE_TO_BACKEND[role],
+      });
+
+      // register() already returns a working token pair (email verification
+      // is not required to log in), so the user is signed in immediately;
+      // /verify-email is still shown next as a nudge, not a gate.
+      setSession(authResponse, { name: formData.fullName });
+
+      navigate("/verify-email", {
+        state: {
+          email: formData.email,
+          role,
+        },
+      });
+    } catch (error) {
+      setSubmitError(extractAuthErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -132,6 +157,12 @@ export default function Register() {
             </div>
 
             <form onSubmit={handleSubmit}>
+              {submitError && (
+                <p className="text-red-500 text-sm mb-4 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+                  {submitError}
+                </p>
+              )}
+
               {/* Name Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
@@ -286,9 +317,10 @@ export default function Register() {
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-md flex items-center justify-center gap-2 transition"
+                disabled={isSubmitting}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-md flex items-center justify-center gap-2 transition"
               >
-                Create Account
+                {isSubmitting ? "Creating account..." : "Create Account"}
                 <FiArrowRight />
               </button>
             </form>

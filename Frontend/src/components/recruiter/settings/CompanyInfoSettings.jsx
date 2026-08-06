@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { FiUploadCloud } from "react-icons/fi";
 
 import { validateCompanyInfo } from "../../../utils/recruiterSettingsValidation";
@@ -63,10 +64,10 @@ export default function CompanyInfoSettings({ recruiterProfileId, companyInfo, s
         companyName: updated.companyName || "",
         aboutUs: updated.about || "",
       });
-      alert("Company info updated successfully");
+      toast.success("Company info updated successfully");
     } catch (error) {
       console.error(error);
-      alert("Failed to update company info");
+      toast.error("Failed to update company info");
     } finally {
       setSaving(false);
     }

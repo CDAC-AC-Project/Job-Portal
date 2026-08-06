@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FiArrowRight, FiAlertCircle } from "react-icons/fi";
 import axios from "axios";
+import { toast } from "react-toastify";
  
 import JobPostedSuccessModal from "../../components/recruiter/JobPostedSuccessModal";
  
@@ -177,14 +178,14 @@ export default function PostJob() {
           },
         });
  
-        alert("Job updated successfully");
+        toast.success("Job updated successfully");
         navigate("/recruiter/my-jobs");
         return;
       }
- 
+
       // CREATE JOB MODE
       if (!canPostJob()) {
-        alert(
+        toast.error(
           "You have reached your job posting limit. Please buy a subscription plan."
         );
         navigate("/recruiter/plans-billing");
@@ -212,9 +213,9 @@ export default function PostJob() {
       console.error("Job save failed:", error);
  
       if (error.response) {
-        alert(error.response.data.message || "Failed to save job");
+        toast.error(error.response.data.message || "Failed to save job");
       } else {
-        alert("Backend is not reachable. Please check if Jobs-service is running.");
+        toast.error("Backend is not reachable. Please check if Jobs-service is running.");
       }
     } finally {
       setIsSubmitting(false);

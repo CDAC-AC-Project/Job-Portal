@@ -12,7 +12,7 @@ import com.backend.app.dto.JobInternalResponse;
 	)
 	public interface JobClient {
 
-	    @GetMapping("/jobs/internal/{jobId}")
+	    @GetMapping("/Internal/jobs/{jobId}")
 	    JobInternalResponse getJobById(@PathVariable Long jobId);
 
 }

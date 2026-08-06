@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import { FiUploadCloud, FiMapPin, FiPhone, FiBriefcase } from "react-icons/fi";
 
 import ResumeCard from "./ResumeCard";
@@ -104,10 +105,11 @@ export default function PersonalSettings({
       };
 
       setProfile?.(updatedProfile);
+      toast.success("Personal information saved");
       onNext?.("profile");
     } catch (error) {
       console.error(error);
-      alert("Failed to save personal information");
+      toast.error("Failed to save personal information");
     } finally {
       setSaving(false);
     }

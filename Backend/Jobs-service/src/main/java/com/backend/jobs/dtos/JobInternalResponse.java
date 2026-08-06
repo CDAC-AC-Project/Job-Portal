@@ -1,5 +1,7 @@
 package com.backend.jobs.dtos;
 
+import java.math.BigDecimal;
+
 import com.backend.jobs.entities.JobStatus;
 
 import lombok.Getter;
@@ -15,4 +17,7 @@ public class JobInternalResponse {
     private String companyName;
     private String location;
     private JobStatus status;
+    private BigDecimal minSalary;
+    private BigDecimal maxSalary;
+    private String jobType;
 }

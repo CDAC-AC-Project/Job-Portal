@@ -1,14 +1,13 @@
-import axios from "axios";
-
 import { getAuthUser } from "../utils/authStorage";
+import { createApiClient } from "../utils/httpClient";
 
 const API_BASE_URL =
   import.meta.env.VITE_PROFILE_SERVICE_URL ||
-  "http://localhost:8080/api/profile";
+  "http://localhost:8081/api/profile";
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-});
+// createApiClient (not a bare axios instance) so every call carries the
+// signed-in user's access token, and a stale token gets silently refreshed.
+const api = createApiClient(API_BASE_URL);
 
 
 /* ===============================
@@ -22,9 +21,16 @@ const api = axios.create({
 
 const CANDIDATE_PROFILE_ID_KEY = "candidateProfileId";
 
+// CandidateDashboard and Settings both call resolveCandidateProfileId() independently
+// on mount (and React.StrictMode double-invokes effects in dev on top of that), so
+// without this, several near-simultaneous calls would all miss the localStorage cache
+// at once and all POST /internal/candidates concurrently for a brand-new user - a race
+// that can trip the profile service's own create-or-get logic. This makes every caller
+// share the one in-flight request instead of firing their own.
+let inFlightResolve = null;
+
 export const resolveCandidateProfileId = async () => {
   const authUser = getAuthUser();
-
   if (!authUser?.userId) {
     throw new Error("No authenticated user found");
   }
@@ -36,15 +42,22 @@ export const resolveCandidateProfileId = async () => {
     return Number(cached);
   }
 
-  const response = await api.post("/internal/candidates", {
-    userId: authUser.userId,
-  });
+  if (inFlightResolve) {
+    return inFlightResolve;
+  }
 
-  const candidateProfileId = response.data.candidateProfileId;
+  inFlightResolve = api
+    .post("/internal/candidates", { userId: authUser.userId })
+    .then((response) => {
+      const candidateProfileId = response.data.candidateProfileId;
+      localStorage.setItem(cacheKey, String(candidateProfileId));
+      return candidateProfileId;
+    })
+    .finally(() => {
+      inFlightResolve = null;
+    });
 
-  localStorage.setItem(cacheKey, String(candidateProfileId));
-
-  return candidateProfileId;
+  return inFlightResolve;
 };
 
 
@@ -94,6 +107,8 @@ export const uploadCandidateResume = async (
   file,
   defaultResume = true
 ) => {
+
+ 
 
   const formData = new FormData();
   formData.append("file", file);

@@ -12,28 +12,53 @@ export const roleHomePath = {
   [ROLES.ADMIN]: "/admin/dashboard",
 };
 
-// There is no Auth Service yet to hand back a real user id after login, but
-// Profile-Service endpoints are keyed by userId. Derive a stable pseudo id from
-// the email so the same account always resolves to the same profile across
-// sessions, instead of minting a new (and colliding) profile every login.
-function derivePseudoUserId(seed) {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash) || 1;
+// Auth_User-Service returns role as an uppercase enum name (CANDIDATE/RECRUITER/ADMIN);
+// the rest of the app (route guards, sidebar links, roleHomePath above) works with the
+// lowercase ROLES constants, so every session boundary normalizes through this.
+function normalizeRole(backendRole) {
+  return String(backendRole || "").toLowerCase();
 }
 
-export function login(role, profile = {}) {
-  const email = profile.email || "";
-
+/**
+ * Persists a real Auth_User-Service AuthResponseDto
+ * ({ token, refreshToken, userId, email, role, message }) as the active session.
+ * `extra.name` lets callers attach a display name the DTO itself doesn't carry
+ * (e.g. the full name just typed into the register form, or a follow-up /auth/me call).
+ */
+export function setSession(authResponse, extra = {}) {
   const authUser = {
-    role,
-    name: profile.name || "",
-    email,
-    userId: derivePseudoUserId(`${role}:${email}`),
+    role: normalizeRole(authResponse.role),
+    name: extra.name || "",
+    email: authResponse.email || "",
+    userId: authResponse.userId,
+    accessToken: authResponse.token,
+    refreshToken: authResponse.refreshToken,
     loggedInAt: new Date().toISOString(),
   };
+
+  localStorage.setItem(AUTH_KEY, JSON.stringify(authUser));
+  return authUser;
+}
+
+// Rotates the access/refresh token pair on the current session in place, without
+// touching the rest of it. Used after a silent POST /auth/refresh-token call.
+export function updateTokens(accessToken, refreshToken) {
+  const authUser = getAuthUser();
+  if (!authUser) return null;
+
+  authUser.accessToken = accessToken;
+  authUser.refreshToken = refreshToken;
+
+  localStorage.setItem(AUTH_KEY, JSON.stringify(authUser));
+  return authUser;
+}
+
+// Merges additional profile fields (currently just `name`) into the active session.
+export function updateSessionProfile(fields = {}) {
+  const authUser = getAuthUser();
+  if (!authUser) return null;
+
+  Object.assign(authUser, fields);
 
   localStorage.setItem(AUTH_KEY, JSON.stringify(authUser));
   return authUser;
@@ -50,6 +75,14 @@ export function getAuthUser() {
   } catch {
     return null;
   }
+}
+
+export function getAccessToken() {
+  return getAuthUser()?.accessToken || null;
+}
+
+export function getRefreshToken() {
+  return getAuthUser()?.refreshToken || null;
 }
 
 export function isAuthenticated(role) {

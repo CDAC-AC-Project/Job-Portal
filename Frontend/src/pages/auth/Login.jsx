@@ -13,7 +13,8 @@ import { FaFacebookF } from "react-icons/fa";
 
 import authBg from "../../assets/images/register-bg.png";
 import { validateLoginForm } from "../../utils/loginValidation";
-import { login as loginUser, ROLES, roleHomePath } from "../../utils/authStorage";
+import { setSession, updateSessionProfile, roleHomePath } from "../../utils/authStorage";
+import { loginUser, getCurrentUser, extractAuthErrorMessage } from "../../services/authService";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -21,6 +22,8 @@ export default function Login() {
   const [role, setRole] = useState("candidate");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -57,7 +60,7 @@ export default function Login() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const validationErrors = validateLoginForm(formData);
@@ -67,12 +70,32 @@ export default function Login() {
       return;
     }
 
-    // No backend auth API yet — persist the session locally so route guards work.
-    // TODO: replace with a real Spring Boot login call once Auth_User-Service is implemented.
-    const role = formData.role === "candidate" ? ROLES.CANDIDATE : ROLES.RECRUITER;
-    const authUser = loginUser(role, { email: formData.email });
+    setSubmitError("");
+    setIsSubmitting(true);
 
-    navigate(roleHomePath[authUser.role]);
+    try {
+      const authResponse = await loginUser({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      // Navigate by the role Auth_User-Service actually returns, not by
+      // whichever "Sign in as a" tab happened to be selected in the UI.
+      const authUser = setSession(authResponse);
+
+      try {
+        const me = await getCurrentUser();
+        updateSessionProfile({ name: me.fullName });
+      } catch {
+        // Non-critical — the dashboard falls back to a generic greeting.
+      }
+
+      navigate(roleHomePath[authUser.role] || "/login");
+    } catch (error) {
+      setSubmitError(extractAuthErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -146,6 +169,12 @@ export default function Login() {
             </div>
 
             <form onSubmit={handleSubmit}>
+              {submitError && (
+                <p className="text-red-500 text-sm mb-4 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+                  {submitError}
+                </p>
+              )}
+
               {/* Email */}
               <div className="mb-4">
                 <input
@@ -222,9 +251,10 @@ export default function Login() {
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-md flex items-center justify-center gap-2 transition"
+                disabled={isSubmitting}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-md flex items-center justify-center gap-2 transition"
               >
-                Sign In
+                {isSubmitting ? "Signing in..." : "Sign In"}
                 <FiArrowRight />
               </button>
             </form>

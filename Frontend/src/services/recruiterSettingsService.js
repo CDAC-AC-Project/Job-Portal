@@ -1,14 +1,13 @@
-import axios from "axios";
-
 import { getAuthUser } from "../utils/authStorage";
+import { createApiClient } from "../utils/httpClient";
 
 const API_BASE_URL =
   import.meta.env.VITE_PROFILE_SERVICE_URL ||
   "http://localhost:8080/api/profile";
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-});
+// createApiClient (not a bare axios instance) so every call carries the
+// signed-in user's access token, and a stale token gets silently refreshed.
+const api = createApiClient(API_BASE_URL);
 
 
 /* ===============================
@@ -21,6 +20,11 @@ const api = axios.create({
 */
 
 const RECRUITER_PROFILE_ID_KEY = "recruiterProfileId";
+
+// See candidateSettingsService.resolveCandidateProfileId for why this guard exists:
+// multiple callers resolving this on mount (plus React.StrictMode's double-invoke in
+// dev) can all miss the localStorage cache at once and race on the create-or-get call.
+let inFlightResolve = null;
 
 export const resolveRecruiterProfileId = async () => {
   const authUser = getAuthUser();
@@ -36,15 +40,22 @@ export const resolveRecruiterProfileId = async () => {
     return Number(cached);
   }
 
-  const response = await api.post("/internal/recruiters", {
-    userId: authUser.userId,
-  });
+  if (inFlightResolve) {
+    return inFlightResolve;
+  }
 
-  const recruiterProfileId = response.data.recruiterProfileId;
+  inFlightResolve = api
+    .post("/internal/recruiters", { userId: authUser.userId })
+    .then((response) => {
+      const recruiterProfileId = response.data.recruiterProfileId;
+      localStorage.setItem(cacheKey, String(recruiterProfileId));
+      return recruiterProfileId;
+    })
+    .finally(() => {
+      inFlightResolve = null;
+    });
 
-  localStorage.setItem(cacheKey, String(recruiterProfileId));
-
-  return recruiterProfileId;
+  return inFlightResolve;
 };
 
 

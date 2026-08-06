@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { FiEye, FiEyeOff, FiBell, FiBellOff, FiMail, FiShield, FiCheckCircle } from "react-icons/fi";
 
 import { validateAccountSettings } from "../../../utils/candidateSettingsValidation";
@@ -42,7 +43,7 @@ export default function AccountSettings({
       onFinish?.(response);
     } catch (error) {
       console.error(error);
-      alert("Failed to update account settings");
+      toast.error("Failed to update account settings");
     } finally {
       setSaving(false);
     }

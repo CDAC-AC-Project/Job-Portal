@@ -1,0 +1,406 @@
+================================================================================
+APPLICATION-SERVICE BACKEND WORK — SUMMARY
+Date: 2026-08-01
+Scope: Close the backend gaps identified between Application-service and the
+candidate-facing frontend, so the frontend can be wired up in a follow-up pass.
+================================================================================
+
+WHAT WAS DONE (high level)
+--------------------------
+1. Status progression — recruiters can now move an application through its
+   lifecycle (was previously stuck at APPLIED/WITHDRAWN forever).
+2. Application status history/timeline — every status change is now recorded
+   and readable via an endpoint.
+3. Recruiter kanban columns — the ApplicationColumn entity is now fully wired
+   (repository, service, controller) with auto-seeded default columns.
+4. Response shape fixes — location/salary/job type/note added to application
+   responses, "Id" typo fixed to "id".
+5. Resume auto-resolution — Application-service now calls Profile-Service
+   (via OpenFeign) to resolve the candidate's resume automatically, instead
+   of requiring the frontend to collect and send a resumeId.
+6. Global exception handling — clean 4xx/5xx JSON errors instead of raw 500s.
+7. candidateId/recruiterId now come exclusively from the X-User-Id header set
+   by ApiGateway after JWT validation (previously a trusted-by-default raw
+   "candidateId" header with no gateway involvement).
+8. Candidate-scoped dashboard counts endpoint.
+
+Two pre-existing bugs were also fixed because they sat directly in code this
+work had to touch and would have silently broken the apply flow end-to-end:
+  - JobClient was calling POST-mapped path "/jobs/internal/{jobId}", but
+    Jobs-service actually exposes it at "/Internal/jobs/{jobId}". Fixed.
+  - Application-service's local JobStatus enum was {ACTIVE, CLOSED, DRAFT},
+    but Jobs-service's real enum is {ACTIVE, CLOSED, DELETED}. A DELETED job
+    would have failed Feign JSON deserialization. Aligned the enums.
+
+
+================================================================================
+1. STATUS PROGRESSION
+================================================================================
+New endpoint (recruiter-only):
+
+  PATCH /applications/{applicationId}/status
+  Headers: X-User-Id (recruiterId), X-User-Role: RECRUITER
+  Body:    { "status": "SHORTLISTED" | "INTERVIEW" | "REJECTED" | "HIRED" }
+  Response: ApplicationResponse { id, message }
+
+Allowed transitions (enforced server-side, anything else -> 409 Conflict):
+  APPLIED      -> SHORTLISTED, REJECTED
+  SHORTLISTED  -> INTERVIEW, REJECTED
+  INTERVIEW    -> HIRED, REJECTED
+  HIRED, REJECTED, WITHDRAWN -> terminal, no further transitions
+
+APPLIED and WITHDRAWN can never be set through this endpoint (APPLIED only
+happens at creation; WITHDRAWN is candidate-only via the existing withdraw
+endpoint). Only the owning recruiter (application.recruiterId == X-User-Id)
+may change status — enforced with a 403 otherwise.
+
+The candidate's withdraw endpoint (PATCH /applications/{id}/withdraw) was
+also tightened: it now also refuses to withdraw an application that is
+already HIRED or REJECTED (previously only blocked re-withdrawing an
+already-WITHDRAWN one).
+
+Files:
+  - controller/ApplicationController.java (new endpoint + role check)
+  - service/ApplicationService.java, ApplicationServiceImpl.java
+    (updateApplicationStatus + validateTransition + withdraw tightening)
+  - dto/UpdateApplicationStatusRequest.java (new)
+
+
+================================================================================
+2. APPLICATION STATUS HISTORY / TIMELINE
+================================================================================
+The ApplicationStatusHistory entity already existed but had zero code wired
+to it. Every status change (apply, withdraw, recruiter status update) now
+writes a history row: { application, oldStatus, newStatus, changedBy,
+changedAt }. changedBy is whoever's X-User-Id header triggered the change
+(candidate for apply/withdraw, recruiter for status updates).
+
+New endpoint:
+
+  GET /applications/{applicationId}/history
+  Headers: X-User-Id, X-User-Role
+  Response: [ { id, oldStatus, newStatus, changedBy, changedAt }, ... ]
+            ordered oldest -> newest
+
+Access control: only the owning candidate or the owning recruiter may read
+an application's history or its details (this same check was also added to
+the pre-existing GET /applications/{applicationId}, which previously had NO
+ownership check at all — any candidateId could view any application).
+
+Files:
+  - repository/ApplicationStatusHistoryRepository.java (new)
+  - dto/ApplicationStatusHistoryResponse.java (new)
+  - service/ApplicationServiceImpl.java (recordHistory(), getApplicationHistory(),
+    assertCanView())
+  - controller/ApplicationController.java (new endpoint, ownership check added
+    to existing GET /{applicationId})
+
+
+================================================================================
+3. RECRUITER KANBAN COLUMNS (ApplicationColumn)
+================================================================================
+The ApplicationColumn entity existed with no repository/service/controller.
+It's now a small standalone feature: per-job, per-recruiter kanban columns
+that applications can be dragged into, independent of the `status` enum
+(status is the pipeline the candidate sees; columns are the recruiter's own
+organizational view on top of it).
+
+  GET    /applications/jobs/{jobId}/columns
+         -> auto-seeds 5 default columns (Applied, Shortlisted, Interview,
+            Hired, Rejected) the first time a recruiter opens a job's board.
+  POST   /applications/jobs/{jobId}/columns        { columnName, displayOrder? }
+  PATCH  /applications/columns/{columnId}          { columnName?, displayOrder? }
+  DELETE /applications/columns/{columnId}          (default columns can't be deleted;
+                                                      applications in a deleted column
+                                                      are unassigned, not deleted)
+  PATCH  /applications/{applicationId}/column       { columnId }
+         -> moves an application into a column; column must belong to the
+            same job and the same recruiter as the application.
+
+All endpoints require X-User-Role: RECRUITER and check X-User-Id against the
+column's/application's recruiterId.
+
+Files:
+  - repository/ApplicationColumnRepository.java (new)
+  - repository/JobApplicationRepository.java (added findByColumn_Id, used to
+    unassign applications when a column is deleted)
+  - dto/ApplicationColumnRequest.java, ApplicationColumnResponse.java,
+    MoveApplicationColumnRequest.java (new)
+  - service/ApplicationColumnService.java, ApplicationColumnServiceImpl.java (new)
+  - controller/ApplicationColumnController.java (new)
+
+
+================================================================================
+4. RESPONSE SHAPE FIXES + JOB SNAPSHOT ENRICHMENT
+================================================================================
+MyApplicationResponse (GET /applications/candidate/my-applications) and
+ApplicationDetailsResponse (GET /applications/{id}) now return:
+  - id (was "Id" — a Java bean casing bug that made the JSON key literally
+    "Id" instead of "id")
+  - jobLocationSnapshot (was missing from the list response)
+  - minSalarySnapshot, maxSalarySnapshot (BigDecimal, nullable)
+  - jobTypeSnapshot (String, e.g. "FULL_TIME")
+  - note (candidate's optional message at apply time)
+ApplicationDetailsResponse additionally exposes candidateId, recruiterId,
+resumeId for completeness.
+
+These are all "snapshots" captured at apply time (same pattern already used
+for jobTitleSnapshot/companyNameSnapshot), not a live join to job-service —
+consistent with how the rest of the entity already worked, and it means an
+applicant's view of "the job I applied to" doesn't change retroactively if
+the recruiter edits the posting later.
+
+To make this possible, Jobs-service's internal job-lookup endpoint
+(GET /Internal/jobs/{jobId}, used by Application-service via JobClient) now
+also returns minSalary, maxSalary and jobType — it previously returned only
+{jobId, title, recruiterId, companyName, location, status}.
+
+Files:
+  - Application-service: dto/MyApplicationResponse.java,
+    dto/ApplicationDetailsResponse.java, dto/JobInternalResponse.java,
+    entities/JobApplication.java (new columns: min_salary_snapshot,
+    max_salary_snapshot, job_type_snapshot, note), service/ApplicationServiceImpl.java
+  - Jobs-service: dtos/JobInternalResponse.java, service/JobsServiceImpl.java
+    (getJobInternalDetails now sets jobType)
+
+
+================================================================================
+5. RESUME AUTO-RESOLUTION (OpenFeign -> Profile-Service)
+================================================================================
+Previously ApplyJobRequest required a resumeId that nothing in the frontend
+ever collected. Per your direction, resume selection is now automatic:
+Application-service resolves it itself by calling Profile-Service.
+
+ApplyJobRequest.resumeId is now OPTIONAL:
+  - If omitted (the expected normal case): Application-service fetches the
+    candidate's resumes from Profile-Service and uses whichever one is
+    flagged as their default resume (matches the existing frontend copy in
+    ApplyJobModal.jsx: "Your default resume from Settings will be shared").
+    If the candidate has no resumes, or has resumes but none marked default,
+    the apply call fails with 404 and a clear message telling them to set a
+    default resume first.
+  - If explicitly provided: it's validated against the candidate's own
+    resume list (a candidate can't submit someone else's resumeId); 404 if
+    it doesn't belong to them.
+ApplyJobRequest also now accepts an optional "note" (max 1000 chars), which
+is stored on the application (see section 4) — this closes the gap where the
+apply modal's note field had nowhere to go on the backend.
+
+Since Application-service only ever has the candidate's auth-service userId
+(from X-User-Id), and Profile-Service resumes are keyed by its own internal
+candidateProfileId, a new internal Profile-Service endpoint was added to do
+that resolution server-side in one hop:
+
+  GET /api/profile/internal/candidates/by-user/{userId}/resumes
+  (Profile-Service, new — resolves userId -> CandidateProfile -> its resumes)
+
+Application-service calls this via a new Feign client:
+  client/ProfileClient.java -> profile-service, http://localhost:8080
+
+Files:
+  - Profile-Service: service/ResumeService.java, ResumeServiceImpl.java
+    (getResumesByUserId), controller/InternalCandidateProfileController.java
+    (new GET endpoint)
+  - Application-service: client/ProfileClient.java (new),
+    dto/ResumeInternalResponse.java (new), dto/ApplyJobRequest.java
+    (resumeId no longer @NotNull, added note), service/ApplicationServiceImpl.java
+    (resolveResumeId()), exception/ResumeNotFoundException.java (new)
+
+
+================================================================================
+6. GLOBAL EXCEPTION HANDLING
+================================================================================
+Previously every failure path threw a raw RuntimeException, which Spring
+turns into an opaque 500 with no JSON body. Added:
+  - New typed exceptions: ApplicationNotFoundException (404),
+    UnauthorizedActionException (403), InvalidApplicationStateException (409),
+    ResumeNotFoundException (404), ColumnNotFoundException (404). All the
+    existing "Application not found" / "not allowed to withdraw" / "already
+    withdrawn" / "Job is not active" RuntimeException throws in
+    ApplicationServiceImpl were replaced with these.
+  - exception/GlobalExceptionHandler.java (@RestControllerAdvice): maps each
+    of the above to the right HTTP status, plus DuplicateApplicationException
+    -> 409, missing X-User-Id/X-User-Role header -> 400, @Valid failures ->
+    400, Feign 404s from job-service/profile-service -> 404, other Feign
+    failures -> 503, anything unhandled -> 500.
+  - dto/ErrorResponse.java: { timestamp, status, error, message, path }
+
+Files:
+  - exception/ApplicationNotFoundException.java, UnauthorizedActionException.java,
+    InvalidApplicationStateException.java, ResumeNotFoundException.java,
+    ColumnNotFoundException.java, GlobalExceptionHandler.java (all new)
+  - dto/ErrorResponse.java (new)
+
+
+================================================================================
+7. candidateId / recruiterId NOW COME FROM THE GATEWAY, NOT A RAW HEADER
+================================================================================
+Every Application-service endpoint previously trusted a plain "candidateId"
+request header with no involvement from ApiGateway at all — anyone calling
+the service directly (or even the browser, if it could reach port 8084)
+could claim to be any candidate.
+
+ApiGateway's JwtAuthenticationFilter already validates the JWT and injects
+trusted X-User-Id / X-User-Email / X-User-Role headers (stripping any of
+those headers a client tries to set itself — see GatewayRequestWrapper).
+Application-service just wasn't using that mechanism.
+
+All endpoints now read X-User-Id (as candidateId or recruiterId depending on
+the endpoint) and X-User-Role, and check the role matches what the action
+requires (CANDIDATE for apply/my-applications/withdraw/dashboard-counts,
+RECRUITER for status updates and kanban columns) — mirroring the exact
+pattern already used in Jobs-service's controllers
+(`if (!"RECRUITER".equalsIgnoreCase(role)) throw ...`).
+
+IMPORTANT — this assumes requests reach Application-service through
+ApiGateway. If your local dev setup currently calls Application-service
+directly on :8084 (bypassing the gateway), those direct calls will no longer
+carry X-User-Id/X-User-Role and every endpoint will 400 with "Missing
+required header: X-User-Id". Route candidate/recruiter traffic through the
+gateway once the frontend is wired up.
+
+Files:
+  - controller/ApplicationController.java, ApplicationColumnController.java
+
+
+================================================================================
+8. CANDIDATE-SCOPED DASHBOARD COUNTS
+================================================================================
+Previously only a recruiter-scoped counts endpoint existed (internal-only).
+New candidate-facing endpoint:
+
+  GET /applications/candidate/dashboard-counts
+  Headers: X-User-Id (candidateId), X-User-Role: CANDIDATE
+  Response: CandidateApplicationDashboardCountsResponse {
+    totalApplied, shortlisted, interview, hired, rejected, withdrawn
+  }
+
+Intended to replace the client-computed `appliedJobs.length` currently done
+in CandidateDashboard.jsx once wired up.
+
+Files:
+  - dto/CandidateApplicationDashboardCountsResponse.java (new)
+  - repository/JobApplicationRepository.java (added countByCandidateId,
+    countByCandidateIdAndStatus)
+  - service/ApplicationServiceImpl.java (getCandidateDashboardCounts)
+  - controller/ApplicationController.java (new endpoint)
+
+
+================================================================================
+FULL ENDPOINT LIST AFTER THIS CHANGE (Application-service, base /applications)
+================================================================================
+Candidate-facing (X-User-Role: CANDIDATE):
+  POST   /applications/jobs/{jobId}/apply
+  GET    /applications/candidate/my-applications
+  GET    /applications/candidate/dashboard-counts        [NEW]
+  PATCH  /applications/{applicationId}/withdraw
+
+Shared (candidate OR owning recruiter, ownership enforced in service):
+  GET    /applications/{applicationId}
+  GET    /applications/{applicationId}/history            [NEW]
+
+Recruiter-facing (X-User-Role: RECRUITER):
+  PATCH  /applications/{applicationId}/status              [NEW]
+  GET    /applications/jobs/{jobId}/columns                [NEW]
+  POST   /applications/jobs/{jobId}/columns                [NEW]
+  PATCH  /applications/columns/{columnId}                  [NEW]
+  DELETE /applications/columns/{columnId}                  [NEW]
+  PATCH  /applications/{applicationId}/column               [NEW]
+
+Internal / service-to-service (unchanged):
+  GET /internal/applications/recruiter/{recruiterId}/dashboard-counts
+  GET /internal/applications/counts?jobIds=1,2,3
+
+
+================================================================================
+DATABASE
+================================================================================
+spring.jpa.hibernate.ddl-auto=update is set, so Hibernate will add the new
+columns/tables automatically on next boot. New/changed schema:
+  - job_applications: + min_salary_snapshot, max_salary_snapshot,
+    job_type_snapshot, note
+  - application_status_history: now actually populated (table already existed,
+    unused until now)
+  - application_columns: now actually populated (table already existed,
+    unused until now)
+No manual migration needed for local dev, but call this out if there's a
+staging/prod DB where ddl-auto is not "update".
+
+
+================================================================================
+WHAT'S STILL NEEDED BEFORE/DURING FRONTEND WIRING (not done in this pass)
+================================================================================
+- The frontend's applications/notifications features are still 100%
+  localStorage-mocked (jobApplicationService.js, notificationService.js,
+  favoriteJobService.js, jobAlertService.js, recruiterApplicationService.js).
+  None of this backend work is wired to the UI yet — that's the deliberate
+  next step you asked to defer.
+- FindJob.jsx / JobDetails.jsx still use a static local data/jobs.js with
+  fake ids, not real Jobs-service jobs. The apply flow can't work end-to-end
+  against real data until job browsing is wired to Jobs-service too.
+- Frontend has no established source for X-User-Id/X-User-Role — confirm
+  how the JWT/session is currently obtained and attached to requests before
+  wiring (authStorage.js only had a pseudo userId derived from email as of
+  the last audit).
+- Notifications (status-change alerts to the candidate) have no backend
+  anywhere in this repo — NotificationService exists as a sibling service
+  but wasn't touched here; whether/how it should hook into Application-service
+  status changes is a separate decision.
+- ApplicationResponse (returned by apply/withdraw/status-update) still only
+  has {id, message} — if the frontend wants the full updated application
+  back in one round trip instead of a second GET, that's a small follow-up.
+
+
+================================================================================
+FILES TOUCHED (by service)
+================================================================================
+Application-service (Backend/Application-service):
+  NEW:
+    exception/ApplicationNotFoundException.java
+    exception/UnauthorizedActionException.java
+    exception/InvalidApplicationStateException.java
+    exception/ResumeNotFoundException.java
+    exception/ColumnNotFoundException.java
+    exception/GlobalExceptionHandler.java
+    dto/ErrorResponse.java
+    dto/ResumeInternalResponse.java
+    dto/UpdateApplicationStatusRequest.java
+    dto/ApplicationStatusHistoryResponse.java
+    dto/ApplicationColumnRequest.java
+    dto/ApplicationColumnResponse.java
+    dto/MoveApplicationColumnRequest.java
+    dto/CandidateApplicationDashboardCountsResponse.java
+    client/ProfileClient.java
+    repository/ApplicationStatusHistoryRepository.java
+    repository/ApplicationColumnRepository.java
+    service/ApplicationColumnService.java
+    service/ApplicationColumnServiceImpl.java
+    controller/ApplicationColumnController.java
+  MODIFIED:
+    dto/ApplyJobRequest.java
+    dto/JobInternalResponse.java
+    dto/MyApplicationResponse.java
+    dto/ApplicationDetailsResponse.java
+    enums/JobStatus.java
+    entities/JobApplication.java
+    client/JobClient.java
+    repository/JobApplicationRepository.java
+    service/ApplicationService.java
+    service/ApplicationServiceImpl.java
+    controller/ApplicationController.java
+
+Jobs-service (Backend/Jobs-service):
+  MODIFIED:
+    dtos/JobInternalResponse.java (added minSalary, maxSalary, jobType)
+    service/JobsServiceImpl.java (getJobInternalDetails sets jobType)
+
+Profile-Service (Backend/Profile-Service):
+  MODIFIED:
+    service/ResumeService.java (added getResumesByUserId)
+    service/ResumeServiceImpl.java (implemented getResumesByUserId)
+    controller/InternalCandidateProfileController.java (new GET
+      /api/profile/internal/candidates/by-user/{userId}/resumes endpoint)
+
+Build verification: `mvn -o compile` run clean on all three services after
+the changes — all BUILD SUCCESS, no compile errors.
+================================================================================
