@@ -17,6 +17,8 @@ export default function Settings() {
 
   const [loading, setLoading] = useState(true);
 
+  const [loadError, setLoadError] = useState(false);
+
   const [candidateProfileId, setCandidateProfileId] = useState(null);
 
   const [profile, setProfile] = useState({
@@ -62,6 +64,7 @@ export default function Settings() {
   const loadCandidateSettings = async () => {
     try {
       setLoading(true);
+      setLoadError(false);
 
       const resolvedCandidateProfileId = await resolveCandidateProfileId();
       const response = await getCandidateSettings(resolvedCandidateProfileId);
@@ -137,6 +140,10 @@ export default function Settings() {
         "Failed to load candidate settings",
         error
       );
+      // candidateProfileId is left at null here on purpose — rendering the settings
+      // tabs anyway with a null id is what caused actions like resume upload to
+      // silently call the API with "null" in place of a real id.
+      setLoadError(true);
     }
 
     finally{
@@ -256,10 +263,23 @@ export default function Settings() {
             }
           />
           {
-            loading ?
-            <Loader />
-            :
-            renderTabContent()
+            loading ? (
+              <Loader />
+            ) : loadError ? (
+              <div className="text-center py-12">
+                <p className="text-red-600 mb-4">
+                  Couldn't load your profile settings. The profile service may be unreachable.
+                </p>
+                <button
+                  onClick={loadCandidateSettings}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : (
+              renderTabContent()
+            )
           }
 
         </section>

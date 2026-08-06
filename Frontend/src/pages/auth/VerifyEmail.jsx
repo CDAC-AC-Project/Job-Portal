@@ -1,44 +1,44 @@
-import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { FiBriefcase, FiArrowRight } from "react-icons/fi";
 
 import Button from "../../components/common/Button";
-import Input from "../../components/common/Input";
+import { verifyEmail, extractAuthErrorMessage } from "../../services/authService";
 
 export default function VerifyEmail() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
 
-  const email = location.state?.email || "emailaddress@gmail.com";
+  const email = location.state?.email || "your email address";
 
-  const [verificationCode, setVerificationCode] = useState("");
+  // Auth_User-Service verifies via a one-time link (/verify-email?token=...)
+  // sent by email, not a typed-in code — so this page verifies automatically
+  // as soon as it loads with a token in the URL.
+  const [status, setStatus] = useState(token ? "verifying" : "missing-token");
   const [error, setError] = useState("");
 
-  const handleVerify = (e) => {
-    e.preventDefault();
+  // The verification token is single-use — the backend nulls it out on first success.
+  // React.StrictMode (see main.jsx) intentionally double-invokes effects in development,
+  // which would otherwise fire this call twice: the second call always fails since the
+  // token from the first call is already consumed. This ref makes sure it only fires once
+  // per token, no matter how many times the effect itself re-runs.
+  const verifiedTokenRef = useRef(null);
 
-    if (!verificationCode.trim()) {
-      setError("Verification code is required");
+  useEffect(() => {
+    if (!token || verifiedTokenRef.current === token) {
       return;
     }
+    verifiedTokenRef.current = token;
 
-    if (verificationCode.trim().length < 4) {
-      setError("Please enter a valid verification code");
-      return;
-    }
-
-    setError("");
-
-    console.log("Verification Code:", verificationCode);
-
-    // Later backend API call will come here.
-    // If verification succeeds:
-    navigate("/login");
-  };
-
-  const handleResendCode = () => {
-    console.log("Resend verification code to:", email);
-  };
+    verifyEmail(token)
+      .then(() => setStatus("verified"))
+      .catch((err) => {
+        setError(extractAuthErrorMessage(err));
+        setStatus("failed");
+      });
+  }, [token]);
 
   return (
     <div className="min-h-screen bg-gray-300 p-5">
@@ -60,48 +60,42 @@ export default function VerifyEmail() {
               Email Verification
             </h1>
 
-            <p className="text-sm text-gray-500 leading-6 mb-8">
-              We&apos;ve sent an verification to{" "}
-              <span className="text-gray-800 font-medium">{email}</span> to
-              verify your email address and activate your account.
-            </p>
+            {status === "verifying" && (
+              <p className="text-sm text-gray-500 leading-6 mb-8">
+                Verifying your email address, please wait...
+              </p>
+            )}
 
-            <form onSubmit={handleVerify}>
-              <div className="text-left mb-5">
-                <Input
-                  type="text"
-                  placeholder="Verification Code"
-                  value={verificationCode}
-                  onChange={(e) => {
-                    setVerificationCode(e.target.value);
-                    setError("");
-                  }}
-                />
+            {status === "verified" && (
+              <>
+                <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-4 py-3 mb-8">
+                  Your email has been verified successfully.
+                </p>
 
-                {error && (
-                  <p className="text-red-500 text-xs mt-2">{error}</p>
-                )}
-              </div>
+                <Button
+                  onClick={() => navigate("/login")}
+                  className="w-full flex items-center justify-center gap-2 py-3"
+                >
+                  Continue to Sign In
+                  <FiArrowRight />
+                </Button>
+              </>
+            )}
 
-              <Button
-                type="submit"
-                className="w-full flex items-center justify-center gap-2 py-3"
-              >
-                Verify My Account
-                <FiArrowRight />
-              </Button>
-            </form>
+            {status === "failed" && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-4 py-3 mb-8">
+                {error || "This verification link is invalid or has expired."}
+              </p>
+            )}
 
-            <p className="text-sm text-gray-500 mt-8">
-              Didn&apos;t recieve any code!{" "}
-              <button
-                type="button"
-                onClick={handleResendCode}
-                className="text-blue-600 font-medium hover:underline"
-              >
-                Resends
-              </button>
-            </p>
+            {status === "missing-token" && (
+              <p className="text-sm text-gray-500 leading-6 mb-8">
+                We&apos;ve sent a verification link to{" "}
+                <span className="text-gray-800 font-medium">{email}</span>.
+                Open it from your inbox to verify your email address and
+                activate your account.
+              </p>
+            )}
           </div>
         </main>
       </div>

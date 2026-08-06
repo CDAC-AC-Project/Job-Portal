@@ -303,7 +303,11 @@ public class JobsServiceImpl implements JobsService{
 	                job.getCity() + ", " + job.getState() + ", " + job.getCountry()
 	        );
 	    }
-		 
+
+	    if (job.getJobType() != null) {
+	        response.setJobType(job.getJobType().name());
+	    }
+
 	    return response;
 	}
 	

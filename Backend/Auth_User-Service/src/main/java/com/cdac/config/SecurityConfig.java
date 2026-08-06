@@ -10,37 +10,49 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.cdac.AuthUserServiceApplication;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
-	@Bean
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    // No CORS config here on purpose: the API Gateway is the only thing browsers talk
+    // to directly (all real frontend traffic goes through it), and it already adds
+    // Access-Control-* headers. If this service also added its own, the gateway's proxied
+    // response would carry both sets of headers duplicated, which browsers reject outright.
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
             .csrf(csrf -> csrf.disable())
-            .cors(cors -> {})
             .sessionManagement(session ->
                     session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            //Authorization filter configuration
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers(
                             "/auth/register",
                             "/auth/login",
                             "/auth/verify-email",
                             "/auth/forgot-password",
-                            "/auth/reset-password"
+                            "/auth/reset-password",
+                            "/auth/refresh-token",
+                            "/auth/logout",
+                            "/actuator/health",
+                            "/swagger-ui/**",
+                            "/swagger-ui.html",
+                            "/v3/api-docs/**"
                     ).permitAll()
-                    .anyRequest().permitAll()
-            );
+                    .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-	
-	@Bean
+
+    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }

@@ -12,17 +12,20 @@ import Loader from "../../components/common/Loader";
 import { getMyApplications } from "../../services/applicationApi";
 import { getFavoriteJobs } from "../../services/favoriteJobService";
 import { getJobAlerts } from "../../services/jobAlertService";
-import { getCandidateSettings } from "../../services/candidateSettingsService";
+import { getCandidateSettings, resolveCandidateProfileId } from "../../services/candidateSettingsService";
+import { getAuthUser } from "../../utils/authStorage";
 
 export default function CandidateDashboard() {
   const navigate = useNavigate();
+
+  const authUser = getAuthUser();
 
   const [appliedJobs, setAppliedJobs] = useState([]);
   const [favoriteJobsCount, setFavoriteJobsCount] = useState(0);
   const [jobAlertsCount, setJobAlertsCount] = useState(0);
 
   const [candidate, setCandidate] = useState({
-    fullName: "Candidate",
+    fullName: authUser?.name || "Candidate",
     profileImageUrl: "",
     profileCompleted: false,
   });
@@ -34,7 +37,15 @@ export default function CandidateDashboard() {
       try {
         setLoading(true);
 
-        const applied = await getMyApplications(1);
+        const candidateProfileId = await resolveCandidateProfileId();
+
+        const [applied, favorites, alerts, profile] = await Promise.all([
+          getAppliedJobs(),
+          getFavoriteJobs(),
+          getJobAlerts(),
+          getCandidateSettings(candidateProfileId),
+        ]);
+        // const applied = await getMyApplications(1);
 
         setAppliedJobs(
   applied.map((app) => ({
@@ -48,9 +59,14 @@ export default function CandidateDashboard() {
   }))
 );
 
-console.log("Dashboard Applications:", applied);
-setFavoriteJobsCount(getFavoriteJobCount());
-setJobAlertsCount(getJobAlertCount());
+        setCandidate({
+          fullName: authUser?.name || "Candidate",
+          profileImageUrl: profile.profileImageUrl || "",
+          profileCompleted: profile.profileCompleted || false,
+        });
+// console.log("Dashboard Applications:", applied);
+// setFavoriteJobsCount(getFavoriteJobCount());
+// setJobAlertsCount(getJobAlertCount());
         // setCandidate({
         //   fullName: profile.fullName || "Candidate",
         //   profileImageUrl: profile.profileImageUrl || "",
@@ -119,6 +135,7 @@ setJobAlertsCount(getJobAlertCount());
                 ))}
               </div>
 
+              {!candidate.profileCompleted && (
               <div className="bg-red-500 rounded-lg px-6 py-5 mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
                 <div className="flex items-center gap-4">
                   {candidate.profileImageUrl ? (
@@ -135,9 +152,7 @@ setJobAlertsCount(getJobAlertCount());
 
                   <div>
                     <h2 className="text-white font-semibold">
-                      {candidate.profileCompleted
-                        ? "Your profile is completed"
-                        : "Your profile editing is not completed."}
+                      Your profile editing is not completed.
                     </h2>
 
                     <p className="text-red-100 text-sm mt-1">
@@ -146,7 +161,6 @@ setJobAlertsCount(getJobAlertCount());
                   </div>
                 </div>
 
-                {!candidate.profileCompleted && (
                   <NavLink
                     to="/candidate/settings"
                     className="bg-white text-red-500 px-5 py-3 rounded-md font-medium flex items-center justify-center gap-2 hover:bg-red-50"
@@ -154,8 +168,8 @@ setJobAlertsCount(getJobAlertCount());
                     Edit Profile
                     <FiArrowRight />
                   </NavLink>
-                )}
               </div>
+              )}
 
               <AppliedJobTable
                 jobs={appliedJobs.slice(0, 5)}

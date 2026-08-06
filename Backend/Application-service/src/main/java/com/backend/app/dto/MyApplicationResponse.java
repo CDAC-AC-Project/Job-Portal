@@ -1,5 +1,6 @@
 package com.backend.app.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.backend.app.enums.ApplicationStatus;
@@ -15,13 +16,23 @@ import lombok.Setter;
 @AllArgsConstructor
 public class MyApplicationResponse {
 
-    private Long Id;
+    private Long id;
 
     private Long jobId;
 
     private String jobTitleSnapshot;
 
     private String companyNameSnapshot;
+
+    private String jobLocationSnapshot;
+
+    private BigDecimal minSalarySnapshot;
+
+    private BigDecimal maxSalarySnapshot;
+
+    private String jobTypeSnapshot;
+
+    private String note;
 
     private ApplicationStatus status;
 

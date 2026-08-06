@@ -60,50 +60,56 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
 
+        // Only actual JWT parsing/validation is caught here. filterChain.doFilter() (below,
+        // outside this try) triggers routing to the downstream service — if that fails (e.g.
+        // the target service isn't running/registered), that exception must NOT be swallowed
+        // and reported as "Invalid or expired token": it has nothing to do with the token and
+        // that message actively hides the real problem.
+        Claims claims;
         try {
-            Claims claims = jwtUtil.extractClaims(token);
-
-            Object userIdClaim = claims.get("userId");
-            String email = claims.getSubject();
-            Object roleClaim = claims.get("role");
-
-            if (userIdClaim == null || email == null || roleClaim == null) {
-                sendUnauthorizedResponse(response, "Invalid token claims");
-                return;
-            }
-
-            String userId = String.valueOf(userIdClaim);
-            String role = String.valueOf(roleClaim);
-
-            List<GrantedAuthority> authorities = List.of(
-                    new SimpleGrantedAuthority("ROLE_" + role)
-            );
-
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            email,
-                            null,
-                            authorities
-                    );
-
-            authentication.setDetails(
-                    new WebAuthenticationDetailsSource().buildDetails(request)
-            );
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            /*
-             * These trusted headers will be forwarded to downstream services.
-             */
-            wrappedRequest.putHeader("X-User-Id", userId);
-            wrappedRequest.putHeader("X-User-Email", email);
-            wrappedRequest.putHeader("X-User-Role", role);
-
-            filterChain.doFilter(wrappedRequest, response);
-
+            claims = jwtUtil.extractClaims(token);
         } catch (Exception e) {
             sendUnauthorizedResponse(response, "Invalid or expired token");
+            return;
         }
+
+        Object userIdClaim = claims.get("userId");
+        String email = claims.getSubject();
+        Object roleClaim = claims.get("role");
+
+        if (userIdClaim == null || email == null || roleClaim == null) {
+            sendUnauthorizedResponse(response, "Invalid token claims");
+            return;
+        }
+
+        String userId = String.valueOf(userIdClaim);
+        String role = String.valueOf(roleClaim);
+
+        List<GrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + role)
+        );
+
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(
+                        email,
+                        null,
+                        authorities
+                );
+
+        authentication.setDetails(
+                new WebAuthenticationDetailsSource().buildDetails(request)
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        /*
+         * These trusted headers will be forwarded to downstream services.
+         */
+        wrappedRequest.putHeader("X-User-Id", userId);
+        wrappedRequest.putHeader("X-User-Email", email);
+        wrappedRequest.putHeader("X-User-Role", role);
+
+        filterChain.doFilter(wrappedRequest, response);
     }
 
     private void sendUnauthorizedResponse(

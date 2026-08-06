@@ -10,7 +10,7 @@ import {
   FiLogOut,
 } from "react-icons/fi";
 
-import { logout } from "../../utils/authStorage";
+import { logoutUser } from "../../services/authService";
 
 const sidebarLinks = [
   {
@@ -89,7 +89,7 @@ export default function CandidateSidebar() {
 
       <div className="hidden lg:flex min-h-[420px] items-end p-5">
         <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500 " onClick={()=>{
-          logout();
+          logoutUser();
           navigate("/login");
         }}>
           <FiLogOut />

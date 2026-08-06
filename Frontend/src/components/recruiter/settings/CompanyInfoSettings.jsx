@@ -1,11 +1,14 @@
+import { useState } from "react";
+import { toast } from "react-toastify";
+import { FiUploadCloud } from "react-icons/fi";
 import { useEffect, useState } from "react";
-import {
-  FiUploadCloud,
-  FiX,
-  FiCheckCircle,
-  FiAlertCircle,
-  FiImage,
-} from "react-icons/fi";
+// import {
+//   FiUploadCloud,
+//   FiX,
+//   FiCheckCircle,
+//   FiAlertCircle,
+//   FiImage,
+// } from "react-icons/fi";
 
 import { validateCompanyInfo } from "../../../utils/recruiterSettingsValidation";
 import { updateRecruiterCompanyInfo } from "../../../services/recruiterSettingsService";
@@ -152,20 +155,24 @@ export default function CompanyInfoSettings({
         companyName: updated.companyName || "",
         aboutUs: updated.about || "",
       });
-
-      setErrors({});
-
-      setMessage({
-        type: "success",
-        text: "Company information updated successfully.",
-      });
+      toast.success("Company info updated successfully");
     } catch (error) {
-      console.error("Failed to update company information:", error);
+      console.error(error);
+      toast.error("Failed to update company info");
 
-      setMessage({
-        type: "error",
-        text: "Failed to update company information. Please try again.",
-      });
+    //   setErrors({});
+
+    //   setMessage({
+    //     type: "success",
+    //     text: "Company information updated successfully.",
+    //   });
+    // } catch (error) {
+    //   console.error("Failed to update company information:", error);
+
+    //   setMessage({
+    //     type: "error",
+    //     text: "Failed to update company information. Please try again.",
+    //   });
     } finally {
       setSaving(false);
     }

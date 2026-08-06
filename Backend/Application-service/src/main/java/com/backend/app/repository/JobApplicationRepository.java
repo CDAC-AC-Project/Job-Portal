@@ -27,6 +27,15 @@ public interface JobApplicationRepository
             Long recruiterId,
             ApplicationStatus status
     );
+
+    long countByCandidateId(Long candidateId);
+
+    long countByCandidateIdAndStatus(
+            Long candidateId,
+            ApplicationStatus status
+    );
+
+    List<JobApplication> findByColumn_Id(Long columnId);
     
     @Query("""
             SELECT application.jobId, COUNT(application.id)

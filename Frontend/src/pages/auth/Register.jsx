@@ -11,7 +11,15 @@ import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
 import registerBg from "../../assets/images/register-bg.png";
 import { validateRegisterForm } from "../../utils/registerValidation";
-import api from "../../services/api";
+import { setSession } from "../../utils/authStorage";
+import { registerUser, extractAuthErrorMessage } from "../../services/authService";
+
+// The role toggle uses "user"/"recruiter" for historical UI reasons; the
+// backend's Role enum is CANDIDATE/RECRUITER.
+const ROLE_TO_BACKEND = {
+  user: "CANDIDATE",
+  recruiter: "RECRUITER",
+};
 
 export default function Register() {
   const navigate = useNavigate();
@@ -20,7 +28,8 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -45,73 +54,45 @@ export default function Register() {
     });
   };
 
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-
-  //   const validationErrors = validateRegisterForm(formData);
-
-  //   if (Object.keys(validationErrors).length > 0) {
-  //     setErrors(validationErrors);
-  //     return;
-  //   }
-
-  //   const registerData = {
-  //     fullName: formData.fullName,
-  //     username: formData.username,
-  //     email: formData.email,
-  //     password: formData.password,
-  //     role,
-  //   };
-
-  //   console.log("Register Data:", registerData);
-
-  //   navigate("/verify-email", {
-  //     state: {
-  //       email: formData.email,
-  //       role,
-  //     },
-  //   });
-  // };
-
   const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  const validationErrors = validateRegisterForm(formData);
-
-  if (Object.keys(validationErrors).length > 0) {
-    setErrors(validationErrors);
-    return;
-  }
-
-  const registerData = {
-    fullName: formData.fullName,
-    email: formData.email,
-    password: formData.password,
-    role,
-  };
+    e.preventDefault();
 
 try {
   setLoading(true);
 
   const response = await api.post("/auth/register", registerData);
 
-  console.log("Registration Successful:", response.data);
+    setSubmitError("");
+    setIsSubmitting(true);
 
-  alert("Registration successful! Please login to continue.");
+    try {
+      // Note: Auth_User-Service's RegisterDto has no "username" field — the
+      // account is keyed by fullName/email/password/role, so username is
+      // collected in the form but intentionally not sent.
+      const authResponse = await registerUser({
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        role: ROLE_TO_BACKEND[role],
+      });
 
-  navigate("/login");
-} catch (error) {
-  console.error(error);
+      // register() already returns a working token pair (email verification
+      // is not required to log in), so the user is signed in immediately;
+      // /verify-email is still shown next as a nudge, not a gate.
+      setSession(authResponse, { name: formData.fullName });
 
-  if (error.response) {
-    alert(error.response.data.message || "Registration Failed");
-  } else {
-    alert("Unable to connect to server.");
-  }
-} finally {
-  setLoading(false);
-}
-};
+      navigate("/verify-email", {
+        state: {
+          email: formData.email,
+          role,
+        },
+      });
+    } catch (error) {
+      setSubmitError(extractAuthErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-200 flex items-center justify-center px-4 py-8">
@@ -174,6 +155,12 @@ try {
             </div>
 
             <form onSubmit={handleSubmit}>
+              {submitError && (
+                <p className="text-red-500 text-sm mb-4 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+                  {submitError}
+                </p>
+              )}
+
               {/* Name Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
@@ -326,12 +313,12 @@ try {
                 <p className="text-red-500 text-xs mb-4">{errors.agree}</p>
               )}
 
-             <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-3 rounded-md flex items-center justify-center gap-2 transition"
-            >
-                Create Account
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-md flex items-center justify-center gap-2 transition"
+              >
+                {isSubmitting ? "Creating account..." : "Create Account"}
                 <FiArrowRight />
               </button>
             </form>

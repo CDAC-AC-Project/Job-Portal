@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { FiEye, FiEyeOff, FiMail, FiUsers, FiXCircle, FiCheckCircle } from "react-icons/fi";
 
 import { validateRecruiterPassword } from "../../../utils/recruiterSettingsValidation";
@@ -55,7 +56,7 @@ export default function RecruiterAccountSettings({
       setSavedMessage("Your account settings have been saved.");
     } catch (error) {
       console.error(error);
-      alert("Failed to update account settings");
+      toast.error("Failed to update account settings");
     } finally {
       setSaving(false);
     }
@@ -72,7 +73,7 @@ export default function RecruiterAccountSettings({
     }
 
     const response = await updateRecruiterPassword(passwordData);
-    alert(response.message || "Password changed successfully");
+    toast.success(response.message || "Password changed successfully");
 
     setPasswordData({
       currentPassword: "",
@@ -89,7 +90,7 @@ export default function RecruiterAccountSettings({
     if (!confirmDelete) return;
 
     await deleteRecruiterCompany(recruiterProfileId);
-    alert("Company account closed successfully");
+    toast.success("Company account closed successfully");
   };
 
   return (

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { FiFacebook, FiTwitter, FiInstagram, FiLinkedin } from "react-icons/fi";
 
 import { validateRecruiterSocialLinks } from "../../../utils/recruiterSettingsValidation";
@@ -43,10 +44,10 @@ export default function RecruiterSocialSettings({
         linkedin: updated.linkedin || "",
         instagram: updated.instagram || "",
       });
-      alert("Social media profile updated successfully");
+      toast.success("Social media profile updated successfully");
     } catch (error) {
       console.error(error);
-      alert("Failed to update social media profile");
+      toast.error("Failed to update social media profile");
     } finally {
       setSaving(false);
     }
