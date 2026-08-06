@@ -311,6 +311,11 @@ public class JobsServiceImpl implements JobsService{
 	    return response;
 	}
 	
+	
+	public List<JobInternalResponse> getJobCardsByIds(List<Long> jobIds) {
+        return jobDao.findJobCardsByIds(jobIds);
+    }
+	
 }
 
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FiX, FiSend, FiMapPin, FiDollarSign } from "react-icons/fi";
 
-import { applyToJob } from "../../services/jobApplicationService";
+import { applyJob } from "../../services/applicationApi";
 
 export default function ApplyJobModal({ isOpen, job, onClose, onApplied }) {
   const [note, setNote] = useState("");
@@ -16,17 +16,31 @@ export default function ApplyJobModal({ isOpen, job, onClose, onApplied }) {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      setSubmitting(true);
-      const application = await applyToJob(job, { note });
-      setNote("");
-      onApplied?.(application);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  try {
+    setSubmitting(true);
+
+    const candidateId = 1; // temporary
+    const resumeId = 1; // temporary
+
+    console.log("Job object:", job);
+console.log("Job ID:", job.id);
+
+    const application = await applyJob(
+      job.id,
+      candidateId,
+      resumeId
+    );
+
+    onApplied?.(application);
+  } catch (error) {
+    console.error(error);
+    alert("Failed to apply for job");
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">

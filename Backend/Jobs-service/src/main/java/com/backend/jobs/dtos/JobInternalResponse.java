@@ -4,11 +4,13 @@ import java.math.BigDecimal;
 
 import com.backend.jobs.entities.JobStatus;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
 @Setter
 @Getter
+@AllArgsConstructor
 public class JobInternalResponse {
 	private Long jobId;
     private String title;

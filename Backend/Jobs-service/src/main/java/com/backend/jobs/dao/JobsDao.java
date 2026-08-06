@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.backend.jobs.dtos.JobCardResponse;
+import com.backend.jobs.dtos.JobInternalResponse;
 import com.backend.jobs.dtos.RecruiterJobListResp;
 import com.backend.jobs.entities.*;
 
@@ -131,5 +132,15 @@ public interface JobsDao extends JpaRepository<Jobs, Long> {
 		        @Param("status") JobStatus status
 		);
 
+	//Internal APIS Queries   (this is "JPQL constructor expression")
+	@Query("""
+	        SELECT new com.backend.jobs.dtos.JobInternalResponse(
+	            j.id, j.title, j.recruiterId, j.companyName, j.location, j.status
+	        )
+	        FROM Job j
+	        WHERE j.id IN :jobIds
+	        AND j.status = 'ACTIVE'
+	        """)
+	    List<JobInternalResponse> findJobCardsByIds(@Param("jobIds") List<Long> jobIds);
 	
 }

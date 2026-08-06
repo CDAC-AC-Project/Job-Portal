@@ -8,13 +8,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 
 import org.springframework.security.config.http.SessionCreationPolicy;
 
@@ -23,8 +20,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-
-import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.List;
 
@@ -39,6 +34,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
     	http.csrf(csrf -> csrf.disable());
+    	http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
 		// 2. Retain basic auth scheme (disable form based auth)
 	//	http.httpBasic(Customizer.withDefaults());
 		// 3. Disable HttpSession (Tell Spring sec - DO NOT create HttpSession object
@@ -58,6 +54,10 @@ public class SecurityConfig {
 						"/auth/refresh-token",
 						"/auth/logout"
 				).permitAll()
+				// .requestMatchers(HttpMethod.GET,"/jobs/search").permitAll()
+				// .requestMatchers(HttpMethod.GET,"/jobs/home").permitAll()
+				// .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+				// .requestMatchers(HttpMethod.POST,"/jobs/recruiter").hasRole("RECRUITER")
 				.anyRequest().authenticated()
 				)
 

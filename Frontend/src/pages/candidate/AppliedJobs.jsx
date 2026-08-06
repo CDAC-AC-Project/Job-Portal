@@ -3,25 +3,46 @@ import { useEffect, useState } from "react";
 import CandidateSidebar from "../../components/candidate/CandidateSidebar";
 import AppliedJobTable from "../../components/candidate/applications/AppliedJobTable";
 import Loader from "../../components/common/Loader";
-import { getAppliedJobs } from "../../services/jobApplicationService";
+import { getMyApplications } from "../../services/applicationApi";
 
 export default function AppliedJobs() {
   const [appliedJobs, setAppliedJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAppliedJobs = async () => {
-      try {
-        setLoading(true);
-        const data = await getAppliedJobs();
-        setAppliedJobs(data);
-      } finally {
-        setLoading(false);
-      }
-    };
+  console.log("AppliedJobs mounted");
 
-    fetchAppliedJobs();
-  }, []);
+  const fetchAppliedJobs = async () => {
+    console.log("fetchAppliedJobs called");
+
+    try {
+      setLoading(true);
+
+      const data = await getMyApplications(1);
+      console.log("API Response:", data);
+
+      const formatted = data.map((app) => ({
+        id: app.id,
+        applicationId: app.id,
+        jobId: app.jobId,
+        title: app.jobTitleSnapshot,
+        company: app.companyNameSnapshot,
+        status: app.status,
+        dateApplied: app.appliedAt,
+      }));
+
+      console.log("Formatted:", formatted);
+
+      setAppliedJobs(formatted);
+    } catch (err) {
+      console.error("Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchAppliedJobs();
+}, []);
 
   return (
     <div className="bg-white">

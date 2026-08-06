@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { FiArrowRight, FiBriefcase, FiBookmark, FiBell } from "react-icons/fi";
 import { NavLink, useNavigate } from "react-router-dom";
+import { getFavoriteJobCount } from "../../services/favoriteJobService";
+import { getJobAlertCount } from "../../services/jobAlertService";
 
 import CandidateSidebar from "../../components/candidate/CandidateSidebar";
 import DashboardStatCard from "../../components/candidate/DashboardStatCard";
 import AppliedJobTable from "../../components/candidate/applications/AppliedJobTable";
 import Loader from "../../components/common/Loader";
 
-import { getAppliedJobs } from "../../services/jobApplicationService";
+import { getMyApplications } from "../../services/applicationApi";
 import { getFavoriteJobs } from "../../services/favoriteJobService";
 import { getJobAlerts } from "../../services/jobAlertService";
 import { getCandidateSettings, resolveCandidateProfileId } from "../../services/candidateSettingsService";
@@ -43,16 +45,33 @@ export default function CandidateDashboard() {
           getJobAlerts(),
           getCandidateSettings(candidateProfileId),
         ]);
+        // const applied = await getMyApplications(1);
 
-        setAppliedJobs(applied);
-        setFavoriteJobsCount(favorites.length);
-        setJobAlertsCount(alerts.length);
+        setAppliedJobs(
+  applied.map((app) => ({
+    id: app.id,
+    applicationId: app.id,
+    jobId: app.jobId,
+    title: app.jobTitleSnapshot,
+    company: app.companyNameSnapshot,
+    status: app.status,
+    dateApplied: app.appliedAt,
+  }))
+);
 
         setCandidate({
           fullName: authUser?.name || "Candidate",
           profileImageUrl: profile.profileImageUrl || "",
           profileCompleted: profile.profileCompleted || false,
         });
+// console.log("Dashboard Applications:", applied);
+// setFavoriteJobsCount(getFavoriteJobCount());
+// setJobAlertsCount(getJobAlertCount());
+        // setCandidate({
+        //   fullName: profile.fullName || "Candidate",
+        //   profileImageUrl: profile.profileImageUrl || "",
+        //   profileCompleted: profile.profileCompleted || false,
+        // });
       } catch (error) {
         console.error("Dashboard loading failed", error);
       } finally {

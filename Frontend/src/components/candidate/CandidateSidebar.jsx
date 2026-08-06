@@ -1,4 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import { getJobAlertCount } from "../../services/jobAlertService";
+import { useEffect, useState } from "react";
 import {
   FiGrid,
   FiBriefcase,
@@ -26,11 +28,10 @@ const sidebarLinks = [
     path: "/candidate/favorite-jobs",
     icon: FiBookmark,
   },
-  {
-    label: "Job Alert",
-    path: "/candidate/job-alerts",
-    icon: FiBell,
-    count: "09",
+    {
+  label: "Job Alert",
+  path: "/candidate/job-alerts",
+  icon: FiBell,
   },
   {
     label: "Settings",
@@ -41,6 +42,11 @@ const sidebarLinks = [
 
 export default function CandidateSidebar() {
   const navigate =useNavigate()
+   const [jobAlertCount, setJobAlertCount] = useState(0);
+
+  useEffect(() => {
+    setJobAlertCount(getJobAlertCount());
+  }, []);
   return (
     <aside className="w-full lg:w-64 border-r border-gray-200 bg-white">
       <div className="p-5">
@@ -70,11 +76,11 @@ export default function CandidateSidebar() {
                   {link.label}
                 </span>
 
-                {link.count && (
-                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-                    {link.count}
-                  </span>
-                )}
+                {link.label === "Job Alert" && (
+  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+    {jobAlertCount}
+  </span>
+)}
               </NavLink>
             );
           })}

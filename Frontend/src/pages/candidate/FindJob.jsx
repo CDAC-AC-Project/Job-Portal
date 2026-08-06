@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   FiSearch,
@@ -10,7 +10,7 @@ import {
   FiXCircle,
 } from "react-icons/fi";
 import JobCard from "../../components/candidate/JobCard";
-import { jobs } from "../../data/jobs";
+import { searchJobs } from "../../services/jobApi";
 
 const popularSearches = [
   "Front-end",
@@ -47,31 +47,36 @@ export default function FindJob() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyword, location, jobType]);
 
-  const filteredJobs = useMemo(() => {
-    return jobs.filter((job) => {
-      const keywordMatch =
-        job.title.toLowerCase().includes(keyword.toLowerCase()) ||
-        job.company.toLowerCase().includes(keyword.toLowerCase()) ||
-        job.category.toLowerCase().includes(keyword.toLowerCase());
+  const [jobs, setJobs] = useState([]);
 
-      const locationMatch = job.location
-        .toLowerCase()
-        .includes(location.toLowerCase());
+  useEffect(() => {
+  loadJobs();
+}, [currentPage]);
 
-      const typeMatch = jobType === "ALL" || job.type === jobType;
-
-      return keywordMatch && locationMatch && typeMatch;
+const loadJobs = async () => {
+  try {
+    const response = await searchJobs({
+      keyword,
+      city: location,
+      jobType: jobType === "ALL" ? null : jobType,
+      page: currentPage - 1,
+      size: 15,
     });
-  }, [keyword, location, jobType]);
 
-  const totalPages = Math.ceil(filteredJobs.length / jobsPerPage);
+    setJobs(response.content);
+  } catch (err) {
+    console.error(err);
+  }
+};
 
-  const startIndex = (currentPage - 1) * jobsPerPage;
-  const paginatedJobs = filteredJobs.slice(startIndex, startIndex + jobsPerPage);
+  const paginatedJobs = jobs;
+  const totalPages = 1;
 
-  const handleSearch = () => {
-    setCurrentPage(1);
-  };
+  const handleSearch = async () => {
+  setCurrentPage(1);
+  await loadJobs();
+};
+
 
   const handlePopularSearch = (value) => {
     setKeyword(value);
@@ -188,8 +193,8 @@ export default function FindJob() {
         {/* Results summary */}
         <div className="mt-6 flex items-center justify-between text-sm text-gray-500">
           <p>
-            Showing <span className="font-semibold text-gray-900">{filteredJobs.length}</span>{" "}
-            {filteredJobs.length === 1 ? "job" : "jobs"}
+            Showing <span className="font-semibold text-gray-900">{jobs.length}</span>{" "}
+            {jobs.length === 1 ? "job" : "jobs"}
           </p>
 
           {hasActiveFilters && (
@@ -207,10 +212,16 @@ export default function FindJob() {
           {paginatedJobs.length > 0 ? (
             paginatedJobs.map((job, index) => (
               <JobCard
-                key={job.id}
-                job={job}
-                highlighted={index === 0 || index === 8}
-              />
+  key={job.id}
+  highlighted={index === 0 || index === 8}
+  job={{
+    ...job,
+    company: job.companyName,
+    location: `${job.city}, ${job.country}`,
+    salary: `₹${job.minSalary} - ₹${job.maxSalary}`,
+    type: job.jobType,
+  }}
+/>
             ))
           ) : (
             <div className="col-span-full text-center py-16">

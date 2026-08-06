@@ -1,6 +1,5 @@
 package com.backend.jobs.service;  
 
-import com.backend.jobs.dtos.JobCardResponse;
 import com.backend.jobs.dtos.*;
 import com.backend.jobs.entities.JobStatus;
 import com.backend.jobs.entities.JobType;
@@ -20,4 +19,5 @@ public interface JobsService {
 	 JobResponse closeJob(Long jobId, Long recruiterId, String userRole);
 	 void deleteJob(Long jobId, Long recruiterId, String userRole);
 	 JobInternalResponse getJobInternalDetails(Long jobId);	 
+	 public List<JobInternalResponse> getJobCardsByIds(List<Long> jobIds);
 }

@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
 
-import RecruiterHeader from "../../components/recruiter/RecruiterHeader";
-import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
-
 import RecruiterSettingsTabs from "../../components/recruiter/settings/RecruiterSettingsTabs";
 import CompanyInfoSettings from "../../components/recruiter/settings/CompanyInfoSettings";
 import FoundingInfoSettings from "../../components/recruiter/settings/FoundingInfoSettings";
 import RecruiterSocialSettings from "../../components/recruiter/settings/RecruiterSocialSettings";
 import RecruiterAccountSettings from "../../components/recruiter/settings/RecruiterAccountSettings";
-import Footer from "../../components/layout/Footer";
 
-import { getRecruiterSettings, resolveRecruiterProfileId } from "../../services/recruiterSettingsService";
+import {
+  getRecruiterSettings,
+  resolveRecruiterProfileId,
+} from "../../services/recruiterSettingsService";
 
 export default function RecruiterSettings() {
   const [activeTab, setActiveTab] = useState("company");
@@ -51,10 +50,10 @@ export default function RecruiterSettings() {
       try {
         setLoading(true);
 
-        const resolvedRecruiterProfileId = await resolveRecruiterProfileId();
-        setRecruiterProfileId(resolvedRecruiterProfileId);
+        const profileId = await resolveRecruiterProfileId();
+        setRecruiterProfileId(profileId);
 
-        const recruiter = await getRecruiterSettings(resolvedRecruiterProfileId);
+        const recruiter = await getRecruiterSettings(profileId);
         const company = recruiter.company || {};
 
         setCompanyInfo({
@@ -68,7 +67,9 @@ export default function RecruiterSettings() {
           organizationType: company.organizationType || "",
           industryType: company.industryType || "",
           teamSize: company.teamSize || "",
-          yearOfEstablishment: company.yearOfEstablishment ? `${company.yearOfEstablishment}-01-01` : "",
+          yearOfEstablishment: company.yearOfEstablishment
+            ? `${company.yearOfEstablishment}-01-01`
+            : "",
           companyWebsite: company.website || "",
         });
 
@@ -80,9 +81,12 @@ export default function RecruiterSettings() {
         });
 
         setAccountSettings({
-          companyVisible: recruiter.accountSetting?.companyVisible ?? true,
-          applicantEmailEnabled: recruiter.accountSetting?.applicantEmailEnabled ?? true,
-          emailNotificationEnabled: recruiter.accountSetting?.emailNotificationEnabled ?? true,
+          companyVisible:
+            recruiter.accountSetting?.companyVisible ?? true,
+          applicantEmailEnabled:
+            recruiter.accountSetting?.applicantEmailEnabled ?? true,
+          emailNotificationEnabled:
+            recruiter.accountSetting?.emailNotificationEnabled ?? true,
         });
       } catch (error) {
         console.error("Failed to fetch recruiter settings:", error);
@@ -95,79 +99,66 @@ export default function RecruiterSettings() {
   }, []);
 
   const renderTabContent = () => {
-    if (activeTab === "company") {
-      return (
-        <CompanyInfoSettings
-          recruiterProfileId={recruiterProfileId}
-          companyInfo={companyInfo}
-          setCompanyInfo={setCompanyInfo}
-        />
-      );
-    }
+    switch (activeTab) {
+      case "company":
+        return (
+          <CompanyInfoSettings
+            recruiterProfileId={recruiterProfileId}
+            companyInfo={companyInfo}
+            setCompanyInfo={setCompanyInfo}
+          />
+        );
 
-    if (activeTab === "founding") {
-      return (
-        <FoundingInfoSettings
-          recruiterProfileId={recruiterProfileId}
-          foundingInfo={foundingInfo}
-          setFoundingInfo={setFoundingInfo}
-        />
-      );
-    }
+      case "founding":
+        return (
+          <FoundingInfoSettings
+            recruiterProfileId={recruiterProfileId}
+            foundingInfo={foundingInfo}
+            setFoundingInfo={setFoundingInfo}
+          />
+        );
 
-    if (activeTab === "social") {
-      return (
-        <RecruiterSocialSettings
-          recruiterProfileId={recruiterProfileId}
-          socialLinks={socialLinks}
-          setSocialLinks={setSocialLinks}
-        />
-      );
-    }
+      case "social":
+        return (
+          <RecruiterSocialSettings
+            recruiterProfileId={recruiterProfileId}
+            socialLinks={socialLinks}
+            setSocialLinks={setSocialLinks}
+          />
+        );
 
-    if (activeTab === "account") {
-      return (
-        <RecruiterAccountSettings
-          recruiterProfileId={recruiterProfileId}
-          accountSettings={accountSettings}
-          setAccountSettings={setAccountSettings}
-        />
-      );
-    }
+      case "account":
+        return (
+          <RecruiterAccountSettings
+            recruiterProfileId={recruiterProfileId}
+            accountSettings={accountSettings}
+            setAccountSettings={setAccountSettings}
+          />
+        );
 
-    return null;
+      default:
+        return null;
+    }
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <RecruiterHeader />
+    <>
+      <h1 className="text-2xl font-semibold text-gray-900 mb-6">
+        Settings
+      </h1>
 
-      <main className="flex-1">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row border-x border-gray-200">
-          <RecruiterSidebar />
+      <RecruiterSettingsTabs
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
 
-          <section className="flex-1 px-4 sm:px-6 lg:px-10 py-8">
-            <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-              Settings
-            </h1>
-
-            <RecruiterSettingsTabs
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-            />
-
-            {loading ? (
-              <div className="py-20 text-center text-gray-500">
-                Loading settings...
-              </div>
-            ) : (
-              renderTabContent()
-            )}
-          </section>
+      {loading ? (
+        <div className="py-20 text-center text-gray-500">
+          Loading settings...
         </div>
-      </main>
-
-      <footer/>
-    </div>
+      ) : (
+        renderTabContent()
+      )}
+    </>
   );
 }

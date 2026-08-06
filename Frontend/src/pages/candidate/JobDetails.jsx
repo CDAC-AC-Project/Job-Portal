@@ -1,5 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+
+import { getJobDetails } from "../../services/jobApi";
+
 import {
   FiMapPin,
   FiDollarSign,
@@ -10,7 +13,6 @@ import {
 } from "react-icons/fi";
 
 import ApplyJobModal from "../../components/candidate/ApplyJobModal";
-import { jobs } from "../../data/jobs.js";
 import {
   getCompanyInitials,
   getCompanyLogoStyle,
@@ -22,13 +24,28 @@ import { hasAppliedToJob } from "../../services/jobApplicationService.js";
 
 export default function JobDetails() {
   const { jobId } = useParams();
-  const job = useMemo(() => jobs.find((j) => j.id === Number(jobId)), [jobId]);
+
+const [job, setJob] = useState(null);
 
   const [isFavorited, setIsFavorited] = useState(() => (job ? isJobFavorited(job.id) : false));
   const [applied, setApplied] = useState(() => (job ? hasAppliedToJob(job.id) : false));
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
 
-  if (!job) {
+  useEffect(() => {
+  loadJob();
+}, [jobId]);
+
+const loadJob = async () => {
+  try {
+    const data = await getJobDetails(jobId);
+    console.log(data);
+    setJob(data);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+  if (job === null) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-20 text-center">
         <h1 className="text-xl font-semibold text-gray-900">Job not found</h1>
