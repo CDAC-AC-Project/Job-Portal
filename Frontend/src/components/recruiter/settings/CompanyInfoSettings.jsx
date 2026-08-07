@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { FiUploadCloud } from "react-icons/fi";
-import { useEffect, useState } from "react";
+import { useEffect} from "react";
 // import {
 //   FiUploadCloud,
 //   FiX,
