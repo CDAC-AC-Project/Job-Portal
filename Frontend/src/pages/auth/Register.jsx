@@ -24,7 +24,7 @@ const ROLE_TO_BACKEND = {
 export default function Register() {
   const navigate = useNavigate();
 
-  const [role, setRole] = useState("user");
+  const [role, setRole] = useState("CANDIDATE");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -57,12 +57,10 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const validationErrors = validateRegisterForm(formData);
+try {
+  setLoading(true);
 
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
+  const response = await api.post("/auth/register", registerData);
 
     setSubmitError("");
     setIsSubmitting(true);
@@ -130,9 +128,9 @@ export default function Register() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setRole("user")}
+                  onClick={() => setRole("CANDIDATE")}
                   className={`flex items-center justify-center gap-2 py-3 rounded-md text-sm font-medium transition ${
-                    role === "user"
+                    role === "CANDIDATE"
                       ? "bg-blue-700 text-white shadow-sm"
                       : "bg-transparent text-gray-600 hover:bg-white"
                   }`}
@@ -143,9 +141,9 @@ export default function Register() {
 
                 <button
                   type="button"
-                  onClick={() => setRole("recruiter")}
+                  onClick={() => setRole("RECRUITER")}
                   className={`flex items-center justify-center gap-2 py-3 rounded-md text-sm font-medium transition ${
-                    role === "recruiter"
+                    role === "RECRUITER"
                       ? "bg-blue-700 text-white shadow-sm"
                       : "bg-transparent text-gray-600 hover:bg-white"
                   }`}
