@@ -132,15 +132,35 @@ public interface JobsDao extends JpaRepository<Jobs, Long> {
 		        @Param("status") JobStatus status
 		);
 
-	//Internal APIS Queries   (this is "JPQL constructor expression")
+//	//Internal APIS Queries   (this is "JPQL constructor expression")
+//	@Query("""
+//	        SELECT new com.backend.jobs.dtos.JobInternalResponse(
+//	            j.id, j.title, j.recruiterId, j.companyName, j.location, j.status
+//	        )
+//	        FROM Jobs j
+//	        WHERE j.id IN :jobIds
+//	        AND j.status = 'ACTIVE'
+//	        """)
+//	    List<JobInternalResponse> findJobCardsByIds(@Param("jobIds") List<Long> jobIds);
+	
 	@Query("""
-	        SELECT new com.backend.jobs.dtos.JobInternalResponse(
-	            j.id, j.title, j.recruiterId, j.companyName, j.location, j.status
-	        )
-	        FROM Job j
-	        WHERE j.id IN :jobIds
-	        AND j.status = 'ACTIVE'
-	        """)
-	    List<JobInternalResponse> findJobCardsByIds(@Param("jobIds") List<Long> jobIds);
+			SELECT new com.backend.jobs.dtos.JobInternalResponse(
+			    j.id,
+			    j.title,
+			    j.recruiterId,
+			    j.companyName,
+			    j.city,
+			    j.status,
+			    j.minSalary,
+			    j.maxSalary,
+			    CAST(j.jobType AS string)
+			)
+			FROM Jobs j
+			WHERE j.id IN :jobIds
+			AND j.status = com.backend.jobs.entities.JobStatus.ACTIVE
+			""")
+			List<JobInternalResponse> findJobCardsByIds(
+			        @Param("jobIds") List<Long> jobIds
+			);
 	
 }

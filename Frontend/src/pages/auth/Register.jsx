@@ -16,14 +16,19 @@ import { registerUser, extractAuthErrorMessage } from "../../services/authServic
 
 // The role toggle uses "user"/"recruiter" for historical UI reasons; the
 // backend's Role enum is CANDIDATE/RECRUITER.
+// const ROLE_TO_BACKEND = {
+//   user: "CANDIDATE",
+//   recruiter: "RECRUITER",
+// };
+
 const ROLE_TO_BACKEND = {
-  user: "CANDIDATE",
-  recruiter: "RECRUITER",
+    CANDIDATE: "CANDIDATE",
+    RECRUITER: "RECRUITER"
 };
 
 export default function Register() {
   const navigate = useNavigate();
-
+  const [loading, setLoading] = useState(false);
   const [role, setRole] = useState("CANDIDATE");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -57,10 +62,10 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-try {
-  setLoading(true);
+// try {
+//   setLoading(true);
 
-  const response = await api.post("/auth/register", registerData);
+//   const response = await api.post("/auth/register", registerData);
 
     setSubmitError("");
     setIsSubmitting(true);

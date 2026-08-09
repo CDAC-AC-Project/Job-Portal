@@ -1,28 +1,40 @@
-import {
-  recruiterApplicationsData,
-  applicationColumnsData,
-} from "../data/recruiterApplicationsData";
-
-export const getRecruiterApplications = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        columns: applicationColumnsData,
-        applications: recruiterApplicationsData,
-      });
-    }, 300);
-  });
-};
-
-/*
-Later backend API:
-
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/recruiter/applications";
+const API = "http://localhost:8084/applications";
 
-export const getRecruiterApplications = async (jobId) => {
-  const response = await axios.get(`${API_URL}/${jobId}`);
+const getHeaders = () => ({
+  "X-User-Id": localStorage.getItem("userId"),
+  "X-User-Role": localStorage.getItem("role"),
+});
+
+export const getRecruiterApplications = async () => {
+  const response = await axios.get(`${API}/recruiter`, {
+    headers: getHeaders(),
+  });
+
   return response.data;
 };
-*/
+
+export const shortlistCandidate = async (applicationId) => {
+  return axios.patch(
+    `${API}/${applicationId}/status`,
+    {
+      status: "SHORTLISTED",
+    },
+    {
+      headers: getHeaders(),
+    }
+  );
+};
+
+export const rejectCandidate = async (applicationId) => {
+  return axios.patch(
+    `${API}/${applicationId}/status`,
+    {
+      status: "REJECTED",
+    },
+    {
+      headers: getHeaders(),
+    }
+  );
+};

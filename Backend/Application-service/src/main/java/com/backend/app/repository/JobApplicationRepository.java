@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.backend.app.dto.RecruiterApplicationResponse;
 import com.backend.app.entities.JobApplication;
 import com.backend.app.enums.ApplicationStatus;
 
@@ -46,4 +47,21 @@ public interface JobApplicationRepository
     List<Object[]> countApplicationsByJobIds(
             @Param("jobIds") List<Long> jobIds
     );
+    
+    @Query("""
+    		SELECT new com.backend.app.dto.RecruiterApplicationResponse(
+    		    a.id,
+    		    a.jobTitleSnapshot,
+    		    a.companyNameSnapshot,
+    		    a.jobLocationSnapshot,
+    		    a.status,
+    		    a.resumeId
+    		)
+    		FROM JobApplication a
+    		WHERE a.recruiterId = :recruiterId
+    		ORDER BY a.appliedAt DESC
+    		""")
+    		List<RecruiterApplicationResponse> findRecruiterApplications(
+    		        @Param("recruiterId") Long recruiterId
+    		);
 }
