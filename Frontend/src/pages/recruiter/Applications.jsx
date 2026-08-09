@@ -3,14 +3,30 @@ import { FiPlusCircle, FiChevronDown } from "react-icons/fi";
 
 import ApplicationColumn from "../../components/recruiter/ApplicationColumn";
 import AddColumnModal from "../../components/recruiter/AddColumnModal";
+
 import {
   getRecruiterApplications,
   shortlistCandidate,
   rejectCandidate,
 } from "../../services/recruiterApplicationService";
 
+const DEFAULT_COLUMNS = [
+  {
+    id: "APPLIED",
+    title: "Applied",
+  },
+  {
+    id: "SHORTLISTED",
+    title: "Shortlisted",
+  },
+  {
+    id: "REJECTED",
+    title: "Rejected",
+  },
+];
+
 export default function Applications() {
-  const [columns, setColumns] = useState([]);
+  const [columns] = useState(DEFAULT_COLUMNS);
   const [applications, setApplications] = useState([]);
   const [sortBy, setSortBy] = useState("Newest");
   const [showSortMenu, setShowSortMenu] = useState(false);
@@ -23,8 +39,19 @@ export default function Applications() {
 
       const data = await getRecruiterApplications();
 
-      setColumns(data?.columns || []);
-      setApplications(data?.applications || []);
+      const mappedApplications = (data || []).map((item) => ({
+        id: item.id,
+        jobTitle: item.jobTitle,
+        companyName: item.companyName,
+        location: item.location,
+        status: item.status,
+        resumeId: item.resumeId,
+
+        // Used by ApplicationColumn
+        column: item.status,
+      }));
+
+      setApplications(mappedApplications);
     } catch (error) {
       console.error("Failed to fetch applications:", error);
     } finally {
@@ -32,10 +59,13 @@ export default function Applications() {
     }
   };
 
+  useEffect(() => {
+    fetchApplications();
+  }, []);
+
   const handleShortlist = async (applicationId) => {
     try {
       await shortlistCandidate(applicationId);
-
       fetchApplications();
     } catch (err) {
       console.error(err);
@@ -45,25 +75,14 @@ export default function Applications() {
   const handleReject = async (applicationId) => {
     try {
       await rejectCandidate(applicationId);
-
       fetchApplications();
     } catch (err) {
       console.error(err);
     }
   };
 
-
-  useEffect(() => {
-    fetchApplications();
-  }, []);
-
   const handleAddColumn = (columnName) => {
-    const newColumn = {
-      id: columnName.toLowerCase().replace(/\s+/g, "-"),
-      title: columnName,
-    };
-
-    setColumns((prevColumns) => [...prevColumns, newColumn]);
+    console.log("New Column:", columnName);
   };
 
   const sortedApplications = useMemo(() => {
@@ -77,18 +96,22 @@ export default function Applications() {
   }, [applications, sortBy]);
 
   const getColumnApplications = (columnId) => {
-    return sortedApplications.filter((item) => item.column === columnId);
+    return sortedApplications.filter(
+      (item) => item.column === columnId
+    );
   };
 
   return (
-    <div>
-      <div className="mb-6">
-        <p className="text-sm text-gray-500 mb-2">
-          Home / Job / Senior UI/UX Designer /{" "}
-          <span className="text-blue-600 font-medium">Applications</span>
+    <div className="p-6">
+
+      <div className="mb-8">
+
+        <p className="text-sm text-gray-500">
+          Home / Job / Applications
         </p>
 
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mt-3">
+
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">
               Job Applications
@@ -99,72 +122,70 @@ export default function Applications() {
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="relative">
+
             <button
               type="button"
-              className="text-sm text-gray-600 hover:text-blue-600"
+              onClick={() => setShowSortMenu(!showSortMenu)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2"
             >
-              Filter
+              Sort
+              <FiChevronDown />
             </button>
 
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowSortMenu(!showSortMenu)}
-                className="bg-blue-600 text-white px-4 py-2.5 rounded-md text-sm font-semibold flex items-center gap-2"
-              >
-                Sort
-                <FiChevronDown />
-              </button>
+            {showSortMenu && (
+              <div className="absolute right-0 top-12 bg-white border rounded-md shadow-md p-4 w-44">
 
-              {showSortMenu && (
-                <div className="absolute right-0 top-12 w-44 bg-white border border-gray-200 shadow-lg rounded-md p-4 z-20">
-                  <p className="text-xs text-gray-400 font-semibold mb-3">
-                    SORT APPLICATION
-                  </p>
+                <label className="flex gap-2">
 
-                  <label className="flex items-center gap-2 text-sm text-gray-700 mb-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="sort"
-                      checked={sortBy === "Newest"}
-                      onChange={() => {
-                        setSortBy("Newest");
-                        setShowSortMenu(false);
-                      }}
-                      className="accent-blue-600"
-                    />
-                    Newest
-                  </label>
+                  <input
+                    type="radio"
+                    checked={sortBy === "Newest"}
+                    onChange={() => {
+                      setSortBy("Newest");
+                      setShowSortMenu(false);
+                    }}
+                  />
 
-                  <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="sort"
-                      checked={sortBy === "Oldest"}
-                      onChange={() => {
-                        setSortBy("Oldest");
-                        setShowSortMenu(false);
-                      }}
-                      className="accent-blue-600"
-                    />
-                    Oldest
-                  </label>
-                </div>
-              )}
-            </div>
+                  Newest
+
+                </label>
+
+                <label className="flex gap-2 mt-3">
+
+                  <input
+                    type="radio"
+                    checked={sortBy === "Oldest"}
+                    onChange={() => {
+                      setSortBy("Oldest");
+                      setShowSortMenu(false);
+                    }}
+                  />
+
+                  Oldest
+
+                </label>
+
+              </div>
+            )}
+
           </div>
+
         </div>
+
       </div>
 
       {loading ? (
-        <div className="py-20 text-center text-gray-500">
+        <div className="text-center py-20">
           Loading applications...
         </div>
       ) : (
-        <div className="overflow-x-auto pb-4">
+        <div className="overflow-x-auto">
+
           <div className="flex gap-6 min-w-max">
+
             {columns.map((column) => (
+
               <ApplicationColumn
                 key={column.id}
                 column={column}
@@ -172,17 +193,19 @@ export default function Applications() {
                 onShortlist={handleShortlist}
                 onReject={handleReject}
               />
+
             ))}
 
             <button
-              type="button"
               onClick={() => setShowAddColumnModal(true)}
-              className="min-w-[260px] h-[56px] border border-gray-200 rounded-lg bg-gray-50 text-gray-700 flex items-center justify-center gap-2 hover:bg-blue-50 hover:text-blue-600"
+              className="min-w-[260px] h-[56px] border rounded-lg flex items-center justify-center gap-2"
             >
               <FiPlusCircle />
               Create New Column
             </button>
+
           </div>
+
         </div>
       )}
 
@@ -191,6 +214,7 @@ export default function Applications() {
         onClose={() => setShowAddColumnModal(false)}
         onAddColumn={handleAddColumn}
       />
+
     </div>
   );
 }
