@@ -17,6 +17,7 @@ import com.backend.app.dto.ApplicationDetailsResponse;
 import com.backend.app.dto.ApplicationStatusHistoryResponse;
 import com.backend.app.dto.ApplyJobRequest;
 import com.backend.app.dto.CandidateApplicationDashboardCountsResponse;
+import com.backend.app.dto.RecruiterApplicationResponse;
 import com.backend.app.dto.UpdateApplicationStatusRequest;
 import com.backend.app.exception.UnauthorizedActionException;
 import com.backend.app.service.ApplicationService;
@@ -33,7 +34,10 @@ import lombok.AllArgsConstructor;
  */
 @RestController
 @AllArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {
+	    "http://localhost:5173",
+	    "http://192.168.1.109:5173"
+	})
 @RequestMapping("/applications")
 public class ApplicationController {
 
@@ -120,6 +124,15 @@ public class ApplicationController {
             throw new UnauthorizedActionException(
                     "Only a " + expected.toLowerCase() + " can perform this action");
         }
+    }
+    
+    @GetMapping("/recruiter")
+    public ResponseEntity<List<RecruiterApplicationResponse>> getRecruiterApplications(
+            @RequestHeader("X-User-Id") Long recruiterId) {
+
+        return ResponseEntity.ok(
+                applicationService.getRecruiterApplications(recruiterId)
+        );
     }
 
 }
