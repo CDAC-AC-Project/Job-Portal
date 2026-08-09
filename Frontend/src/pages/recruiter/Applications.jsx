@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { FiPlusCircle, FiChevronDown } from "react-icons/fi";
+import { FiChevronDown } from "react-icons/fi";
 
 import ApplicationColumn from "../../components/recruiter/ApplicationColumn";
-import AddColumnModal from "../../components/recruiter/AddColumnModal";
 
 import {
   getRecruiterApplications,
@@ -31,7 +30,6 @@ export default function Applications() {
   const [sortBy, setSortBy] = useState("Newest");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showAddColumnModal, setShowAddColumnModal] = useState(false);
 
   const fetchApplications = async () => {
     try {
@@ -46,8 +44,6 @@ export default function Applications() {
         location: item.location,
         status: item.status,
         resumeId: item.resumeId,
-
-        // Used by ApplicationColumn
         column: item.status,
       }));
 
@@ -81,10 +77,6 @@ export default function Applications() {
     }
   };
 
-  const handleAddColumn = (columnName) => {
-    console.log("New Column:", columnName);
-  };
-
   const sortedApplications = useMemo(() => {
     const copiedApplications = [...applications];
 
@@ -102,119 +94,111 @@ export default function Applications() {
   };
 
   return (
-    <div className="p-6">
+  <div className="w-full px-8 py-6">
 
-      <div className="mb-8">
+    {/* Header */}
 
+    <div className="mb-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+
+      <div>
         <p className="text-sm text-gray-500">
-          Home / Job / Applications
+          Home / Recruiter / Applications
         </p>
 
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mt-3">
+        <h1 className="mt-2 text-3xl font-bold text-gray-900">
+          Job Applications
+        </h1>
 
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              Job Applications
-            </h1>
+        <p className="mt-2 text-gray-500">
+          Review, shortlist and reject candidate applications.
+        </p>
+      </div>
 
-            <p className="text-sm text-gray-500 mt-1">
-              Manage candidates by application status.
-            </p>
-          </div>
+      <div className="relative">
 
-          <div className="relative">
+        <button
+          type="button"
+          onClick={() => setShowSortMenu(!showSortMenu)}
+          className="flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-medium shadow-sm transition hover:border-blue-500 hover:text-blue-600"
+        >
+          Sort
+          <FiChevronDown />
+        </button>
 
-            <button
-              type="button"
-              onClick={() => setShowSortMenu(!showSortMenu)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2"
-            >
-              Sort
-              <FiChevronDown />
-            </button>
+        {showSortMenu && (
+          <div className="absolute right-0 top-14 z-20 w-48 rounded-xl border border-gray-200 bg-white p-4 shadow-xl">
 
-            {showSortMenu && (
-              <div className="absolute right-0 top-12 bg-white border rounded-md shadow-md p-4 w-44">
+            <label className="flex items-center gap-3 cursor-pointer">
 
-                <label className="flex gap-2">
+              <input
+                type="radio"
+                checked={sortBy === "Newest"}
+                onChange={() => {
+                  setSortBy("Newest");
+                  setShowSortMenu(false);
+                }}
+              />
 
-                  <input
-                    type="radio"
-                    checked={sortBy === "Newest"}
-                    onChange={() => {
-                      setSortBy("Newest");
-                      setShowSortMenu(false);
-                    }}
-                  />
+              Newest
 
-                  Newest
+            </label>
 
-                </label>
+            <label className="mt-4 flex items-center gap-3 cursor-pointer">
 
-                <label className="flex gap-2 mt-3">
+              <input
+                type="radio"
+                checked={sortBy === "Oldest"}
+                onChange={() => {
+                  setSortBy("Oldest");
+                  setShowSortMenu(false);
+                }}
+              />
 
-                  <input
-                    type="radio"
-                    checked={sortBy === "Oldest"}
-                    onChange={() => {
-                      setSortBy("Oldest");
-                      setShowSortMenu(false);
-                    }}
-                  />
+              Oldest
 
-                  Oldest
-
-                </label>
-
-              </div>
-            )}
+            </label>
 
           </div>
+        )}
+
+      </div>
+
+    </div>
+
+    {loading ? (
+
+      <div className="rounded-2xl border border-gray-200 bg-white py-20 text-center shadow-sm">
+
+        <p className="text-gray-500">
+          Loading applications...
+        </p>
+
+      </div>
+
+    ) : (
+
+      <div className="overflow-x-auto pb-4">
+
+        <div className="flex items-start gap-8 min-w-max">
+
+          {columns.map((column) => (
+
+            <ApplicationColumn
+              key={column.id}
+              column={column}
+              applications={getColumnApplications(column.id)}
+              onShortlist={handleShortlist}
+              onReject={handleReject}
+            />
+
+          ))}
 
         </div>
 
       </div>
 
-      {loading ? (
-        <div className="text-center py-20">
-          Loading applications...
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
+    )}
 
-          <div className="flex gap-6 min-w-max">
-
-            {columns.map((column) => (
-
-              <ApplicationColumn
-                key={column.id}
-                column={column}
-                applications={getColumnApplications(column.id)}
-                onShortlist={handleShortlist}
-                onReject={handleReject}
-              />
-
-            ))}
-
-            <button
-              onClick={() => setShowAddColumnModal(true)}
-              className="min-w-[260px] h-[56px] border rounded-lg flex items-center justify-center gap-2"
-            >
-              <FiPlusCircle />
-              Create New Column
-            </button>
-
-          </div>
-
-        </div>
-      )}
-
-      <AddColumnModal
-        isOpen={showAddColumnModal}
-        onClose={() => setShowAddColumnModal(false)}
-        onAddColumn={handleAddColumn}
-      />
-
-    </div>
-  );
+  </div>
+);
 }

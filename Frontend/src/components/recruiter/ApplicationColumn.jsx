@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { FiMoreHorizontal, FiEdit2, FiTrash2 } from "react-icons/fi";
+import { FiMoreHorizontal } from "react-icons/fi";
+
 import ApplicantCard from "./ApplicantCard";
 
 export default function ApplicationColumn({
@@ -8,58 +9,72 @@ export default function ApplicationColumn({
   onShortlist,
   onReject,
 }) {
+
   const [showMenu, setShowMenu] = useState(false);
 
   return (
-    <div className="bg-gray-50 border border-gray-200 rounded-lg min-w-[280px]">
-      <div className="px-4 py-4 flex items-center justify-between border-b border-gray-200">
-        <h2 className="text-sm font-semibold text-gray-900">
-          {column.title}{" "}
-          <span className="text-gray-400 font-normal">
-            ({applications.length})
-          </span>
-        </h2>
 
-        <div className="relative">
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="text-gray-500 hover:text-blue-600"
-          >
-            <FiMoreHorizontal />
-          </button>
+    <div className="w-[380px] rounded-2xl border border-gray-200 bg-white shadow-sm">
 
-          {showMenu && (
-            <div className="absolute right-0 top-8 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-20 overflow-hidden">
-              <button className="w-full px-4 py-3 text-sm flex items-center gap-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600">
-                <FiEdit2 />
-                Edit Column
-              </button>
+      <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
 
-              <button className="w-full px-4 py-3 text-sm flex items-center gap-2 text-red-500 hover:bg-red-50">
-                <FiTrash2 />
-                Delete
-              </button>
-            </div>
-          )}
+        <div>
+
+          <h2 className="text-lg font-semibold text-gray-900">
+            {column.title}
+          </h2>
+
+          <p className="mt-1 text-sm text-gray-500">
+            {applications.length} Candidate
+            {applications.length !== 1 && "s"}
+          </p>
+
         </div>
+
+        <button
+          className="rounded-lg p-2 hover:bg-gray-100"
+          onClick={() => setShowMenu(!showMenu)}
+        >
+          <FiMoreHorizontal />
+        </button>
+
       </div>
 
-      <div className="p-4 space-y-4 max-h-[620px] overflow-y-auto">
-        {applications.length > 0 ? (
+      <div className="max-h-[720px] overflow-y-auto p-5 space-y-5">
+
+        {applications.length === 0 ? (
+
+          <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 py-16 text-center">
+
+            <p className="font-medium text-gray-700">
+              No Applications
+            </p>
+
+            <p className="mt-2 text-sm text-gray-500">
+              Candidates will appear here.
+            </p>
+
+          </div>
+
+        ) : (
+
           applications.map((application) => (
+
             <ApplicantCard
               key={application.id}
               applicant={application}
               onShortlist={onShortlist}
               onReject={onReject}
             />
+
           ))
-        ) : (
-          <div className="text-center py-10 text-sm text-gray-500">
-            No applications
-          </div>
+
         )}
+
       </div>
+
     </div>
+
   );
+
 }
