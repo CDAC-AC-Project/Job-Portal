@@ -1,68 +1,116 @@
 import { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 import { FiPlusCircle, FiChevronDown } from "react-icons/fi";
 
 import ApplicationColumn from "../../components/recruiter/ApplicationColumn";
 import AddColumnModal from "../../components/recruiter/AddColumnModal";
-import { getRecruiterApplications } from "../../services/recruiterApplicationService";
+import {
+  getRecruiterApplications,
+  createColumn,
+  moveApplicationToColumn,
+  updateApplicationStatus,
+} from "../../services/recruiterApplicationService";
+import { extractAuthErrorMessage } from "../../services/authService";
 
 export default function Applications() {
+  const { jobId } = useParams();
+
   const [columns, setColumns] = useState([]);
   const [applications, setApplications] = useState([]);
   const [sortBy, setSortBy] = useState("Newest");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [showAddColumnModal, setShowAddColumnModal] = useState(false);
 
+  const fetchApplications = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const data = await getRecruiterApplications(jobId);
+
+      setColumns(data?.columns || []);
+      setApplications(data?.applications || []);
+    } catch (err) {
+      console.error("Failed to fetch applications:", err);
+      setError("Couldn't load applications for this job.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchApplications = async () => {
-      try {
-        setLoading(true);
+    if (jobId) fetchApplications();
+  }, [jobId]);
 
-        const data = await getRecruiterApplications();
+  const handleAddColumn = async (columnName) => {
+    try {
+      const newColumn = await createColumn(jobId, columnName);
+      setColumns((prev) => [...prev, newColumn]);
+    } catch (err) {
+      console.error("Failed to create column:", err);
+      alert("Failed to create column");
+    }
+  };
 
-        setColumns(data?.columns || []);
-        setApplications(data?.applications || []);
-      } catch (error) {
-        console.error("Failed to fetch applications:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const handleMoveApplication = async (applicationId, columnId) => {
+    // Optimistic update so the board feels immediate; refetch on failure to
+    // reconcile with the server's actual state.
+    setApplications((prev) =>
+      prev.map((app) =>
+        app.applicationId === applicationId ? { ...app, columnId } : app
+      )
+    );
 
-    fetchApplications();
-  }, []);
+    try {
+      await moveApplicationToColumn(applicationId, columnId);
+    } catch (err) {
+      console.error("Failed to move application:", err);
+      alert("Failed to move application");
+      fetchApplications();
+    }
+  };
 
-  const handleAddColumn = (columnName) => {
-    const newColumn = {
-      id: columnName.toLowerCase().replace(/\s+/g, "-"),
-      title: columnName,
-    };
+  const handleUpdateStatus = async (applicationId, status) => {
+    const previous = applications;
 
-    setColumns((prevColumns) => [...prevColumns, newColumn]);
+    setApplications((prev) =>
+      prev.map((app) =>
+        app.applicationId === applicationId ? { ...app, status } : app
+      )
+    );
+
+    try {
+      await updateApplicationStatus(applicationId, status);
+    } catch (err) {
+      console.error("Failed to update status:", err);
+      alert(extractAuthErrorMessage(err));
+      setApplications(previous);
+    }
   };
 
   const sortedApplications = useMemo(() => {
     const copiedApplications = [...applications];
 
     if (sortBy === "Newest") {
-      return copiedApplications.sort((a, b) => b.id - a.id);
+      return copiedApplications.sort(
+        (a, b) => new Date(b.appliedAt) - new Date(a.appliedAt)
+      );
     }
 
-    return copiedApplications.sort((a, b) => a.id - b.id);
+    return copiedApplications.sort(
+      (a, b) => new Date(a.appliedAt) - new Date(b.appliedAt)
+    );
   }, [applications, sortBy]);
 
   const getColumnApplications = (columnId) => {
-    return sortedApplications.filter((item) => item.column === columnId);
+    return sortedApplications.filter((item) => item.columnId === columnId);
   };
 
   return (
     <div>
       <div className="mb-6">
-        <p className="text-sm text-gray-500 mb-2">
-          Home / Job / Senior UI/UX Designer /{" "}
-          <span className="text-blue-600 font-medium">Applications</span>
-        </p>
-
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">
@@ -75,13 +123,6 @@ export default function Applications() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              className="text-sm text-gray-600 hover:text-blue-600"
-            >
-              Filter
-            </button>
-
             <div className="relative">
               <button
                 type="button"
@@ -136,14 +177,19 @@ export default function Applications() {
         <div className="py-20 text-center text-gray-500">
           Loading applications...
         </div>
+      ) : error ? (
+        <div className="py-20 text-center text-red-500">{error}</div>
       ) : (
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-6 min-w-max">
             {columns.map((column) => (
               <ApplicationColumn
                 key={column.id}
-                column={column}
+                column={{ id: column.id, title: column.columnName }}
+                columns={columns.map((c) => ({ id: c.id, title: c.columnName }))}
                 applications={getColumnApplications(column.id)}
+                onMoveApplication={handleMoveApplication}
+                onUpdateStatus={handleUpdateStatus}
               />
             ))}
 

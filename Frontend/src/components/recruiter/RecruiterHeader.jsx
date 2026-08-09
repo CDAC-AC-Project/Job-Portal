@@ -14,7 +14,6 @@ export default function RecruiterHeader() {
     { name: "Find Candidate", path: "/recruiter/find-candidate" },
     { name: "Dashboard", path: "/recruiter/dashboard" },
     { name: "My Jobs", path: "/recruiter/my-jobs" },
-    { name: "Applications", path: "/recruiter/applications" },
     { name: "Customer Supports", path: "/recruiter/support" },
   ];
 

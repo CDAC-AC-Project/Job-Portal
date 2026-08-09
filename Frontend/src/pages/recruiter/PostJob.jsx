@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FiArrowRight, FiAlertCircle } from "react-icons/fi";
-import axios from "axios";
 import { toast } from "react-toastify";
- 
 
 import JobPostedSuccessModal from "../../components/recruiter/JobPostedSuccessModal";
 
@@ -23,12 +21,20 @@ import {
 import { validatePostJobForm } from "../../utils/postJobValidation";
 
 import {
-  canPostJob,
-  getRecruiterPlan,
-  getRemainingJobPosts,
-  incrementPostedJobCount,
-  getPostedJobCount,
-} from "../../services/recruiterPlanService";
+  resolveRecruiterProfileId,
+  getRecruiterSettings,
+} from "../../services/recruiterSettingsService";
+import { createApiClient } from "../../utils/httpClient";
+
+const JOBS_API_BASE_URL =
+  import.meta.env.VITE_JOBS_SERVICE_URL || "http://localhost:8080/jobs";
+
+// createApiClient (not a bare axios instance) so every call carries the signed-in
+// recruiter's access token - the gateway's JwtAuthenticationFilter strips any
+// client-supplied X-User-Id/X-User-Role and only re-derives trusted ones from a
+// valid Bearer token, so posting a job without going through this client is
+// rejected as unauthenticated before it ever reaches Jobs-service.
+const api = createApiClient(JOBS_API_BASE_URL);
 
 export default function PostJob() {
   const navigate = useNavigate();
@@ -37,22 +43,10 @@ export default function PostJob() {
   const isEditMode = Boolean(jobId);
   const [errors, setErrors] = useState({});
   const [selectedBenefits, setSelectedBenefits] = useState([]);
-  const [plan, setPlan] = useState("FREE");
-  const [remainingPosts, setRemainingPosts] = useState(0);
-  const [postedCount, setPostedCount] = useState(0);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [postedJob, setPostedJob] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const requestHeaders = {
-    "Content-Type": "application/json",
-
-    // Temporary until JWT integration
-    "X-User-Id": 1,
-    "X-User-Role": "RECRUITER",
-  };
-
-  const JOBS_API = "http://localhost:8080/jobs/recruiter";
+  const [companyId, setCompanyId] = useState(null);
 
   const [formData, setFormData] = useState({
     jobTitle: "",
@@ -74,9 +68,17 @@ export default function PostJob() {
   });
 
   useEffect(() => {
-    setPlan(getRecruiterPlan());
-    setRemainingPosts(getRemainingJobPosts());
-    setPostedCount(getPostedJobCount());
+    const loadCompanyId = async () => {
+      try {
+        const recruiterProfileId = await resolveRecruiterProfileId();
+        const settings = await getRecruiterSettings(recruiterProfileId);
+        setCompanyId(settings.company?.id ?? null);
+      } catch (error) {
+        console.error("Failed to resolve recruiter's company", error);
+      }
+    };
+
+    loadCompanyId();
   }, []);
 
   const handleChange = (e) => {
@@ -134,7 +136,7 @@ export default function PostJob() {
 
   const buildBackendPayload = () => {
     return {
-      companyId: 1, // temporary. Later get this from logged-in recruiter's company profile
+      companyId,
 
       title: formData.jobTitle,
       tags: formData.tags,
@@ -173,6 +175,13 @@ export default function PostJob() {
       return;
     }
 
+    if (!companyId) {
+      toast.error(
+        "Your company profile could not be found. Please complete your company info in Settings first."
+      );
+      return;
+    }
+
     const payload = buildBackendPayload();
 
     try {
@@ -180,13 +189,7 @@ export default function PostJob() {
 
       // EDIT JOB MODE
       if (isEditMode) {
-        await axios.put(
-          `${JOBS_API}/${jobId}`,
-          payload,
-          {
-            headers: requestHeaders,
-          }
-        );
+        await api.put(`/recruiter/${jobId}`, payload);
 
         toast.success("Job updated successfully");
         navigate("/recruiter/my-jobs");
@@ -194,27 +197,9 @@ export default function PostJob() {
       }
 
       // CREATE JOB MODE
-      if (!canPostJob()) {
-        toast.error(
-          "You have reached your job posting limit. Please buy a subscription plan."
-        );
-        navigate("/recruiter/plans-billing");
-        return;
-      }
-
-      const response = await axios.post(
-        JOBS_API,
-        payload,
-        {
-          headers: requestHeaders,
-        }
-      );
-
-      incrementPostedJobCount();
+      const response = await api.post("/recruiter", payload);
 
       setPostedJob(response.data);
-      setRemainingPosts(getRemainingJobPosts());
-      setPostedCount(getPostedJobCount());
       setShowSuccessModal(true);
 
       resetForm();
@@ -250,34 +235,6 @@ export default function PostJob() {
         <h1 className="text-2xl font-semibold text-gray-900 mb-6">
           {isEditMode ? "Edit Job" : "Post a Job"}
         </h1>
-
-        {!isEditMode && (
-          <div className="mb-6 border border-blue-100 bg-blue-50 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <FiAlertCircle className="text-blue-600 text-xl mt-0.5" />
-
-              <div>
-                <p className="font-semibold text-gray-900">
-                  Current Plan: <span className="text-blue-600">{plan}</span>
-                </p>
-
-                <p className="text-sm text-gray-600 mt-1">
-                  Jobs posted: {postedCount} | Remaining posts: {remainingPosts}
-                </p>
-              </div>
-            </div>
-
-            {remainingPosts === 0 && (
-              <button
-                type="button"
-                onClick={() => navigate("/recruiter/plans-billing")}
-                className="bg-blue-600 text-white px-5 py-2.5 rounded-md font-semibold hover:bg-blue-700"
-              >
-                Upgrade Plan
-              </button>
-            )}
-          </div>
-        )}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-5">

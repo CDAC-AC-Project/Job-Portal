@@ -6,15 +6,15 @@ spring:
     name: JOB-SERVICE
 
   datasource:
-    url: jdbc:mysql://localhost:3306/jobs_db
+    url: jdbc:mysql://localhost:3306/jobs_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
     username: root
-    password: luffy@2002
+    password: Abhishek@1915
 
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
-
+    database-platform: org.hibernate.dialect.MySQLDialect
 eureka:
   client:
     service-url:

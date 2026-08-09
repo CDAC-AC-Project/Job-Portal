@@ -2,7 +2,7 @@ import { createApiClient } from "../utils/httpClient";
 import { getRefreshToken, logout as clearLocalSession } from "../utils/authStorage";
 
 const AUTH_API_BASE_URL =
-  import.meta.env.VITE_AUTH_SERVICE_URL || "http://localhost:8083/auth";
+  import.meta.env.VITE_AUTH_SERVICE_URL || "http://localhost:8085/auth";
 
 const api = createApiClient(AUTH_API_BASE_URL);
 

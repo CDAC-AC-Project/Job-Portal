@@ -1,115 +1,88 @@
-import { addNotification } from "./notificationService";
+import { createApiClient } from "../utils/httpClient";
 
-const STORAGE_KEY = "candidateApplications";
+const API_BASE_URL =
+  import.meta.env.VITE_APPLICATION_SERVICE_URL ||
+  "http://localhost:8080/applications";
 
-export const APPLICATION_STATUS = {
-  APPLIED: "Applied",
-  UNDER_REVIEW: "Under Review",
-  SHORTLISTED: "Shortlisted",
-  INTERVIEW: "Interview Scheduled",
-};
+// createApiClient (not a bare axios instance) so every call carries the signed-in
+// user's access token; candidateId itself is never sent by the frontend - the gateway
+// derives it from the token and injects X-User-Id before Application-service sees it.
+const api = createApiClient(API_BASE_URL);
 
-export const STATUS_ORDER = [
-  APPLICATION_STATUS.APPLIED,
-  APPLICATION_STATUS.UNDER_REVIEW,
-  APPLICATION_STATUS.SHORTLISTED,
-  APPLICATION_STATUS.INTERVIEW,
-];
+function toAppliedJob(app) {
+  const salary =
+    app.minSalarySnapshot != null && app.maxSalarySnapshot != null
+      ? `${app.minSalarySnapshot} - ${app.maxSalarySnapshot}`
+      : app.minSalarySnapshot ?? app.maxSalarySnapshot ?? "";
 
-// Demo-only: simulates a recruiter reviewing the application over time,
-// since there is no backend wiring applications to recruiter decisions yet.
-const STATUS_THRESHOLDS_MINUTES = [
-  { minutes: 10, status: APPLICATION_STATUS.INTERVIEW },
-  { minutes: 5, status: APPLICATION_STATUS.SHORTLISTED },
-  { minutes: 2, status: APPLICATION_STATUS.UNDER_REVIEW },
-  { minutes: 0, status: APPLICATION_STATUS.APPLIED },
-];
-
-function computeStatus(dateApplied) {
-  const elapsedMinutes = (Date.now() - new Date(dateApplied).getTime()) / 60000;
-  const match = STATUS_THRESHOLDS_MINUTES.find((t) => elapsedMinutes >= t.minutes);
-  return match ? match.status : APPLICATION_STATUS.APPLIED;
+  return {
+    id: app.id,
+    applicationId: app.id,
+    jobId: app.jobId,
+    title: app.jobTitleSnapshot,
+    company: app.companyNameSnapshot,
+    location: app.jobLocationSnapshot,
+    type: app.jobTypeSnapshot,
+    salary,
+    note: app.note,
+    status: app.status,
+    dateApplied: app.appliedAt,
+  };
 }
 
-function readAll() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeAll(applications) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(applications));
+export async function applyToJob(jobId, { resumeId, note } = {}) {
+  const response = await api.post(`/jobs/${jobId}/apply`, { resumeId, note });
+  return response.data;
 }
 
 export async function getAppliedJobs() {
-  const applications = readAll();
-  let changed = false;
-
-  const withCurrentStatus = applications.map((application) => {
-    const currentStatus = computeStatus(application.dateApplied);
-
-    if (currentStatus !== application.status) {
-      changed = true;
-      addNotification({
-        type: "status",
-        title: "Application update",
-        message: `Your application for ${application.title} at ${application.company} moved to "${currentStatus}".`,
-      });
-      return { ...application, status: currentStatus };
-    }
-
-    return application;
-  });
-
-  if (changed) {
-    writeAll(withCurrentStatus);
-  }
-
-  return withCurrentStatus.sort(
+  const response = await api.get("/candidate/my-applications");
+  return response.data.map(toAppliedJob).sort(
     (a, b) => new Date(b.dateApplied) - new Date(a.dateApplied)
   );
 }
 
-export function hasAppliedToJob(jobId) {
+// In-memory cache of this session's applied jobIds, so components that only need a
+// yes/no ("have I applied to job X") don't each trigger their own network call.
+let appliedJobIdsPromise = null;
+
+export function invalidateAppliedJobsCache() {
+  appliedJobIdsPromise = null;
+}
+
+export async function hasAppliedToJob(jobId) {
   if (jobId === undefined || jobId === null) return false;
-  return readAll().some((application) => application.jobId === jobId);
+
+  if (!appliedJobIdsPromise) {
+    appliedJobIdsPromise = getAppliedJobs()
+      .then((jobs) => new Set(jobs.map((job) => job.jobId)))
+      .catch((error) => {
+        appliedJobIdsPromise = null;
+        throw error;
+      });
+  }
+
+  const appliedJobIds = await appliedJobIdsPromise;
+  return appliedJobIds.has(jobId);
 }
 
-export async function applyToJob(job, { note = "" } = {}) {
-  const applications = readAll();
-
-  const application = {
-    id: `app-${Date.now()}`,
-    jobId: job.id ?? null,
-    title: job.title,
-    company: job.company,
-    location: job.location,
-    salary: job.salary,
-    type: job.type,
-    note,
-    dateApplied: new Date().toISOString(),
-    status: APPLICATION_STATUS.APPLIED,
-  };
-
-  const updated = [application, ...applications];
-  writeAll(updated);
-
-  addNotification({
-    type: "application",
-    title: "Application submitted",
-    message: `You applied to ${job.title} at ${job.company}.`,
-  });
-
-  return application;
+export async function getApplicationDetails(applicationId) {
+  const response = await api.get(`/${applicationId}`);
+  return response.data;
 }
 
-export function withdrawApplication(applicationId) {
-  const updated = readAll().filter(
-    (application) => application.id !== applicationId
-  );
-  writeAll(updated);
-  return updated;
+export async function getApplicationHistory(applicationId) {
+  const response = await api.get(`/${applicationId}/history`);
+  return response.data;
+}
+
+export async function getCandidateDashboardCounts() {
+  const response = await api.get("/candidate/dashboard-counts");
+  return response.data;
+}
+
+export async function withdrawApplication(applicationId) {
+  const response = await api.patch(`/${applicationId}/withdraw`);
+  invalidateAppliedJobsCache();
+  return response.data;
 }

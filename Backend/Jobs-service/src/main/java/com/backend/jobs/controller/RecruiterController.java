@@ -15,7 +15,7 @@ import lombok.AllArgsConstructor;
 @RestController
 @AllArgsConstructor
 @CrossOrigin(origins = "http://localhost:5173")
-@RequestMapping("/recruiter")
+@RequestMapping("/jobs/recruiter")
 public class RecruiterController {
 
     private final RecruiterDashboardService recruiterDashboardService;

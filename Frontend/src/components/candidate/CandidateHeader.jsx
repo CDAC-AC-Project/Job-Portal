@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   FiBriefcase,
@@ -6,6 +7,8 @@ import {
 } from "react-icons/fi";
 
 import NotificationsPanel from "./notifications/NotificationsPanel";
+import { getCandidateSettings, resolveCandidateProfileId } from "../../services/candidateSettingsService";
+import { getAuthUser } from "../../utils/authStorage";
 
 export default function CandidateHeader() {
   const navLinks = [
@@ -15,6 +18,39 @@ export default function CandidateHeader() {
     { name: "Job Alerts", path: "/candidate/job-alerts" },
     { name: "Customer Supports", path: "/candidate/support" },
   ];
+
+  const authUser = getAuthUser();
+  const [candidate, setCandidate] = useState({
+    fullName: authUser?.name || "Candidate",
+    profileImageUrl: "",
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchProfile = async () => {
+      try {
+        const candidateProfileId = await resolveCandidateProfileId();
+        const profile = await getCandidateSettings(candidateProfileId);
+
+        if (!cancelled) {
+          setCandidate({
+            fullName: authUser?.name || "Candidate",
+            profileImageUrl: profile.profileImageUrl || "",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load candidate profile", error);
+      }
+    };
+
+    fetchProfile();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <header className="bg-white border-b border-gray-200">
@@ -65,7 +101,17 @@ export default function CandidateHeader() {
 
           <div className="lg:hidden flex items-center gap-4">
             <NotificationsPanel />
-            <div className="w-9 h-9 rounded-full bg-gray-300"></div>
+            <div className="w-9 h-9 rounded-full bg-gray-300 overflow-hidden flex items-center justify-center text-sm font-semibold text-white">
+              {candidate.profileImageUrl ? (
+                <img
+                  src={candidate.profileImageUrl}
+                  alt="profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                candidate.fullName.charAt(0)
+              )}
+            </div>
           </div>
         </div>
 
@@ -77,12 +123,16 @@ export default function CandidateHeader() {
 
         <div className="hidden lg:flex items-center gap-5 lg:ml-auto">
           <NotificationsPanel />
-          <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden">
-            <img
-              src="https://i.pravatar.cc/100?img=12"
-              alt="profile"
-              className="w-full h-full object-cover"
-            />
+          <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden flex items-center justify-center text-sm font-semibold text-white">
+            {candidate.profileImageUrl ? (
+              <img
+                src={candidate.profileImageUrl}
+                alt="profile"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              candidate.fullName.charAt(0)
+            )}
           </div>
         </div>
       </div>

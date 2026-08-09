@@ -15,7 +15,9 @@ function formatDateApplied(dateApplied) {
   });
 }
 
-export default function AppliedJobTable({ jobs, showViewAll = false, onViewAll }) {
+const WITHDRAWABLE_STATUSES = new Set(["APPLIED", "SHORTLISTED", "INTERVIEW"]);
+
+export default function AppliedJobTable({ jobs, showViewAll = false, onViewAll, onWithdraw }) {
   const navigate = useNavigate();
 
   return (
@@ -101,14 +103,26 @@ export default function AppliedJobTable({ jobs, showViewAll = false, onViewAll }
                     </td>
 
                     <td className="px-5 py-4 text-right">
-                      <button
-                        type="button"
-                        disabled={!Number.isFinite(job.jobId)}
-                        onClick={() => navigate(`/candidate/job/${job.jobId}`)}
-                        className="bg-blue-50 text-blue-600 px-4 py-2 rounded-md font-medium hover:bg-blue-600 hover:text-white transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-blue-50 disabled:hover:text-blue-600"
-                      >
-                        View Details
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        {onWithdraw && WITHDRAWABLE_STATUSES.has(job.status) && (
+                          <button
+                            type="button"
+                            onClick={() => onWithdraw(job.applicationId ?? job.id)}
+                            className="bg-red-50 text-red-500 px-4 py-2 rounded-md font-medium hover:bg-red-500 hover:text-white transition"
+                          >
+                            Withdraw
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          disabled={!Number.isFinite(job.jobId)}
+                          onClick={() => navigate(`/candidate/job/${job.jobId}`)}
+                          className="bg-blue-50 text-blue-600 px-4 py-2 rounded-md font-medium hover:bg-blue-600 hover:text-white transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-blue-50 disabled:hover:text-blue-600"
+                        >
+                          View Details
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

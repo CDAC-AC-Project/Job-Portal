@@ -36,6 +36,11 @@ public interface JobApplicationRepository
     );
 
     List<JobApplication> findByColumn_Id(Long columnId);
+
+    List<JobApplication> findByJobIdAndRecruiterIdOrderByAppliedAtDesc(
+            Long jobId,
+            Long recruiterId
+    );
     
     @Query("""
             SELECT application.jobId, COUNT(application.id)

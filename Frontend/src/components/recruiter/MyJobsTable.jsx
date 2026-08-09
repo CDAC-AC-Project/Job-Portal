@@ -67,7 +67,7 @@ export default function MyJobsTable({ jobs }) {
 
               <td className="px-5 py-5">
                <button
-                onClick={() => navigate("/recruiter/applications")}
+                onClick={() => navigate(`/recruiter/applications/${job.id}`)}
                 className="px-5 py-3 rounded-md font-semibold bg-gray-100 text-blue-600 hover:bg-blue-600 hover:text-white transition"
                 >View Applications</button>
               </td>

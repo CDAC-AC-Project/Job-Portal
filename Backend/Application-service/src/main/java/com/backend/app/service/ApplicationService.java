@@ -2,6 +2,7 @@ package com.backend.app.service;
 
 import java.util.List;
 
+import com.backend.app.dto.ApplicationCardResponse;
 import com.backend.app.dto.ApplicationDetailsResponse;
 import com.backend.app.dto.ApplicationResponse;
 import com.backend.app.dto.ApplicationStatusHistoryResponse;
@@ -29,5 +30,7 @@ public interface ApplicationService {
             Long applicationId, Long requesterId, String role);
 
     CandidateApplicationDashboardCountsResponse getCandidateDashboardCounts(Long candidateId);
+
+    List<ApplicationCardResponse> getApplicationsForJob(Long jobId, Long recruiterId);
 
 }

@@ -40,6 +40,7 @@ public class SecurityConfig {
                             "/auth/reset-password",
                             "/auth/refresh-token",
                             "/auth/logout",
+                            "/auth/internal/**",
                             "/actuator/health",
                             "/swagger-ui/**",
                             "/swagger-ui.html",

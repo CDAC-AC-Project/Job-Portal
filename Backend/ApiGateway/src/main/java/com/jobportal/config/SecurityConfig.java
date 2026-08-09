@@ -74,10 +74,7 @@ public class SecurityConfig {
         return request -> {
             CorsConfiguration config = new CorsConfiguration();
 
-            // Both origins allowed: localhost for browsing directly on this PC, and the
-            // LAN IP for other devices (e.g. a phone) on the same network reaching the
-            // Vite dev server started with `host: true`.
-            config.setAllowedOrigins(List.of("http://localhost:5173", "http://192.168.0.102:5173"));
+            config.setAllowedOrigins(List.of("http://localhost:5173"));
             config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
             config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
             config.setExposedHeaders(List.of("Authorization"));

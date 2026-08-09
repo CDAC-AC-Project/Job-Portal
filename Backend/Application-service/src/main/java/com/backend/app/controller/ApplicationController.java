@@ -62,6 +62,17 @@ public class ApplicationController {
         return ResponseEntity.ok(applicationService.getMyApplication(candidateId));
     }
 
+    @GetMapping("/jobs/{jobId}")
+    public ResponseEntity<?> getApplicationsForJob(
+            @PathVariable Long jobId,
+            @RequestHeader("X-User-Id") Long recruiterId,
+            @RequestHeader("X-User-Role") String role) {
+
+        requireRole(role, "RECRUITER");
+
+        return ResponseEntity.ok(applicationService.getApplicationsForJob(jobId, recruiterId));
+    }
+
     @GetMapping("/candidate/dashboard-counts")
     public ResponseEntity<CandidateApplicationDashboardCountsResponse> getCandidateDashboardCounts(
             @RequestHeader("X-User-Id") Long candidateId,

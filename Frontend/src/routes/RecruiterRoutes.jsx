@@ -22,7 +22,7 @@ const RecruiterRoutes = (
     <Route path="find-candidate" element={<FindCandidate />} />
     <Route path="post-job" element={<PostJob />} />
     <Route path="my-jobs" element={<MyJobs />} />
-    <Route path="applications" element={<Applications />} />
+    <Route path="applications/:jobId" element={<Applications />} />
     <Route path="settings" element={<RecruiterSettings />} />
     <Route path="saved-candidates" element={<SavedCandidates />} />
     <Route path="candidate-profile/:id" element={<CandidateProfile />} />
