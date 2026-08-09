@@ -19,6 +19,7 @@ import com.backend.app.dto.ApplyJobRequest;
 import com.backend.app.dto.CandidateApplicationDashboardCountsResponse;
 import com.backend.app.dto.JobInternalResponse;
 import com.backend.app.dto.MyApplicationResponse;
+import com.backend.app.dto.RecruiterApplicationResponse;
 import com.backend.app.dto.ResumeInternalResponse;
 import com.backend.app.enums.ApplicationStatus;
 import com.backend.app.entities.ApplicationStatusHistory;
@@ -305,5 +306,13 @@ public class ApplicationServiceImpl implements ApplicationService {
                 history.getChangedBy(),
                 history.getChangedAt()
         );
+    }
+    
+   
+    @Override
+    public List<RecruiterApplicationResponse> getRecruiterApplications(Long recruiterId) {
+
+        
+		return applicationRepository.findRecruiterApplications(recruiterId);
     }
 }
