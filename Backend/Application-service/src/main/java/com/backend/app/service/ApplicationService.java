@@ -8,6 +8,7 @@ import com.backend.app.dto.ApplicationStatusHistoryResponse;
 import com.backend.app.dto.ApplyJobRequest;
 import com.backend.app.dto.CandidateApplicationDashboardCountsResponse;
 import com.backend.app.dto.MyApplicationResponse;
+import com.backend.app.dto.RecruiterApplicationResponse;
 import com.backend.app.enums.ApplicationStatus;
 
 public interface ApplicationService {
@@ -29,5 +30,6 @@ public interface ApplicationService {
             Long applicationId, Long requesterId, String role);
 
     CandidateApplicationDashboardCountsResponse getCandidateDashboardCounts(Long candidateId);
+    List<RecruiterApplicationResponse> getRecruiterApplications(Long recruiterId);
 
 }
