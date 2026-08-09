@@ -45,15 +45,6 @@ public class SecurityConfig {
 		http.authorizeHttpRequests(auth -> auth
 				.requestMatchers("/auth/**").permitAll()
 				.requestMatchers("/actuator/health").permitAll()
-				.requestMatchers(
-						"/auth/register",
-						"/auth/login",
-						"/auth/verify-email",
-						"/auth/forgot-password",
-						"/auth/reset-password",
-						"/auth/refresh-token",
-						"/auth/logout"
-				).permitAll()
 				.requestMatchers(HttpMethod.GET,"/jobs/search").permitAll()
 				.requestMatchers(HttpMethod.GET,"/jobs/home").permitAll()
 				.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()

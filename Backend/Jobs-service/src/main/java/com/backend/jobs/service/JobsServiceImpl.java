@@ -295,19 +295,6 @@ public class JobsServiceImpl implements JobsService{
 	    // because entity field is id, but DTO field is jobId
 	    response.setJobId(job.getId());
 
-	    // custom calculated field
-	    if (Boolean.TRUE.equals(job.getRemote())) {
-	        response.setLocation("Remote");
-	    } else {
-	        response.setLocation(
-	                job.getCity() + ", " + job.getState() + ", " + job.getCountry()
-	        );
-	    }
-
-	    if (job.getJobType() != null) {
-	        response.setJobType(job.getJobType().name());
-	    }
-
 	    return response;
 	}
 	
