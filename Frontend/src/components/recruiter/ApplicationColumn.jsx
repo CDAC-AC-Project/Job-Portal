@@ -2,7 +2,12 @@ import { useState } from "react";
 import { FiMoreHorizontal, FiEdit2, FiTrash2 } from "react-icons/fi";
 import ApplicantCard from "./ApplicantCard";
 
-export default function ApplicationColumn({ column, applications }) {
+export default function ApplicationColumn({
+  column,
+  applications,
+  onShortlist,
+  onReject,
+}) {
   const [showMenu, setShowMenu] = useState(false);
 
   return (
@@ -41,8 +46,13 @@ export default function ApplicationColumn({ column, applications }) {
 
       <div className="p-4 space-y-4 max-h-[620px] overflow-y-auto">
         {applications.length > 0 ? (
-          applications.map((applicant) => (
-            <ApplicantCard key={applicant.id} applicant={applicant} />
+          applications.map((application) => (
+            <ApplicantCard
+              key={application.id}
+              applicant={application}
+              onShortlist={onShortlist}
+              onReject={onReject}
+            />
           ))
         ) : (
           <div className="text-center py-10 text-sm text-gray-500">
