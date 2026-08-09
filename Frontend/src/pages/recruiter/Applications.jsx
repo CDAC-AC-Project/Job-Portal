@@ -3,7 +3,11 @@ import { FiPlusCircle, FiChevronDown } from "react-icons/fi";
 
 import ApplicationColumn from "../../components/recruiter/ApplicationColumn";
 import AddColumnModal from "../../components/recruiter/AddColumnModal";
-import { getRecruiterApplications } from "../../services/recruiterApplicationService";
+import {
+  getRecruiterApplications,
+  shortlistCandidate,
+  rejectCandidate,
+} from "../../services/recruiterApplicationService";
 
 export default function Applications() {
   const [columns, setColumns] = useState([]);
@@ -13,22 +17,43 @@ export default function Applications() {
   const [loading, setLoading] = useState(true);
   const [showAddColumnModal, setShowAddColumnModal] = useState(false);
 
+  const fetchApplications = async () => {
+    try {
+      setLoading(true);
+
+      const data = await getRecruiterApplications();
+
+      setColumns(data?.columns || []);
+      setApplications(data?.applications || []);
+    } catch (error) {
+      console.error("Failed to fetch applications:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleShortlist = async (applicationId) => {
+    try {
+      await shortlistCandidate(applicationId);
+
+      fetchApplications();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleReject = async (applicationId) => {
+    try {
+      await rejectCandidate(applicationId);
+
+      fetchApplications();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+
   useEffect(() => {
-    const fetchApplications = async () => {
-      try {
-        setLoading(true);
-
-        const data = await getRecruiterApplications();
-
-        setColumns(data?.columns || []);
-        setApplications(data?.applications || []);
-      } catch (error) {
-        console.error("Failed to fetch applications:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchApplications();
   }, []);
 
@@ -144,6 +169,8 @@ export default function Applications() {
                 key={column.id}
                 column={column}
                 applications={getColumnApplications(column.id)}
+                onShortlist={handleShortlist}
+                onReject={handleReject}
               />
             ))}
 
