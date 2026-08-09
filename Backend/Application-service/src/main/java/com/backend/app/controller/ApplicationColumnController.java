@@ -29,10 +29,7 @@ import lombok.AllArgsConstructor;
  */
 @RestController
 @AllArgsConstructor
-@CrossOrigin(origins = {
-	    "http://localhost:5173",
-	    "http://192.168.1.109:5173"
-	})
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/applications")
 public class ApplicationColumnController {
 

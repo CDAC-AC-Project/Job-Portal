@@ -131,13 +131,21 @@ public interface JobsDao extends JpaRepository<Jobs, Long> {
 		        @Param("recruiterId") Long recruiterId,
 		        @Param("status") JobStatus status
 		);
-	
 
 	//Internal APIS Queries   (this is "JPQL constructor expression")
-	@Query("SELECT new com.backend.jobs.dtos.JobInternalResponse(" +
-		       "j.id, j.title, j.recruiterId, j.companyName, j.country, j.state, j.city, " +
-		       "j.remote, j.status, j.minSalary, j.maxSalary, j.jobType) " +
-		       "FROM Jobs j WHERE j.id IN :jobIds AND j.status = 'ACTIVE'")
-		List<JobInternalResponse> findJobCardsByIds(@Param("jobIds") List<Long> jobIds);
+	@Query("""
+	        SELECT new com.backend.jobs.dtos.JobInternalResponse(
+	            j.id,
+	            j.title,
+	            j.recruiterId,
+	            j.companyName,
+	            CASE WHEN j.remote = true THEN 'Remote' ELSE CONCAT(j.city, ', ', j.state, ', ', j.country) END,
+	            j.status
+	        )
+	        FROM Jobs j
+	        WHERE j.id IN :jobIds
+	        AND j.status = 'ACTIVE'
+	        """)
+	    List<JobInternalResponse> findJobCardsByIds(@Param("jobIds") List<Long> jobIds);
 	
 }

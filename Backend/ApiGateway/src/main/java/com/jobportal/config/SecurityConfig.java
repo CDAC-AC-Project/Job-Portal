@@ -43,12 +43,21 @@ public class SecurityConfig {
 		session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 		// 4. Add a rule - all endpoints - secured (requires Authentication)
 		http.authorizeHttpRequests(auth -> auth
-				.requestMatchers("/auth/**").permitAll()
+				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 				.requestMatchers("/actuator/health").permitAll()
-				.requestMatchers(HttpMethod.GET,"/jobs/search").permitAll()
-				.requestMatchers(HttpMethod.GET,"/jobs/home").permitAll()
-				.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-				.requestMatchers(HttpMethod.POST,"/jobs/recruiter").hasRole("RECRUITER")
+				.requestMatchers(
+						"/auth/register",
+						"/auth/login",
+						"/auth/verify-email",
+						"/auth/forgot-password",
+						"/auth/reset-password",
+						"/auth/refresh-token",
+						"/auth/logout"
+				).permitAll()
+				// .requestMatchers(HttpMethod.GET,"/jobs/search").permitAll()
+				// .requestMatchers(HttpMethod.GET,"/jobs/home").permitAll()
+				// .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+				// .requestMatchers(HttpMethod.POST,"/jobs/recruiter").hasRole("RECRUITER")
 				.anyRequest().authenticated()
 				)
 
@@ -65,10 +74,7 @@ public class SecurityConfig {
         return request -> {
             CorsConfiguration config = new CorsConfiguration();
 
-            // Both origins allowed: localhost for browsing directly on this PC, and the
-            // LAN IP for other devices (e.g. a phone) on the same network reaching the
-            // Vite dev server started with `host: true`.
-            config.setAllowedOrigins(List.of("http://localhost:5173", "http://192.168.0.102:5173"));
+            config.setAllowedOrigins(List.of("http://localhost:5173"));
             config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
             config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
             config.setExposedHeaders(List.of("Authorization"));

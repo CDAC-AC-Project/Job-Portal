@@ -10,8 +10,12 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.backend.app.client.AuthClient;
 import com.backend.app.client.JobClient;
 import com.backend.app.client.ProfileClient;
+import com.backend.app.entities.ApplicationColumn;
+import com.backend.app.dto.UserInternalResponse;
+import com.backend.app.dto.ApplicationCardResponse;
 import com.backend.app.dto.ApplicationDetailsResponse;
 import com.backend.app.dto.ApplicationResponse;
 import com.backend.app.dto.ApplicationStatusHistoryResponse;
@@ -19,7 +23,6 @@ import com.backend.app.dto.ApplyJobRequest;
 import com.backend.app.dto.CandidateApplicationDashboardCountsResponse;
 import com.backend.app.dto.JobInternalResponse;
 import com.backend.app.dto.MyApplicationResponse;
-import com.backend.app.dto.RecruiterApplicationResponse;
 import com.backend.app.dto.ResumeInternalResponse;
 import com.backend.app.enums.ApplicationStatus;
 import com.backend.app.entities.ApplicationStatusHistory;
@@ -34,10 +37,12 @@ import com.backend.app.repository.JobApplicationRepository;
 
 import feign.FeignException;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Transactional
 @AllArgsConstructor
+@Slf4j
 public class ApplicationServiceImpl implements ApplicationService {
 
     private static final Map<ApplicationStatus, Set<ApplicationStatus>> ALLOWED_TRANSITIONS = Map.of(
@@ -55,6 +60,10 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final JobClient jobClient;
 
     private final ProfileClient profileClient;
+
+    private final AuthClient authClient;
+
+    private final ApplicationColumnService columnService;
 
     @Override
     public ApplicationResponse applyJob(Long candidateId, Long jobId, ApplyJobRequest dto) {
@@ -83,6 +92,14 @@ public class ApplicationServiceImpl implements ApplicationService {
         application.setNote(dto.getNote());
 
         application.setRecruiterId(job.getRecruiterId());
+
+        // Without this, a new application saves with column=null and never appears in any
+        // of the recruiter's board columns (each is filtered by exact columnId match), even
+        // though it exists and getApplicationsForJob returns it.
+        ApplicationColumn appliedColumn =
+                columnService.getOrCreateAppliedColumn(jobId, job.getRecruiterId());
+        application.setColumn(appliedColumn);
+
         application.setJobTitleSnapshot(job.getTitle());
         application.setCompanyNameSnapshot(job.getCompanyName());
         application.setJobLocationSnapshot(job.getLocation());
@@ -157,7 +174,40 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         ApplicationDetailsResponse response = mapper.map(application, ApplicationDetailsResponse.class);
         response.setApplicationId(application.getId());
+
+        enrichWithCandidateAndResume(response, application.getCandidateId(), application.getResumeId());
+
         return response;
+    }
+
+    // Candidate name/resume file details live in Auth_User-Service and Profile-Service
+    // respectively, not in this service's own data - fetched here rather than stored
+    // on JobApplication itself, since only the job snapshot (not the candidate's own
+    // info) needs to survive changes made after the application was submitted.
+    private void enrichWithCandidateAndResume(
+            ApplicationDetailsResponse response, Long candidateId, Long resumeId) {
+
+        try {
+            UserInternalResponse candidate = authClient.getUserById(candidateId);
+            response.setCandidateName(candidate.getFullName());
+            response.setCandidateEmail(candidate.getEmail());
+        } catch (FeignException ignored) {
+            // Candidate lookup failing shouldn't block viewing the application itself.
+        }
+
+        if (resumeId != null) {
+            try {
+                profileClient.getResumesByUserId(candidateId).stream()
+                        .filter(resume -> resume.getId().equals(resumeId))
+                        .findFirst()
+                        .ifPresent(resume -> {
+                            response.setResumeFileUrl(resume.getFileUrl());
+                            response.setResumeFileName(resume.getFileName());
+                        });
+            } catch (FeignException ignored) {
+                // Same reasoning - a resume lookup failure shouldn't hide the application.
+            }
+        }
     }
 
     @Override
@@ -264,6 +314,64 @@ public class ApplicationServiceImpl implements ApplicationService {
                 total, shortlisted, interview, hired, rejected, withdrawn);
     }
 
+    @Override
+    public List<ApplicationCardResponse> getApplicationsForJob(Long jobId, Long recruiterId) {
+
+        List<JobApplication> applications =
+                applicationRepository.findByJobIdAndRecruiterIdOrderByAppliedAtDesc(jobId, recruiterId);
+
+        return applications.stream().map(this::mapToCardResponse).toList();
+    }
+
+    private ApplicationCardResponse mapToCardResponse(JobApplication application) {
+
+        ApplicationCardResponse card = new ApplicationCardResponse(
+                application.getId(),
+                application.getCandidateId(),
+                null,
+                application.getResumeId(),
+                null,
+                null,
+                application.getNote(),
+                application.getStatus(),
+                application.getColumn() != null ? application.getColumn().getId() : null,
+                application.getAppliedAt()
+        );
+
+        try {
+            UserInternalResponse candidate = authClient.getUserById(application.getCandidateId());
+            card.setCandidateName(candidate.getFullName());
+        } catch (FeignException e) {
+            // A missing candidate name shouldn't stop the whole board from loading, but a
+            // silently swallowed failure here is exactly what makes "why is the name blank"
+            // impossible to diagnose - log it instead of losing it.
+            log.warn(
+                    "Could not resolve candidate name for candidateId={} (application={}): {} {}",
+                    application.getCandidateId(), application.getId(), e.status(), e.getMessage()
+            );
+        }
+
+        if (application.getResumeId() != null) {
+            try {
+                profileClient.getResumesByUserId(application.getCandidateId()).stream()
+                        .filter(resume -> resume.getId().equals(application.getResumeId()))
+                        .findFirst()
+                        .ifPresent(resume -> {
+                            card.setResumeFileUrl(resume.getFileUrl());
+                            card.setResumeFileName(resume.getFileName());
+                        });
+            } catch (FeignException e) {
+                log.warn(
+                        "Could not resolve resume for candidateId={} resumeId={} (application={}): {} {}",
+                        application.getCandidateId(), application.getResumeId(), application.getId(),
+                        e.status(), e.getMessage()
+                );
+            }
+        }
+
+        return card;
+    }
+
     private JobApplication findApplicationOrThrow(Long applicationId) {
         return applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new ApplicationNotFoundException("Application not found"));
@@ -306,13 +414,5 @@ public class ApplicationServiceImpl implements ApplicationService {
                 history.getChangedBy(),
                 history.getChangedAt()
         );
-    }
-    
-   
-    @Override
-    public List<RecruiterApplicationResponse> getRecruiterApplications(Long recruiterId) {
-
-        
-		return applicationRepository.findRecruiterApplications(recruiterId);
     }
 }

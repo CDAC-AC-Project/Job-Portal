@@ -1,10 +1,11 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import {
   FiGrid,
   FiUser,
   FiPlusCircle,
   FiBriefcase,
-  FiUsers,
+  FiBookmark,
+  FiCreditCard,
   FiSettings,
   FiLogOut,
 } from "react-icons/fi";
@@ -31,9 +32,9 @@ const sidebarLinks = [
     icon: FiBriefcase,
   },
   {
-    label: "Applications",
-    path: "/recruiter/applications",
-    icon: FiUsers,
+    label: "Saved Candidate",
+    path: "/recruiter/saved-candidates",
+    icon: FiBookmark,
   },
   {
     label: "Settings",
@@ -43,32 +44,14 @@ const sidebarLinks = [
 ];
 
 export default function RecruiterSidebar() {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/login");
-  };
-
   return (
-    <aside className="hidden lg:flex lg:w-72 flex-col border-r border-gray-200 bg-white h-screen sticky top-0">
-
-      {/* Header */}
-
-      <div className="border-b border-gray-200 px-6 py-6">
-
-        <h2 className="text-xl font-semibold text-gray-900">
+    <aside className="w-full lg:w-72 border-r border-gray-200 bg-white">
+      <div className="p-5">
+        <p className="text-xs font-medium text-gray-400 uppercase mb-4">
           Employers Dashboard
-        </h2>
+        </p>
 
-      </div>
-
-      {/* Navigation */}
-
-      <div className="flex-1 p-5">
-
-        <nav className="space-y-2">
-
+        <nav className="space-y-1">
           {sidebarLinks.map((link) => {
             const Icon = link.icon;
 
@@ -78,9 +61,10 @@ export default function RecruiterSidebar() {
                 to={link.path}
                 end={link.path === "/recruiter/dashboard"}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition ${isActive
-                    ? "bg-blue-50 font-medium text-blue-600"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-blue-600"
+                  `flex items-center gap-3 px-4 py-3 rounded-md text-sm transition ${
+                    isActive
+                      ? "bg-blue-50 text-blue-600 font-medium"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-blue-600"
                   }`
                 }
               >
@@ -89,26 +73,15 @@ export default function RecruiterSidebar() {
               </NavLink>
             );
           })}
-
         </nav>
-
       </div>
 
-      {/* Logout */}
-
-      <div className="border-t border-gray-200 p-5">
-
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-gray-600 transition hover:bg-red-50 hover:text-red-600"
-        >
-          <FiLogOut className="text-lg" />
-          Logout
+      <div className="hidden lg:flex min-h-[400px] items-end p-5">
+        <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500">
+          <FiLogOut />
+          Log-out
         </button>
-
       </div>
-
     </aside>
   );
 }

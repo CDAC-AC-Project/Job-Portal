@@ -48,9 +48,12 @@ export default function FindJob() {
   }, [keyword, location, jobType]);
 
   const [jobs, setJobs] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
 
   useEffect(() => {
   loadJobs();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [currentPage]);
 
 const loadJobs = async () => {
@@ -60,17 +63,18 @@ const loadJobs = async () => {
       city: location,
       jobType: jobType === "ALL" ? null : jobType,
       page: currentPage - 1,
-      size: 15,
+      size: jobsPerPage,
     });
 
     setJobs(response.content);
+    setTotalPages(response.totalPages || 1);
+    setTotalElements(response.totalElements ?? response.content.length);
   } catch (err) {
     console.error(err);
   }
 };
 
   const paginatedJobs = jobs;
-  const totalPages = 1;
 
   const handleSearch = async () => {
   setCurrentPage(1);
@@ -193,8 +197,8 @@ const loadJobs = async () => {
         {/* Results summary */}
         <div className="mt-6 flex items-center justify-between text-sm text-gray-500">
           <p>
-            Showing <span className="font-semibold text-gray-900">{jobs.length}</span>{" "}
-            {jobs.length === 1 ? "job" : "jobs"}
+            Showing <span className="font-semibold text-gray-900">{totalElements}</span>{" "}
+            {totalElements === 1 ? "job" : "jobs"}
           </p>
 
           {hasActiveFilters && (

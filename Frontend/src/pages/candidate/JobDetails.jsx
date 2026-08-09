@@ -17,7 +17,6 @@ import {
   getCompanyInitials,
   getCompanyLogoStyle,
   formatJobType,
-  getJobDescriptionContent,
 } from "../../utils/jobDisplay.js";
 import { isJobFavorited, toggleFavoriteJob } from "../../services/favoriteJobService.js";
 import { hasAppliedToJob } from "../../services/jobApplicationService.js";
@@ -28,18 +27,37 @@ export default function JobDetails() {
 const [job, setJob] = useState(null);
 
   const [isFavorited, setIsFavorited] = useState(() => (job ? isJobFavorited(job.id) : false));
-  const [applied, setApplied] = useState(() => (job ? hasAppliedToJob(job.id) : false));
+  const [applied, setApplied] = useState(false);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
 
   useEffect(() => {
   loadJob();
 }, [jobId]);
 
+  useEffect(() => {
+    if (!job) return;
+    let cancelled = false;
+    hasAppliedToJob(job.id).then((result) => {
+      if (!cancelled) setApplied(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [job]);
+
 const loadJob = async () => {
   try {
     const data = await getJobDetails(jobId);
-    console.log(data);
-    setJob(data);
+
+    setJob({
+      ...data,
+      company: data.companyName,
+      location: data.remote
+        ? "Remote"
+        : [data.city, data.state, data.country].filter(Boolean).join(", "),
+      salary: `₹${data.minSalary ?? "-"} - ₹${data.maxSalary ?? "-"}`,
+      type: data.jobType,
+    });
   } catch (e) {
     console.error(e);
   }
@@ -62,7 +80,6 @@ const loadJob = async () => {
     );
   }
 
-  const content = getJobDescriptionContent(job);
   const logoStyle = getCompanyLogoStyle(job.id);
 
   const handleToggleFavorite = () => {
@@ -87,9 +104,17 @@ const loadJob = async () => {
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div
-              className={`w-14 h-14 rounded-md flex items-center justify-center font-semibold text-lg ${logoStyle.bg} ${logoStyle.text}`}
+              className={`w-14 h-14 rounded-md flex items-center justify-center overflow-hidden font-semibold text-lg ${logoStyle.bg} ${logoStyle.text}`}
             >
-              {getCompanyInitials(job.company)}
+              {job.companyLogoUrl ? (
+                <img
+                  src={job.companyLogoUrl}
+                  alt={job.company}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                getCompanyInitials(job.company)
+              )}
             </div>
 
             <div>
@@ -106,44 +131,24 @@ const loadJob = async () => {
         <div className="space-y-8">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Job Description</h2>
-            <p className="text-sm leading-6 text-gray-600">{content.summary}</p>
+            <p className="text-sm leading-6 text-gray-600 whitespace-pre-line">
+              {job.description || "No description provided for this job."}
+            </p>
           </div>
 
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Responsibilities</h2>
-            <ul className="space-y-2">
-              {content.responsibilities.map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm text-gray-600">
-                  <FiCheckCircle className="mt-0.5 shrink-0 text-blue-600" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Requirements</h2>
-            <ul className="space-y-2">
-              {content.requirements.map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm text-gray-600">
-                  <FiCheckCircle className="mt-0.5 shrink-0 text-blue-600" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Benefits</h2>
-            <ul className="space-y-2">
-              {content.benefits.map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm text-gray-600">
-                  <FiCheckCircle className="mt-0.5 shrink-0 text-blue-600" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
+          {job.benefits?.length > 0 && (
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">Benefits</h2>
+              <ul className="space-y-2">
+                {job.benefits.map((item) => (
+                  <li key={item} className="flex items-start gap-2 text-sm text-gray-600">
+                    <FiCheckCircle className="mt-0.5 shrink-0 text-blue-600" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <aside className="space-y-4">
@@ -205,13 +210,6 @@ const loadJob = async () => {
                 <FiBookmark className={isFavorited ? "fill-current" : ""} />
               </button>
             </div>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 p-5">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">About {job.company}</h3>
-            <p className="text-sm text-gray-500 leading-6">
-              {job.company} is hiring for the {job.category?.toLowerCase()} team in {job.location}. Join a team that values collaboration and growth.
-            </p>
           </div>
         </aside>
       </section>

@@ -1,211 +1,165 @@
-import React from "react";
-import {
-  FiArrowLeft,
-  FiMail,
-  FiPhone,
-  FiMapPin,
-  FiGlobe,
-  FiUsers,
-  FiBriefcase,
-  FiCalendar,
-  FiLinkedin,
-  FiFacebook,
-  FiTwitter,
-  FiInstagram,
-  FiEdit,
-} from "react-icons/fi";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FiMapPin, FiGlobe, FiUsers, FiEdit2, FiMail } from "react-icons/fi";
 
-const recruiter = {
-  companyName: "TechNova Solutions",
-  recruiterName: "Rahul Sharma",
-  designation: "Senior Technical Recruiter",
-  logo: "https://placehold.co/120x120",
-  industry: "Information Technology",
-  companySize: "201-500 Employees",
-  founded: "2015",
-  website: "https://www.technova.com",
-  email: "hr@technova.com",
-  phone: "+91 9876543210",
-  location: "Pune, Maharashtra, India",
-  address: "Cyber Park, Hinjawadi Phase 2, Pune - 411057",
-  about:
-    "TechNova Solutions is a software company specializing in cloud computing, AI, enterprise applications, and digital transformation. We are committed to hiring talented professionals and building innovative products for customers across the globe.",
-  linkedin: "https://linkedin.com/company/technova",
-  facebook: "https://facebook.com/technova",
-  twitter: "https://twitter.com/technova",
-  instagram: "https://instagram.com/technova",
+import Loader from "../../components/common/Loader";
+import {
+  resolveRecruiterProfileId,
+  getRecruiterSettings,
+} from "../../services/recruiterSettingsService";
+
+const getCompanyInitials = (name = "") => {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "?";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
 };
-
-function OverviewItem({ icon, label, value }) {
-  return (
-    <div className="flex items-start gap-3 py-3 border-b last:border-b-0">
-      <div className="text-blue-600 text-lg mt-1">{icon}</div>
-      <div>
-        <p className="text-sm text-gray-500">{label}</p>
-        <h3 className="font-semibold text-gray-900">{value}</h3>
-      </div>
-    </div>
-  );
-}
 
 export default function RecruiterProfile() {
   const navigate = useNavigate();
 
+  const [company, setCompany] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const recruiterProfileId = await resolveRecruiterProfileId();
+        const settings = await getRecruiterSettings(recruiterProfileId);
+
+        setCompany(settings.company || null);
+      } catch (err) {
+        console.error("Failed to load employer profile", err);
+        setError("Unable to load your employer profile. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
+
+  if (loading) {
+    return <Loader />;
+  }
+
+  const location = [company?.city, company?.state, company?.country]
+    .filter(Boolean)
+    .join(", ");
+
   return (
-    <div className="p-6">
-      <button
-        type="button"
-        onClick={() => navigate("/recruiter/dashboard")}
-        className="mb-6 text-gray-600 hover:text-blue-600 flex items-center gap-2"
-      >
-        <FiArrowLeft />
-        Back to Dashboard
-      </button>
+    <>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Employer Profile
+        </h1>
 
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="bg-blue-50 px-6 py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div className="flex items-center gap-5">
-            <img
-              src={recruiter.logo}
-              alt={recruiter.companyName}
-              className="w-24 h-24 rounded-full border-4 border-white object-cover bg-white"
-            />
+        <button
+          onClick={() => navigate("/recruiter/settings")}
+          className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-md hover:bg-blue-700 transition"
+        >
+          <FiEdit2 />
+          Edit Profile
+        </button>
+      </div>
 
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900">
-                {recruiter.companyName}
-              </h1>
-
-              <p className="text-blue-600 font-medium mt-1">
-                {recruiter.designation}
-              </p>
-
-              <p className="text-gray-600 mt-1">
-                Recruiter: {recruiter.recruiterName}
-              </p>
-
-              <p className="text-gray-500 flex items-center gap-2 mt-2">
-                <FiMapPin />
-                {recruiter.location}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <button className="bg-blue-600 text-white px-5 py-3 rounded-md flex items-center gap-2 hover:bg-blue-700">
-              <FiEdit />
-              Edit Profile
-            </button>
-
-            <a
-              href={recruiter.website}
-              target="_blank"
-              rel="noreferrer"
-              className="bg-white border border-blue-600 text-blue-600 px-5 py-3 rounded-md flex items-center gap-2 hover:bg-blue-50"
-            >
-              <FiGlobe />
-              Visit Website
-            </a>
-          </div>
+      {error && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
         </div>
+      )}
 
-        <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <h2 className="text-lg font-semibold mb-3">About Company</h2>
-            <p className="text-gray-600 leading-7 mb-8">
-              {recruiter.about}
-            </p>
+      {!error && !company && (
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+          You haven't set up your company profile yet. Complete it in Settings
+          to have it appear here.
+        </div>
+      )}
 
-            <div className="border border-gray-200 rounded-xl p-5">
-              <h2 className="text-lg font-semibold mb-5">
-                Contact Information
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        {/* Banner */}
+        {company?.banner ? (
+          <div
+            className="h-56 bg-cover bg-center"
+            style={{ backgroundImage: `url(${company.banner})` }}
+          />
+        ) : (
+          <div className="h-56 bg-gradient-to-r from-blue-600 to-sky-400" />
+        )}
+
+        {/* Company */}
+        <div className="px-8 pb-8">
+          <div className="-mt-16 flex flex-col md:flex-row md:items-end gap-6">
+            <div className="w-32 h-32 rounded-full bg-white border-4 border-white shadow flex items-center justify-center overflow-hidden text-4xl font-bold text-blue-600">
+              {company?.logo ? (
+                <img
+                  src={company.logo}
+                  alt={company.companyName || "Company logo"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                getCompanyInitials(company?.companyName)
+              )}
+            </div>
+
+            <div className="pb-2">
+              <h2 className="text-3xl font-semibold text-gray-900">
+                {company?.companyName || "Company name not set"}
               </h2>
 
-              <p className="flex items-center gap-3 mb-4 text-gray-600">
-                <FiMail className="text-blue-600" />
-                {recruiter.email}
-              </p>
-
-              <p className="flex items-center gap-3 mb-4 text-gray-600">
-                <FiPhone className="text-blue-600" />
-                {recruiter.phone}
-              </p>
-
-              <p className="flex items-center gap-3 text-gray-600">
-                <FiMapPin className="text-blue-600" />
-                {recruiter.address}
+              <p className="text-gray-500 mt-2">
+                {company?.industryType || "Industry not specified"}
               </p>
             </div>
           </div>
 
-          <div>
-            <div className="border border-gray-200 rounded-xl p-5">
-              <h2 className="text-lg font-semibold mb-5">
-                Company Overview
-              </h2>
+          <div className="grid md:grid-cols-3 gap-6 mt-10">
+            <div className="border rounded-lg p-5">
+              <h3 className="font-semibold text-gray-900 mb-4">
+                Company Information
+              </h3>
 
-              <OverviewItem
-                icon={<FiBriefcase />}
-                label="Industry"
-                value={recruiter.industry}
-              />
+              <div className="space-y-3 text-sm text-gray-600">
+                <p className="flex items-center gap-2">
+                  <FiMail />
+                  {company?.email || "Not provided"}
+                </p>
 
-              <OverviewItem
-                icon={<FiUsers />}
-                label="Company Size"
-                value={recruiter.companySize}
-              />
+                <p className="flex items-center gap-2">
+                  <FiGlobe />
+                  {company?.website || "Not provided"}
+                </p>
 
-              <OverviewItem
-                icon={<FiCalendar />}
-                label="Founded"
-                value={recruiter.founded}
-              />
+                <p className="flex items-center gap-2">
+                  <FiMapPin />
+                  {location || "Location not specified"}
+                </p>
 
-              <OverviewItem
-                icon={<FiGlobe />}
-                label="Website"
-                value={recruiter.website}
-              />
+                <p className="flex items-center gap-2">
+                  <FiUsers />
+                  {company?.teamSize
+                    ? `${company.teamSize} Employees`
+                    : "Team size not specified"}
+                </p>
+              </div>
             </div>
 
-            <div className="border border-gray-200 rounded-xl p-5 mt-5">
-              <h2 className="text-lg font-semibold mb-5">
-                Social Links
-              </h2>
+            <div className="md:col-span-2 border rounded-lg p-5">
+              <h3 className="font-semibold text-gray-900 mb-4">
+                About Company
+              </h3>
 
-              <p className="flex items-center gap-3 mb-4">
-                <FiLinkedin className="text-blue-600" />
-                <a href={recruiter.linkedin} target="_blank" rel="noreferrer" className="hover:text-blue-600">
-                  LinkedIn
-                </a>
-              </p>
-
-              <p className="flex items-center gap-3 mb-4">
-                <FiFacebook className="text-blue-600" />
-                <a href={recruiter.facebook} target="_blank" rel="noreferrer" className="hover:text-blue-600">
-                  Facebook
-                </a>
-              </p>
-
-              <p className="flex items-center gap-3 mb-4">
-                <FiTwitter className="text-blue-600" />
-                <a href={recruiter.twitter} target="_blank" rel="noreferrer" className="hover:text-blue-600">
-                  Twitter
-                </a>
-              </p>
-
-              <p className="flex items-center gap-3">
-                <FiInstagram className="text-blue-600" />
-                <a href={recruiter.instagram} target="_blank" rel="noreferrer" className="hover:text-blue-600">
-                  Instagram
-                </a>
+              <p className="text-gray-600 leading-7">
+                {company?.about || "No company description added yet."}
               </p>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

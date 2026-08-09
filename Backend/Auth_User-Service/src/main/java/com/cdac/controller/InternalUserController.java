@@ -1,0 +1,31 @@
+package com.cdac.controller;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.cdac.dtos.UserResponseDto;
+import com.cdac.service.AuthService;
+
+import lombok.AllArgsConstructor;
+
+/**
+ * Called directly by other backend services (not through the API Gateway) to resolve
+ * a userId into basic profile info - e.g. Application-service showing a candidate's
+ * name on a recruiter's application view. Same trust model as Jobs-service's and
+ * Profile-Service's own /internal/** endpoints.
+ */
+@RestController
+@AllArgsConstructor
+@RequestMapping("/auth/internal")
+public class InternalUserController {
+
+    private final AuthService authService;
+
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<UserResponseDto> getUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(authService.getCurrentUser(userId));
+    }
+}

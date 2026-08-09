@@ -14,11 +14,8 @@ import lombok.AllArgsConstructor;
 
 @RestController
 @AllArgsConstructor
-@CrossOrigin(origins = {
-	    "http://localhost:5173",
-	    "http://192.168.1.109:5173"
-	})
-@RequestMapping("/recruiter")
+@CrossOrigin(origins = "http://localhost:5173")
+@RequestMapping("/jobs/recruiter")
 public class RecruiterController {
 
     private final RecruiterDashboardService recruiterDashboardService;

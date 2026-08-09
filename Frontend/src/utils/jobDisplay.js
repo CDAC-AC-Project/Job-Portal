@@ -23,7 +23,7 @@ export function getCompanyLogoStyle(id = 0) {
 export function formatJobType(type = "") {
   return type
     .toLowerCase()
-    .split(/[\s-]+/)
+    .split(/[\s_-]+/)
     .filter(Boolean)
     .map((word) => word[0].toUpperCase() + word.slice(1))
     .join(" ");

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FiMapPin,
   FiDollarSign,
@@ -12,23 +12,24 @@ import ApplyJobModal from "./ApplyJobModal";
 import { toggleJobAlertSaved } from "../../services/jobAlertService";
 import { hasAppliedToJob } from "../../services/jobApplicationService";
 
-// Job alerts are a separate mock catalog from the real job listings (data/jobs.js) and
-// their numeric ids just happen to overlap — namespace them so "applied" state doesn't
-// collide with an unrelated real job that shares the same id.
-function alertApplicationId(alertId) {
-  return `alert-${alertId}`;
-}
-
 export default function JobAlertRow({ job }) {
   const [saved, setSaved] = useState(job.saved);
-  const [applied, setApplied] = useState(() => hasAppliedToJob(alertApplicationId(job.id)));
+  const [applied, setApplied] = useState(false);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    hasAppliedToJob(job.id).then((result) => {
+      if (!cancelled) setApplied(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [job.id]);
 
   const handleToggleSave = () => {
     setSaved(toggleJobAlertSaved(job.id));
   };
-
-  const applyJob = { ...job, id: alertApplicationId(job.id) };
 
   return (
     <div
@@ -107,7 +108,7 @@ export default function JobAlertRow({ job }) {
 
       <ApplyJobModal
         isOpen={isApplyModalOpen}
-        job={applyJob}
+        job={job}
         onClose={() => setIsApplyModalOpen(false)}
         onApplied={() => {
           setApplied(true);
