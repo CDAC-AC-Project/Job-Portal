@@ -3,6 +3,7 @@ package com.backend.jobs.dtos;
 import java.math.BigDecimal;
 
 import com.backend.jobs.entities.JobStatus;
+import com.backend.jobs.entities.JobType;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,9 +18,12 @@ public class JobInternalResponse {
     private Long recruiterId;
     //private Long companyId;
     private String companyName;
-    private String location;
+    private String country;
+    private String state;
+    private String city;
+    private boolean remote;
     private JobStatus status;
     private BigDecimal minSalary;
     private BigDecimal maxSalary;
-    private String jobType;
+    private JobType jobType;
 }

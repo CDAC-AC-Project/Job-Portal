@@ -21,11 +21,6 @@ import { registerUser, extractAuthErrorMessage } from "../../services/authServic
 //   recruiter: "RECRUITER",
 // };
 
-const ROLE_TO_BACKEND = {
-    CANDIDATE: "CANDIDATE",
-    RECRUITER: "RECRUITER"
-};
-
 export default function Register() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -60,45 +55,40 @@ export default function Register() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-// try {
-//   setLoading(true);
-
-//   const response = await api.post("/auth/register", registerData);
-
-    setSubmitError("");
+  try {
     setIsSubmitting(true);
+    setSubmitError("");
 
-    try {
-      // Note: Auth_User-Service's RegisterDto has no "username" field — the
-      // account is keyed by fullName/email/password/role, so username is
-      // collected in the form but intentionally not sent.
-      const authResponse = await registerUser({
-        fullName: formData.fullName,
+    // Auth service registration
+    const authResponse = await registerUser({
+      fullName: formData.fullName,
+      email: formData.email,
+      password: formData.password,
+      role,
+    });
+
+    // Save authentication session
+    setSession(authResponse, {
+      name: formData.fullName,
+    });
+
+    // Navigate to email verification
+    navigate("/verify-email", {
+      state: {
         email: formData.email,
-        password: formData.password,
-        role: ROLE_TO_BACKEND[role],
-      });
+        role,
+      },
+    });
 
-      // register() already returns a working token pair (email verification
-      // is not required to log in), so the user is signed in immediately;
-      // /verify-email is still shown next as a nudge, not a gate.
-      setSession(authResponse, { name: formData.fullName });
+  } catch (error) {
+    setSubmitError(extractAuthErrorMessage(error));
 
-      navigate("/verify-email", {
-        state: {
-          email: formData.email,
-          role,
-        },
-      });
-    } catch (error) {
-      setSubmitError(extractAuthErrorMessage(error));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   return (
     <div className="min-h-screen bg-gray-200 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-7xl min-h-[90vh] bg-white overflow-hidden flex flex-col lg:flex-row">
