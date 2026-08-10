@@ -1,0 +1,48 @@
+jwt:
+  secret: ${JWT_SECRET}
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: API-GATEWAY
+
+  cloud:
+    gateway:
+      # spring-cloud-gateway-server-mvc (the WebMVC gateway, not the classic WebFlux
+      # spring-cloud-starter-gateway) binds routes under server.webmvc.routes, NOT
+      # plain "gateway.routes" - that key is silently ignored by this module, which is
+      # why no route has ever actually been registered.
+      server:
+        webmvc:
+          routes:
+            - id: auth-user-service
+              uri: lb://AUTH-USER-SERVICE
+              predicates:
+                - Path=/auth/**
+
+            - id: profile-service
+              uri: lb://PROFILE-SERVICE
+              predicates:
+                - Path=/api/profile/**
+
+            - id: job-service
+              uri: lb://JOB-SERVICE
+              predicates:
+                - Path=/jobs/**
+
+            - id: application-service
+              uri: lb://APPLICATION-SERVICE
+              predicates:
+                - Path=/applications/**
+
+            - id: notification-service
+              uri: lb://NOTIFICATION-SERVICE
+              predicates:
+                - Path=/notifications/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
