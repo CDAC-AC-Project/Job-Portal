@@ -1,6 +1,5 @@
 package com.backend.app.dto;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.backend.app.enums.ApplicationStatus;
@@ -10,23 +9,20 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * One card on the recruiter's application kanban board for a job.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ApplicationDetailsResponse {
+public class ApplicationCardResponse {
 
     private Long applicationId;
-
-    private Long jobId;
 
     private Long candidateId;
 
     private String candidateName;
-
-    private String candidateEmail;
-
-    private Long recruiterId;
 
     private Long resumeId;
 
@@ -34,22 +30,11 @@ public class ApplicationDetailsResponse {
 
     private String resumeFileName;
 
-    private String jobTitleSnapshot;
-
-    private String companyNameSnapshot;
-
-    private String jobLocationSnapshot;
-
-    private BigDecimal minSalarySnapshot;
-
-    private BigDecimal maxSalarySnapshot;
-
-    private String jobTypeSnapshot;
-
     private String note;
 
     private ApplicationStatus status;
 
-    private LocalDateTime appliedAt;
+    private Long columnId;
 
+    private LocalDateTime appliedAt;
 }

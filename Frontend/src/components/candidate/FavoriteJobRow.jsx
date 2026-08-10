@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FiMapPin,
   FiDollarSign,
@@ -14,8 +14,18 @@ import { toggleFavoriteJob } from "../../services/favoriteJobService";
 import { hasAppliedToJob } from "../../services/jobApplicationService";
 
 export default function FavoriteJobRow({ job, onRemove }) {
-  const [applied, setApplied] = useState(() => hasAppliedToJob(job.id));
+  const [applied, setApplied] = useState(false);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    hasAppliedToJob(job.id).then((result) => {
+      if (!cancelled) setApplied(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [job.id]);
 
   const handleRemoveFavorite = () => {
     toggleFavoriteJob(job.id);

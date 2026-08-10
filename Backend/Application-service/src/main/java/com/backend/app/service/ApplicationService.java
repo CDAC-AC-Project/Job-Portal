@@ -2,13 +2,13 @@ package com.backend.app.service;
 
 import java.util.List;
 
+import com.backend.app.dto.ApplicationCardResponse;
 import com.backend.app.dto.ApplicationDetailsResponse;
 import com.backend.app.dto.ApplicationResponse;
 import com.backend.app.dto.ApplicationStatusHistoryResponse;
 import com.backend.app.dto.ApplyJobRequest;
 import com.backend.app.dto.CandidateApplicationDashboardCountsResponse;
 import com.backend.app.dto.MyApplicationResponse;
-import com.backend.app.dto.RecruiterApplicationResponse;
 import com.backend.app.enums.ApplicationStatus;
 
 public interface ApplicationService {
@@ -30,6 +30,7 @@ public interface ApplicationService {
             Long applicationId, Long requesterId, String role);
 
     CandidateApplicationDashboardCountsResponse getCandidateDashboardCounts(Long candidateId);
-    List<RecruiterApplicationResponse> getRecruiterApplications(Long recruiterId);
+
+    List<ApplicationCardResponse> getApplicationsForJob(Long jobId, Long recruiterId);
 
 }

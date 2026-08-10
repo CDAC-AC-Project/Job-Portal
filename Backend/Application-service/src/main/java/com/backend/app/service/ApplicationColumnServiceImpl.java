@@ -33,6 +33,23 @@ public class ApplicationColumnServiceImpl implements ApplicationColumnService {
 
     @Override
     public List<ApplicationColumnResponse> getColumns(Long jobId, Long recruiterId) {
+        return ensureColumns(jobId, recruiterId).stream().map(this::mapToResponse).toList();
+    }
+
+    @Override
+    public ApplicationColumn getOrCreateAppliedColumn(Long jobId, Long recruiterId) {
+
+        List<ApplicationColumn> columns = ensureColumns(jobId, recruiterId);
+
+        return columns.stream()
+                .filter(column -> DEFAULT_COLUMN_NAMES[0].equals(column.getColumnName()))
+                .findFirst()
+                // Falls back to whichever column sorts first, in case a recruiter has since
+                // renamed/reordered the seeded "Applied" column.
+                .orElse(columns.get(0));
+    }
+
+    private List<ApplicationColumn> ensureColumns(Long jobId, Long recruiterId) {
 
         List<ApplicationColumn> columns =
                 columnRepository.findByJobIdAndRecruiterIdOrderByDisplayOrderAsc(jobId, recruiterId);
@@ -41,7 +58,7 @@ public class ApplicationColumnServiceImpl implements ApplicationColumnService {
             columns = seedDefaultColumns(jobId, recruiterId);
         }
 
-        return columns.stream().map(this::mapToResponse).toList();
+        return columns;
     }
 
     private List<ApplicationColumn> seedDefaultColumns(Long jobId, Long recruiterId) {

@@ -45,7 +45,13 @@ export default function CandidateSidebar() {
    const [jobAlertCount, setJobAlertCount] = useState(0);
 
   useEffect(() => {
-    setJobAlertCount(getJobAlertCount());
+    let cancelled = false;
+    getJobAlertCount().then((count) => {
+      if (!cancelled) setJobAlertCount(count);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
   return (
     <aside className="w-full lg:w-64 border-r border-gray-200 bg-white">

@@ -16,15 +16,15 @@ import { registerUser, extractAuthErrorMessage } from "../../services/authServic
 
 // The role toggle uses "user"/"recruiter" for historical UI reasons; the
 // backend's Role enum is CANDIDATE/RECRUITER.
-// const ROLE_TO_BACKEND = {
-//   user: "CANDIDATE",
-//   recruiter: "RECRUITER",
-// };
+const ROLE_TO_BACKEND = {
+  user: "CANDIDATE",
+  recruiter: "RECRUITER",
+};
 
 export default function Register() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState("CANDIDATE");
+
+  const [role, setRole] = useState("user");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -55,40 +55,47 @@ export default function Register() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    setIsSubmitting(true);
+    const validationErrors = validateRegisterForm(formData);
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
     setSubmitError("");
+    setIsSubmitting(true);
 
-    // Auth service registration
-    const authResponse = await registerUser({
-      fullName: formData.fullName,
-      email: formData.email,
-      password: formData.password,
-      role,
-    });
-
-    // Save authentication session
-    setSession(authResponse, {
-      name: formData.fullName,
-    });
-
-    // Navigate to email verification
-    navigate("/verify-email", {
-      state: {
+    try {
+      // Note: Auth_User-Service's RegisterDto has no "username" field — the
+      // account is keyed by fullName/email/password/role, so username is
+      // collected in the form but intentionally not sent.
+      const authResponse = await registerUser({
+        fullName: formData.fullName,
         email: formData.email,
-        role,
-      },
-    });
+        password: formData.password,
+        role: ROLE_TO_BACKEND[role],
+      });
 
-  } catch (error) {
-    setSubmitError(extractAuthErrorMessage(error));
+      // register() already returns a working token pair (email verification
+      // is not required to log in), so the user is signed in immediately;
+      // /verify-email is still shown next as a nudge, not a gate.
+      setSession(authResponse, { name: formData.fullName });
 
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      navigate("/verify-email", {
+        state: {
+          email: formData.email,
+          role,
+        },
+      });
+    } catch (error) {
+      setSubmitError(extractAuthErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-200 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-7xl min-h-[90vh] bg-white overflow-hidden flex flex-col lg:flex-row">
@@ -123,9 +130,9 @@ export default function Register() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setRole("CANDIDATE")}
+                  onClick={() => setRole("user")}
                   className={`flex items-center justify-center gap-2 py-3 rounded-md text-sm font-medium transition ${
-                    role === "CANDIDATE"
+                    role === "user"
                       ? "bg-blue-700 text-white shadow-sm"
                       : "bg-transparent text-gray-600 hover:bg-white"
                   }`}
@@ -136,9 +143,9 @@ export default function Register() {
 
                 <button
                   type="button"
-                  onClick={() => setRole("RECRUITER")}
+                  onClick={() => setRole("recruiter")}
                   className={`flex items-center justify-center gap-2 py-3 rounded-md text-sm font-medium transition ${
-                    role === "RECRUITER"
+                    role === "recruiter"
                       ? "bg-blue-700 text-white shadow-sm"
                       : "bg-transparent text-gray-600 hover:bg-white"
                   }`}

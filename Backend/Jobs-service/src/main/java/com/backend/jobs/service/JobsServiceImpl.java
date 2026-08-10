@@ -27,7 +27,9 @@ import lombok.*;
 @AllArgsConstructor
 public class JobsServiceImpl implements JobsService{
 	
-	private static final int HOME_JOBS_LIMIT = 15;
+	// Also powers the candidate Job Alerts feed (most-recent-first, self-capping: once more
+	// than this many active jobs exist, the oldest simply falls out of the query results).
+	private static final int HOME_JOBS_LIMIT = 20;
 	
 	private final JobsDao jobDao;
 	private  final ModelMapper mapper;
@@ -294,6 +296,19 @@ public class JobsServiceImpl implements JobsService{
 
 	    // because entity field is id, but DTO field is jobId
 	    response.setJobId(job.getId());
+
+	    // custom calculated field
+	    if (Boolean.TRUE.equals(job.getRemote())) {
+	        response.setLocation("Remote");
+	    } else {
+	        response.setLocation(
+	                job.getCity() + ", " + job.getState() + ", " + job.getCountry()
+	        );
+	    }
+
+	    if (job.getJobType() != null) {
+	        response.setJobType(job.getJobType().name());
+	    }
 
 	    return response;
 	}

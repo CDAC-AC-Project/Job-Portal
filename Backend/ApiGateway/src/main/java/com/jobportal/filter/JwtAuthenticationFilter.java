@@ -38,7 +38,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         GatewayRequestWrapper wrappedRequest = new GatewayRequestWrapper(request);
-        System.out.println("========== JWT FILTER ==========");
+
         /*
          * Remove fake user headers sent by frontend/client.
          * Gateway should be the only trusted source of these headers.
@@ -48,7 +48,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         wrappedRequest.removeHeader("X-User-Role");
 
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        System.out.println("Authorization Header = " + authHeader);
 
         /*
          * If token is missing, let Spring Security block it using SecurityConfig rules.

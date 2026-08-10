@@ -1,27 +1,15 @@
-import axios from "axios";
+import { createApiClient } from "../utils/httpClient";
 
-const API_URL = "http://localhost:8083/recruiter/dashboard";
+const JOBS_API_BASE_URL =
+  import.meta.env.VITE_JOBS_SERVICE_URL || "http://localhost:8080/jobs";
+
+// createApiClient (not a bare axios instance) so every call carries the signed-in
+// recruiter's access token - the gateway derives X-User-Id/X-User-Role from it and
+// forwards those to Jobs-service; going directly to Jobs-service with client-supplied
+// identity headers (the old implementation here) is rejected as unauthenticated.
+const api = createApiClient(JOBS_API_BASE_URL);
 
 export const getRecruiterDashboardCounts = async () => {
-  const recruiterId = localStorage.getItem("userId");
-  const role = localStorage.getItem("role");
-  const token = localStorage.getItem("token");
-
-  if (!recruiterId || !role) {
-    throw new Error(
-      "Recruiter login details were not found. Please sign in again."
-    );
-  }
-
-  const response = await axios.get(API_URL, {
-    headers: {
-      "X-User-Id": recruiterId,
-      "X-User-Role": role,
-      ...(token && {
-        Authorization: `Bearer ${token}`,
-      }),
-    },
-  });
-
+  const response = await api.get("/recruiter/dashboard");
   return response.data;
 };

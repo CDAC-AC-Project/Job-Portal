@@ -10,6 +10,7 @@ import com.backend.profile.dtos.CloudinaryUploadResponse;
 import com.backend.profile.dtos.CompanyInfoRequestDto;
 import com.backend.profile.dtos.CompanyResponseDto;
 import com.backend.profile.dtos.CompanySocialLinksRequestDto;
+import com.backend.profile.dtos.CompanySummaryDto;
 import com.backend.profile.dtos.FoundingInfoRequestDto;
 import com.backend.profile.entities.Company;
 import com.backend.profile.entities.RecruiterProfile;
@@ -82,6 +83,24 @@ public class CompanyServiceImpl implements CompanyService {
         company.setInstagram(dto.getInstagram());
 
         return mapToResponseDto(companyRepository.save(company));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CompanySummaryDto getCompanySummaryByUserId(Long userId) {
+
+        RecruiterProfile recruiter = recruiterProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Recruiter profile not found"));
+
+        Company company = companyRepository.findByRecruiterId(recruiter.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Company profile not found"));
+
+        return new CompanySummaryDto(
+                company.getId(),
+                company.getCompanyName(),
+                company.getLogo(),
+                company.getIndustryType()
+        );
     }
 
     @Override

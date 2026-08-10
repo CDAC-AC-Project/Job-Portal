@@ -1,46 +1,86 @@
-import { useState } from "react";
-import { FiX, FiSend, FiMapPin, FiDollarSign } from "react-icons/fi";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { FiX, FiSend, FiMapPin, FiDollarSign, FiAlertCircle } from "react-icons/fi";
 
-import { applyJob } from "../../services/applicationApi";
+import { applyToJob, invalidateAppliedJobsCache } from "../../services/jobApplicationService";
+import { extractAuthErrorMessage } from "../../services/authService";
+import {
+  getCandidateSettings,
+  resolveCandidateProfileId,
+} from "../../services/candidateSettingsService";
 
 export default function ApplyJobModal({ isOpen, job, onClose, onApplied }) {
+  const navigate = useNavigate();
+
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  // null = still checking, true/false = known. Re-checked every time the modal opens
+  // so a candidate who completes their profile in another tab isn't stuck seeing a
+  // stale "incomplete" gate.
+  const [profileCompleted, setProfileCompleted] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let cancelled = false;
+    setProfileCompleted(null);
+
+    const checkProfile = async () => {
+      try {
+        const candidateProfileId = await resolveCandidateProfileId();
+        const settings = await getCandidateSettings(candidateProfileId);
+
+        if (!cancelled) {
+          setProfileCompleted(Boolean(settings.profileCompleted));
+        }
+      } catch (err) {
+        console.error("Failed to check profile completion", err);
+        if (!cancelled) setProfileCompleted(false);
+      }
+    };
+
+    checkProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   if (!isOpen || !job) return null;
 
   const handleClose = () => {
     if (submitting) return;
     setNote("");
+    setError("");
     onClose();
   };
 
+  const handleGoToSettings = () => {
+    handleClose();
+    navigate("/candidate/settings");
+  };
+
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    setSubmitting(true);
+    try {
+      setSubmitting(true);
+      setError("");
 
-    const candidateId = 1; // temporary
-    const resumeId = 1; // temporary
+      // resumeId is intentionally omitted - Application-service resolves the
+      // candidate's default resume via Profile-Service when it's not provided.
+      const application = await applyToJob(job.id, { note });
 
-    console.log("Job object:", job);
-console.log("Job ID:", job.id);
-
-    const application = await applyJob(
-      job.id,
-      candidateId,
-      resumeId
-    );
-
-    onApplied?.(application);
-  } catch (error) {
-    console.error(error);
-    alert("Failed to apply for job");
-  } finally {
-    setSubmitting(false);
-  }
-};
+      invalidateAppliedJobsCache();
+      onApplied?.(application);
+    } catch (err) {
+      setError(extractAuthErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
@@ -55,6 +95,48 @@ console.log("Job ID:", job.id);
           <FiX className="text-xl" />
         </button>
 
+        {profileCompleted === null && (
+          <div className="flex items-center justify-center p-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+          </div>
+        )}
+
+        {profileCompleted === false && (
+          <div className="p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="rounded-md bg-yellow-100 p-2 text-yellow-600">
+                <FiAlertCircle className="text-xl" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-900">Complete your profile to apply</h2>
+            </div>
+
+            <p className="text-sm text-gray-600">
+              Recruiters need your personal details and a resume to consider your
+              application for <span className="font-medium text-gray-900">{job.title}</span>.
+              Finish setting up your profile first, then come back to apply.
+            </p>
+
+            <div className="mt-6 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="rounded-md bg-blue-50 px-5 py-3 font-medium text-blue-600 hover:bg-blue-100"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleGoToSettings}
+                className="rounded-md bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700"
+              >
+                Complete Profile
+              </button>
+            </div>
+          </div>
+        )}
+
+        {profileCompleted === true && (
         <form onSubmit={handleSubmit} className="p-6">
           <div className="mb-5 flex items-center gap-3">
             <div className="rounded-md bg-blue-100 p-2 text-blue-600">
@@ -62,6 +144,12 @@ console.log("Job ID:", job.id);
             </div>
             <h2 className="text-lg font-semibold text-gray-900">Apply for this job</h2>
           </div>
+
+          {error && (
+            <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-500">
+              {error}
+            </p>
+          )}
 
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
             <h3 className="text-sm font-semibold text-gray-900">{job.title}</h3>
@@ -116,6 +204,7 @@ console.log("Job ID:", job.id);
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { FiUploadCloud } from "react-icons/fi";
-import { useEffect} from "react";
-// import {
-//   FiUploadCloud,
-//   FiX,
-//   FiCheckCircle,
-//   FiAlertCircle,
-//   FiImage,
-// } from "react-icons/fi";
+import {
+  FiUploadCloud,
+  FiX,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiImage,
+} from "react-icons/fi";
 
 import { validateCompanyInfo } from "../../../utils/recruiterSettingsValidation";
 import { updateRecruiterCompanyInfo } from "../../../services/recruiterSettingsService";
@@ -159,27 +157,11 @@ export default function CompanyInfoSettings({
     } catch (error) {
       console.error(error);
       toast.error("Failed to update company info");
-
-    //   setErrors({});
-
-    //   setMessage({
-    //     type: "success",
-    //     text: "Company information updated successfully.",
-    //   });
-    // } catch (error) {
-    //   console.error("Failed to update company information:", error);
-
-    //   setMessage({
-    //     type: "error",
-    //     text: "Failed to update company information. Please try again.",
-    //   });
     } finally {
       setSaving(false);
     }
   };
-    console.log("Company Info:", companyInfo);
-  console.log("Logo:", companyInfo.logo);
-  console.log("Banner:", companyInfo.banner);
+
   return (
     <form onSubmit={handleSave} className="space-y-10">
 

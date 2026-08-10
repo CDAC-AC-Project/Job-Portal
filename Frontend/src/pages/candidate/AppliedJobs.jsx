@@ -3,46 +3,42 @@ import { useEffect, useState } from "react";
 import CandidateSidebar from "../../components/candidate/CandidateSidebar";
 import AppliedJobTable from "../../components/candidate/applications/AppliedJobTable";
 import Loader from "../../components/common/Loader";
-import { getMyApplications } from "../../services/applicationApi";
+import {
+  getAppliedJobs,
+  withdrawApplication,
+} from "../../services/jobApplicationService";
 
 export default function AppliedJobs() {
   const [appliedJobs, setAppliedJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-  console.log("AppliedJobs mounted");
+  const [error, setError] = useState("");
 
   const fetchAppliedJobs = async () => {
-    console.log("fetchAppliedJobs called");
-
     try {
       setLoading(true);
-
-      const data = await getMyApplications(1);
-      console.log("API Response:", data);
-
-      const formatted = data.map((app) => ({
-        id: app.id,
-        applicationId: app.id,
-        jobId: app.jobId,
-        title: app.jobTitleSnapshot,
-        company: app.companyNameSnapshot,
-        status: app.status,
-        dateApplied: app.appliedAt,
-      }));
-
-      console.log("Formatted:", formatted);
-
-      setAppliedJobs(formatted);
+      setError("");
+      setAppliedJobs(await getAppliedJobs());
     } catch (err) {
-      console.error("Error:", err);
+      console.error("Failed to load applied jobs", err);
+      setError("Couldn't load your applications. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  fetchAppliedJobs();
-}, []);
+  useEffect(() => {
+    fetchAppliedJobs();
+  }, []);
+
+  const handleWithdraw = async (applicationId) => {
+    try {
+      await withdrawApplication(applicationId);
+      await fetchAppliedJobs();
+    } catch (err) {
+      console.error("Failed to withdraw application", err);
+      alert("Failed to withdraw application");
+    }
+  };
 
   return (
     <div className="bg-white">
@@ -59,7 +55,13 @@ export default function AppliedJobs() {
             </p>
           </div>
 
-          {loading ? <Loader /> : <AppliedJobTable jobs={appliedJobs} />}
+          {loading ? (
+            <Loader />
+          ) : error ? (
+            <p className="text-sm text-red-500">{error}</p>
+          ) : (
+            <AppliedJobTable jobs={appliedJobs} onWithdraw={handleWithdraw} />
+          )}
         </section>
       </div>
     </div>
