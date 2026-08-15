@@ -7,12 +7,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import com.backend.app.dto.JobInternalResponse;
 
 @FeignClient(
-	        name = "job-service",
-	        url = "http://localhost:8083"
-	)
-	public interface JobClient {
+        name = "JOB-SERVICE"
+)
+public interface JobClient {
 
-	    @GetMapping("/Internal/jobs/{jobId}")
-	    JobInternalResponse getJobById(@PathVariable Long jobId);
+    @GetMapping("/Internal/jobs/{jobId}")
+    JobInternalResponse getJobById(@PathVariable Long jobId);
 
 }

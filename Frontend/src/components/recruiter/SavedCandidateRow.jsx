@@ -8,12 +8,29 @@ import {
   FiDownload,
 } from "react-icons/fi";
 
-export default function SavedCandidateRow({ candidate, highlighted }) {
+import { unsaveCandidate } from "../../services/recruiterCandidateService";
+
+export default function SavedCandidateRow({ candidate, highlighted, onUnsaved }) {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
+  const [unsavePending, setUnsavePending] = useState(false);
 
   const handleViewProfile = () => {
     navigate(`/recruiter/candidate-profile/${candidate.id}`);
+  };
+
+  const handleUnsave = async () => {
+    if (unsavePending) return;
+
+    setUnsavePending(true);
+    try {
+      await unsaveCandidate(candidate.id);
+      onUnsaved?.();
+    } catch (error) {
+      console.error("Failed to remove saved candidate:", error);
+    } finally {
+      setUnsavePending(false);
+    }
   };
 
   return (
@@ -38,7 +55,13 @@ export default function SavedCandidateRow({ candidate, highlighted }) {
       </div>
 
       <div className="flex items-center justify-end gap-4">
-        <button className="text-blue-600 hover:text-blue-700">
+        <button
+          type="button"
+          onClick={handleUnsave}
+          disabled={unsavePending}
+          title="Remove from saved candidates"
+          className="text-blue-600 hover:text-blue-700"
+        >
           <FiBookmark className="fill-current text-lg" />
         </button>
 
