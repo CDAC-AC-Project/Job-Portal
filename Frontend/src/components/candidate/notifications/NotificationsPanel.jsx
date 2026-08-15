@@ -32,9 +32,17 @@ export default function NotificationsPanel() {
   const [unreadCount, setUnreadCount] = useState(0);
   const containerRef = useRef(null);
 
-  const refresh = () => {
-    setNotifications(getNotifications());
-    setUnreadCount(getUnreadCount());
+  const refresh = async () => {
+    try {
+      const [notificationsData, unreadCountData] = await Promise.all([
+        getNotifications(),
+        getUnreadCount(),
+      ]);
+      setNotifications(notificationsData);
+      setUnreadCount(unreadCountData);
+    } catch {
+      // Leave the last-known state on the screen rather than clearing it.
+    }
   };
 
   useEffect(() => {
@@ -57,13 +65,13 @@ export default function NotificationsPanel() {
     setIsOpen((prev) => !prev);
   };
 
-  const handleMarkAllRead = () => {
-    markAllAsRead();
+  const handleMarkAllRead = async () => {
+    await markAllAsRead();
     refresh();
   };
 
-  const handleNotificationClick = (id) => {
-    markAsRead(id);
+  const handleNotificationClick = async (id) => {
+    await markAsRead(id);
     refresh();
   };
 
@@ -109,7 +117,7 @@ export default function NotificationsPanel() {
                     type="button"
                     onClick={() => handleNotificationClick(notification.id)}
                     className={`flex w-full items-start gap-3 border-b border-gray-50 px-4 py-3 text-left transition hover:bg-gray-50 ${
-                      !notification.read ? "bg-blue-50/40" : ""
+                      !notification.isRead ? "bg-blue-50/40" : ""
                     }`}
                   >
                     <div className="mt-0.5 rounded-md bg-blue-100 p-1.5 text-blue-600">
@@ -121,7 +129,7 @@ export default function NotificationsPanel() {
                         <p className="truncate text-sm font-medium text-gray-900">
                           {notification.title}
                         </p>
-                        {!notification.read && (
+                        {!notification.isRead && (
                           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" />
                         )}
                       </div>

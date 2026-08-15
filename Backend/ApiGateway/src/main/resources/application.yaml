@@ -1,6 +1,12 @@
 jwt:
   secret: ${JWT_SECRET}
 
+cors:
+  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
+
+notification-service:
+  url: ${NOTIFICATION_SERVICE_URL:http://localhost:8086}
+
 server:
   port: 8080
 
@@ -38,11 +44,15 @@ spring:
                 - Path=/applications/**
 
             - id: notification-service
-              uri: lb://NOTIFICATION-SERVICE
+              # NotificationService is .NET (no Eureka/Steeltoe client available), so
+              # it can't self-register - route to a fixed URI instead of lb://.
+              uri: ${notification-service.url}
               predicates:
                 - Path=/notifications/**
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka}
+  instance:
+    prefer-ip-address: true

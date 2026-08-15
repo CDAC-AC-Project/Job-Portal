@@ -1,6 +1,7 @@
 package com.cdac.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.modelmapper.ModelMapper;
@@ -200,6 +201,22 @@ public class AuthServiceImpl implements AuthService {
                 user.isEmailVerified(),
                 user.isActive()
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserResponseDto> getUsersByIds(List<Long> userIds) {
+
+        return userRepository.findAllById(userIds).stream()
+                .map(user -> new UserResponseDto(
+                        user.getId(),
+                        user.getFullName(),
+                        user.getEmail(),
+                        user.getRole(),
+                        user.isEmailVerified(),
+                        user.isActive()
+                ))
+                .toList();
     }
 
     @Override

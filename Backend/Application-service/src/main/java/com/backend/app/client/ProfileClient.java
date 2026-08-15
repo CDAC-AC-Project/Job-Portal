@@ -9,8 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import com.backend.app.dto.ResumeInternalResponse;
 
 @FeignClient(
-        name = "profile-service",
-        url = "http://localhost:8081"
+        name = "PROFILE-SERVICE"
 )
 public interface ProfileClient {
 

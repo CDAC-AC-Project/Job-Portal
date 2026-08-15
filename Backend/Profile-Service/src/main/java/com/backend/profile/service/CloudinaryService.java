@@ -29,10 +29,8 @@ public class CloudinaryService {
                     		    "job-portal/candidates/" + candidateProfileId + "/resumes",
                     		    "resource_type",
                     		    "raw",
-
                     		    "type",
                     		    "upload",
-
                     		    "public_id",
                     		    originalFileName
                     )

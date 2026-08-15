@@ -75,6 +75,20 @@ public class NotificationService : INotificationService
         await _dbContext.SaveChangesAsync();
     }
 
+    public async Task MarkAllAsReadAsync(long userId)
+    {
+        var unreadNotifications = await _dbContext.Notifications
+            .Where(n => n.UserId == userId && !n.IsRead)
+            .ToListAsync();
+
+        foreach (var notification in unreadNotifications)
+        {
+            notification.IsRead = true;
+        }
+
+        await _dbContext.SaveChangesAsync();
+    }
+
     private static NotificationResponseDto MapToResponseDto(Notification notification)
     {
         return new NotificationResponseDto

@@ -1,4 +1,7 @@
-import { FiDownload, FiCalendar, FiFileText } from "react-icons/fi";
+import { useState } from "react";
+import { FiDownload, FiCalendar, FiFileText, FiBookmark } from "react-icons/fi";
+
+import { saveCandidate, unsaveCandidate } from "../../services/recruiterCandidateService";
 
 // Only forward transitions the backend actually allows (see Application-service's
 // ALLOWED_TRANSITIONS) - APPLIED and WITHDRAWN aren't settable through this endpoint.
@@ -34,6 +37,7 @@ export default function ApplicantCard({
 }) {
   const {
     applicationId,
+    candidateId,
     candidateName,
     resumeFileUrl,
     resumeFileName,
@@ -43,6 +47,33 @@ export default function ApplicantCard({
     status,
   } = application;
 
+  const [isSaved, setIsSaved] = useState(false);
+  const [savePending, setSavePending] = useState(false);
+
+  const handleToggleSave = async () => {
+    if (!candidateId || savePending) return;
+
+    setSavePending(true);
+    try {
+      if (isSaved) {
+        await unsaveCandidate(candidateId);
+        setIsSaved(false);
+      } else {
+        await saveCandidate(candidateId);
+        setIsSaved(true);
+      }
+    } catch (error) {
+      // Already-saved (409) still means the end state is "saved" - reflect that.
+      if (error?.response?.status === 409) {
+        setIsSaved(true);
+      } else {
+        console.error("Failed to update saved candidate:", error);
+      }
+    } finally {
+      setSavePending(false);
+    }
+  };
+
   return (
     <div className="bg-white border border-gray-200 rounded-md p-4 shadow-sm">
       <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
@@ -50,13 +81,27 @@ export default function ApplicantCard({
           {getInitials(candidateName)}
         </div>
 
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900">
-            {candidateName || "Unknown candidate"}
-          </h3>
-          <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-            <FiCalendar /> Applied {formatAppliedDate(appliedAt)}
-          </p>
+        <div className="flex-1 flex items-start justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">
+              {candidateName || "Unknown candidate"}
+            </h3>
+            <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+              <FiCalendar /> Applied {formatAppliedDate(appliedAt)}
+            </p>
+          </div>
+
+          {candidateId && (
+            <button
+              type="button"
+              onClick={handleToggleSave}
+              disabled={savePending}
+              title={isSaved ? "Remove from saved candidates" : "Save candidate"}
+              className={`shrink-0 ${isSaved ? "text-blue-600" : "text-gray-400"} hover:text-blue-600`}
+            >
+              <FiBookmark className={isSaved ? "fill-current" : ""} />
+            </button>
+          )}
         </div>
       </div>
 

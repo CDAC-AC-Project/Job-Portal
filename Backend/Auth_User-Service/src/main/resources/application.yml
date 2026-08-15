@@ -9,9 +9,9 @@ spring:
     name: AUTH-USER-SERVICE
 
   datasource:
-    url: jdbc:mysql://localhost:3306/auth_db/?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: Abhishek@1915
+    url: jdbc:mysql://${DB_HOST:localhost}:3306/auth_db/?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:Abhishek@1915}
 
   jpa:
     hibernate:
@@ -23,8 +23,8 @@ spring:
   # env vars (MAIL_USERNAME / MAIL_PASSWORD) so a mailbox credential is never
   # hardcoded in this file. If they're unset, the app fails fast on startup.
   mail:
-    host: ${MAIL_HOST:}
-    port: ${MAIL_PORT:}
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
     properties:
@@ -37,9 +37,11 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka}
     register-with-eureka: true
     fetch-registry: true
+  instance:
+    prefer-ip-address: true
 
 app:
   # Used to build the verify-email / reset-password links sent in emails. Set to the

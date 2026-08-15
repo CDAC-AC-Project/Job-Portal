@@ -8,7 +8,7 @@ import {
 } from "./authStorage";
 
 const AUTH_API_BASE_URL =
-  import.meta.env.VITE_AUTH_SERVICE_URL || "http://localhost:8085/auth";
+  import.meta.env.VITE_AUTH_SERVICE_URL || "http://localhost:8080/auth";
 
 // Deliberately a bare axios call, not createApiClient(): refreshing the access
 // token must never itself go through the interceptor below, or a 401 on the

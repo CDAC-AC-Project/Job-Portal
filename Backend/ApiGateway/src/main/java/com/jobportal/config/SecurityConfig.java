@@ -4,6 +4,7 @@ import com.jobportal.filter.JwtAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -30,6 +31,13 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    // Comma-separated list, e.g. "http://localhost:5173,http://<VM-IP>:5173" - a
+    // deployed frontend is served from something other than localhost, and the
+    // browser's CORS check fails closed (not an error the JWT filter would ever see)
+    // if its origin isn't in this list.
+    @Value("#{'${cors.allowed-origins:http://localhost:5173}'.split(',')}")
+    private List<String> allowedOrigins;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
@@ -54,8 +62,10 @@ public class SecurityConfig {
 						"/auth/refresh-token",
 						"/auth/logout"
 				).permitAll()
-				// .requestMatchers(HttpMethod.GET,"/jobs/search").permitAll()
-				// .requestMatchers(HttpMethod.GET,"/jobs/home").permitAll()
+				// Single-path-segment matcher: covers /jobs/search, /jobs/home, and
+				// /jobs/{jobId} (public browsing/details) without opening up the
+				// multi-segment /jobs/recruiter/** routes, which stay authenticated.
+				.requestMatchers(HttpMethod.GET, "/jobs/*").permitAll()
 				// .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 				// .requestMatchers(HttpMethod.POST,"/jobs/recruiter").hasRole("RECRUITER")
 				.anyRequest().authenticated()
@@ -74,7 +84,7 @@ public class SecurityConfig {
         return request -> {
             CorsConfiguration config = new CorsConfiguration();
 
-            config.setAllowedOrigins(List.of("http://localhost:5173"));
+            config.setAllowedOrigins(allowedOrigins);
             config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
             config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
             config.setExposedHeaders(List.of("Authorization"));

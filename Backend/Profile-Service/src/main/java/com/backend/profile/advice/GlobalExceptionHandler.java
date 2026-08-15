@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.backend.profile.exceptions.DuplicateResourceException;
 import com.backend.profile.exceptions.ResourceNotFoundException;
 import com.backend.profile.exceptions.UnauthorizedActionException;
 
@@ -35,6 +36,12 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(UnauthorizedActionException.class)
 	public ResponseEntity<?> handleUnauthorizedActionException(UnauthorizedActionException e) {
 		return ResponseEntity.status(HttpStatus.FORBIDDEN) // SC 403
+				.body(Collections.singletonMap("message", e.getMessage()));
+	}
+
+	@ExceptionHandler(DuplicateResourceException.class)
+	public ResponseEntity<?> handleDuplicateResourceException(DuplicateResourceException e) {
+		return ResponseEntity.status(HttpStatus.CONFLICT) // SC 409
 				.body(Collections.singletonMap("message", e.getMessage()));
 	}
 
