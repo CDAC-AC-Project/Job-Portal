@@ -38,7 +38,7 @@ spring:
                 - Path=/applications/**
 
             - id: notification-service
-              uri: lb://NOTIFICATION-SERVICE
+              uri: http://localhost:5007
               predicates:
                 - Path=/notifications/**
 

@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.backend.app.client.AuthClient;
 import com.backend.app.client.JobClient;
+import com.backend.app.client.NotificationServiceClient;
 import com.backend.app.client.ProfileClient;
 import com.backend.app.entities.ApplicationColumn;
 import com.backend.app.dto.UserInternalResponse;
@@ -21,6 +22,7 @@ import com.backend.app.dto.ApplicationResponse;
 import com.backend.app.dto.ApplicationStatusHistoryResponse;
 import com.backend.app.dto.ApplyJobRequest;
 import com.backend.app.dto.CandidateApplicationDashboardCountsResponse;
+import com.backend.app.dto.CreateNotificationRequest;
 import com.backend.app.dto.JobInternalResponse;
 import com.backend.app.dto.MyApplicationResponse;
 import com.backend.app.dto.ResumeInternalResponse;
@@ -52,17 +54,12 @@ public class ApplicationServiceImpl implements ApplicationService {
     );
 
     private final JobApplicationRepository applicationRepository;
-
     private final ApplicationStatusHistoryRepository statusHistoryRepository;
-
     private final ModelMapper mapper;
-
     private final JobClient jobClient;
-
     private final ProfileClient profileClient;
-
     private final AuthClient authClient;
-
+    private final NotificationServiceClient notificationServiceClient;
     private final ApplicationColumnService columnService;
 
     @Override
@@ -256,19 +253,92 @@ public class ApplicationServiceImpl implements ApplicationService {
         }
 
         ApplicationStatus currentStatus = application.getStatus();
-
         validateTransition(currentStatus, newStatus);
-
         application.setStatus(newStatus);
-
         JobApplication updated = applicationRepository.save(application);
-
         recordHistory(updated, currentStatus, newStatus, recruiterId);
-
+        
+        sendStatusNotification(updated, newStatus);
+        
         ApplicationResponse response = mapper.map(updated, ApplicationResponse.class);
         response.setMessage("Application status updated to " + newStatus.name());
 
         return response;
+    }
+    
+    //send notification
+    private void sendStatusNotification(
+            JobApplication application,
+            ApplicationStatus newStatus) {
+
+        if (newStatus != ApplicationStatus.SHORTLISTED
+                && newStatus != ApplicationStatus.REJECTED
+                && newStatus != ApplicationStatus.HIRED) {
+
+            return;
+        }
+        try {
+            CreateNotificationRequest notification =
+                    buildNotification(application, newStatus);
+
+            notificationServiceClient.createNotification(notification);
+
+        } catch (Exception e) {
+            log.error(
+                    "Failed to send notification for application {}",
+                    application.getId(),
+                    e
+            );
+        }
+    }
+    private CreateNotificationRequest buildNotification(
+            JobApplication application,
+            ApplicationStatus status) {
+
+        String title;
+        String message;
+        String type;
+
+        switch (status) {
+
+            case SHORTLISTED:
+                title = "Application Shortlisted";
+                message = "Your application for "
+                        + application.getJobTitleSnapshot()
+                        + " has been shortlisted.";
+                type = "APPLICATION_SHORTLISTED";
+                break;
+
+            case REJECTED:
+                title = "Application Update";
+                message = "Your application for "
+                        + application.getJobTitleSnapshot()
+                        + " has been rejected.";
+                type = "APPLICATION_REJECTED";
+                break;
+
+            case HIRED:
+                title = "Congratulations!";
+                message = "You have been hired for "
+                        + application.getJobTitleSnapshot()
+                        + ".";
+                type = "APPLICATION_HIRED";
+                break;
+
+            default:
+                throw new IllegalArgumentException(
+                        "Notification not supported for status: " + status
+                );
+        }
+
+        return CreateNotificationRequest.builder()
+                .userId(application.getCandidateId())
+                .title(title)
+                .message(message)
+                .type(type)
+                .referenceId(application.getId())
+                .referenceType("APPLICATION")
+                .build();
     }
 
     private void validateTransition(ApplicationStatus current, ApplicationStatus target) {

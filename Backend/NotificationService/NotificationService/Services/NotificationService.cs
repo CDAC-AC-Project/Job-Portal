@@ -34,7 +34,7 @@ public class NotificationService : INotificationService
         return MapToResponseDto(notification);
     }
 
-    public async Task<List<NotificationResponseDto>> GetMyNotificationsAsync(long userId)
+    public async Task<IEnumerable<NotificationResponseDto>> GetUserNotificationsAsync(long userId)
     {
         return await _dbContext.Notifications
             .Where(n => n.UserId == userId)
@@ -60,7 +60,7 @@ public class NotificationService : INotificationService
             .CountAsync(n => n.UserId == userId && !n.IsRead);
     }
 
-    public async Task MarkAsReadAsync(long notificationId, long userId)
+    public async Task<Notification?> MarkAsReadAsync(long notificationId, long userId)
     {
         var notification = await _dbContext.Notifications
             .FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
@@ -73,6 +73,7 @@ public class NotificationService : INotificationService
         notification.IsRead = true;
 
         await _dbContext.SaveChangesAsync();
+        return notification;
     }
 
     private static NotificationResponseDto MapToResponseDto(Notification notification)

@@ -45,7 +45,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
          */
         wrappedRequest.removeHeader("X-User-Id");
         wrappedRequest.removeHeader("X-User-Email");
-        wrappedRequest.removeHeader("X-User-Role");
+        wrappedRequest.removeHeader("X-User-Role"); 
 
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 

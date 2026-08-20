@@ -7,9 +7,9 @@ public interface INotificationService
 {
     Task<NotificationResponseDto> CreateNotificationAsync(CreateNotificationDto dto);
 
-    Task<List<NotificationResponseDto>> GetMyNotificationsAsync(long userId);
+    Task<IEnumerable<NotificationResponseDto>> GetUserNotificationsAsync(long userId);
 
     Task<int> GetUnreadCountAsync(long userId);
 
-    Task MarkAsReadAsync(long notificationId, long userId);
+    Task<Notification?> MarkAsReadAsync(long id, long userId);
 }

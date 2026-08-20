@@ -25,29 +25,28 @@ public class NotificationsController : ControllerBase
 
     [HttpGet("me")]
     public async Task<IActionResult> GetMyNotifications(
-        [FromHeader(Name = "X-User-Id")] long userId)
+    [FromHeader(Name = "X-User-Id")] long userId)
     {
-        var notifications = await _notificationService.GetMyNotificationsAsync(userId);
+        var notifications =
+            await _notificationService.GetUserNotificationsAsync(userId);
 
         return Ok(notifications);
     }
 
     [HttpGet("unread-count")]
     public async Task<IActionResult> GetUnreadCount(
-        [FromHeader(Name = "X-User-Id")] long userId)
+     [FromHeader(Name = "X-User-Id")] long userId)
     {
-        var count = await _notificationService.GetUnreadCountAsync(userId);
+        var count =
+            await _notificationService.GetUnreadCountAsync(userId);
 
-        return Ok(new
-        {
-            count = count
-        });
+        return Ok(count);
     }
 
-    [HttpPatch("{id:long}/read")]
+    [HttpPatch("{id}/read")]
     public async Task<IActionResult> MarkAsRead(
-        long id,
-        [FromHeader(Name = "X-User-Id")] long userId)
+       long id,
+       [FromHeader(Name = "X-User-Id")] long userId)
     {
         await _notificationService.MarkAsReadAsync(id, userId);
 

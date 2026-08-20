@@ -54,10 +54,10 @@ public class SecurityConfig {
 						"/auth/refresh-token",
 						"/auth/logout"
 				).permitAll()
-				// .requestMatchers(HttpMethod.GET,"/jobs/search").permitAll()
-				// .requestMatchers(HttpMethod.GET,"/jobs/home").permitAll()
-				// .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-				// .requestMatchers(HttpMethod.POST,"/jobs/recruiter").hasRole("RECRUITER")
+				.requestMatchers(HttpMethod.GET,"/jobs/search").permitAll()
+				.requestMatchers(HttpMethod.GET,"/jobs/home").permitAll()
+				.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+				.requestMatchers(HttpMethod.POST,"/jobs/recruiter").hasRole("RECRUITER")
 				.anyRequest().authenticated()
 				)
 
