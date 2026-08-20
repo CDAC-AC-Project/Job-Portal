@@ -10,16 +10,16 @@ export default function SavedCandidates() {
 
   const candidatesPerPage = 10;
 
-  useEffect(() => {
-    const fetchCandidates = async () => {
-      try {
-        const data = await getSavedCandidates();
-        setCandidates(data);
-      } catch (error) {
-        console.error("Failed to fetch saved candidates:", error);
-      }
-    };
+  const fetchCandidates = async () => {
+    try {
+      const data = await getSavedCandidates();
+      setCandidates(data);
+    } catch (error) {
+      console.error("Failed to fetch saved candidates:", error);
+    }
+  };
 
+  useEffect(() => {
     fetchCandidates();
   }, []);
 
@@ -53,6 +53,7 @@ export default function SavedCandidates() {
           <SavedCandidateRow
             key={candidate.id}
             candidate={candidate}
+            onUnsaved={fetchCandidates}
           />
         ))}
       </div>

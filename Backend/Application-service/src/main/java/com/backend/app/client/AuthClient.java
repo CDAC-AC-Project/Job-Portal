@@ -7,8 +7,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import com.backend.app.dto.UserInternalResponse;
 
 @FeignClient(
+<<<<<<< HEAD
         name = "auth-user-service",
         url = "http://localhost:8085"
+=======
+        name = "AUTH-USER-SERVICE"
+>>>>>>> feature/internal
 )
 public interface AuthClient {
 

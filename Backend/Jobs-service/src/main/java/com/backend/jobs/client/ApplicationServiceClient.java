@@ -18,7 +18,6 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 
 @FeignClient(
         name = "APPLICATION-SERVICE",
-        url = "http://localhost:8084",
         path = "/internal/applications"
 )
 public interface ApplicationServiceClient {

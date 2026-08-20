@@ -55,4 +55,16 @@ public class NotificationsController : ControllerBase
             message = "Notification marked as read"
         });
     }
+
+    [HttpPatch("mark-all-read")]
+    public async Task<IActionResult> MarkAllAsRead(
+        [FromHeader(Name = "X-User-Id")] long userId)
+    {
+        await _notificationService.MarkAllAsReadAsync(userId);
+
+        return Ok(new
+        {
+            message = "All notifications marked as read"
+        });
+    }
 }

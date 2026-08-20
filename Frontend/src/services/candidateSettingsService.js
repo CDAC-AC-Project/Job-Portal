@@ -3,7 +3,7 @@ import { createApiClient } from "../utils/httpClient";
 
 const API_BASE_URL =
   import.meta.env.VITE_PROFILE_SERVICE_URL ||
-  "http://localhost:8081/api/profile";
+  "http://localhost:8080/api/profile";
 
 // createApiClient (not a bare axios instance) so every call carries the
 // signed-in user's access token, and a stale token gets silently refreshed.

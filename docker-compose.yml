@@ -1,0 +1,154 @@
+# Brings up the whole Job Portal stack: Eureka, the 5 Spring Boot services, the
+# .NET NotificationService, their databases, and the frontend behind nginx.
+#
+# Java/.NET services use `restart: on-failure` rather than health-check-gated
+# `depends_on`, because their runtime images (eclipse-temurin JRE, aspnet) don't
+# ship curl/wget for HTTP health checks. `depends_on` here is start ORDER, not a
+# readiness gate — if a service crashes because MySQL/Eureka wasn't accepting
+# connections yet, Docker restarts it and it succeeds on the next attempt.
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD}
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+
+  service-registry:
+    build: ./Backend/ServiceRegistry
+    ports:
+      - "8761:8761"
+    restart: on-failure
+
+  auth-user-service:
+    build: ./Backend/Auth_User-Service
+    depends_on:
+      - service-registry
+      - mysql
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      DB_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      EUREKA_SERVER_URL: http://service-registry:8761/eureka
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:5173}
+    ports:
+      - "8085:8085"
+    restart: on-failure
+
+  profile-service:
+    build: ./Backend/Profile-Service
+    depends_on:
+      - service-registry
+      - mysql
+    environment:
+      DB_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      EUREKA_SERVER_URL: http://service-registry:8761/eureka
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+    ports:
+      - "8081:8081"
+    restart: on-failure
+
+  jobs-service:
+    build: ./Backend/Jobs-service
+    depends_on:
+      - service-registry
+      - mysql
+    environment:
+      DB_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      EUREKA_SERVER_URL: http://service-registry:8761/eureka
+    ports:
+      - "8083:8083"
+    restart: on-failure
+
+  application-service:
+    build: ./Backend/Application-service
+    depends_on:
+      - service-registry
+      - mysql
+    environment:
+      DB_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      EUREKA_SERVER_URL: http://service-registry:8761/eureka
+    ports:
+      - "8084:8084"
+    restart: on-failure
+
+  notification-service:
+    build: ./Backend/NotificationService/NotificationService
+    depends_on:
+      - sqlserver
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=JobPilotNotificationDb;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True"
+    ports:
+      - "8086:8086"
+    restart: on-failure
+
+  api-gateway:
+    build: ./Backend/ApiGateway
+    depends_on:
+      - service-registry
+      - auth-user-service
+      - profile-service
+      - jobs-service
+      - application-service
+      - notification-service
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      EUREKA_SERVER_URL: http://service-registry:8761/eureka
+      NOTIFICATION_SERVICE_URL: http://notification-service:8086
+      # Must match wherever the built frontend is actually served from - see
+      # PUBLIC_HOST below. Comma-separated if you need more than one origin
+      # (e.g. localhost:5173 during local testing plus the deployed host).
+      ALLOWED_ORIGINS: http://${PUBLIC_HOST:-localhost}:5173
+    ports:
+      - "8080:8080"
+    restart: on-failure
+
+  frontend:
+    build:
+      context: ./Frontend
+      args:
+        # PUBLIC_HOST defaults to localhost for local `docker compose up`. For a
+        # real deployment, set PUBLIC_HOST in .env (e.g. a VM's static external
+        # IP or a domain) - Vite bakes these URLs into the JS bundle at build
+        # time, so the browser calls the gateway there directly.
+        VITE_AUTH_SERVICE_URL: http://${PUBLIC_HOST:-localhost}:8080/auth
+        VITE_PROFILE_SERVICE_URL: http://${PUBLIC_HOST:-localhost}:8080/api/profile
+        VITE_APPLICATION_SERVICE_URL: http://${PUBLIC_HOST:-localhost}:8080/applications
+        VITE_JOBS_SERVICE_URL: http://${PUBLIC_HOST:-localhost}:8080/jobs
+        VITE_NOTIFICATION_SERVICE_URL: http://${PUBLIC_HOST:-localhost}:8080/notifications
+    depends_on:
+      - api-gateway
+    ports:
+      - "5173:80"
+
+volumes:
+  mysql-data:
+  sqlserver-data:
