@@ -21,8 +21,7 @@ public class SecurityConfig {
 
     // No CORS config here on purpose: the API Gateway is the only thing browsers talk
     // to directly (all real frontend traffic goes through it), and it already adds
-    // Access-Control-* headers. If this service also added its own, the gateway's proxied
-    // response would carry both sets of headers duplicated, which browsers reject outright.
+      // response would carry both sets of headers duplicated, which browsers reject outright.
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 

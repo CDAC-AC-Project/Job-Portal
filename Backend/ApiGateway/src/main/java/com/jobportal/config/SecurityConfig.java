@@ -66,8 +66,8 @@ public class SecurityConfig {
 				// /jobs/{jobId} (public browsing/details) without opening up the
 				// multi-segment /jobs/recruiter/** routes, which stay authenticated.
 				.requestMatchers(HttpMethod.GET, "/jobs/*").permitAll()
-				// .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-				// .requestMatchers(HttpMethod.POST,"/jobs/recruiter").hasRole("RECRUITER")
+				.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+				.requestMatchers(HttpMethod.POST,"/jobs/recruiter").hasRole("RECRUITER")
 				.anyRequest().authenticated()
 				)
 
